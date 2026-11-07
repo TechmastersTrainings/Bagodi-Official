@@ -8,6 +8,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
 from app.modules.health.router import router as health_router
+from app.modules.platform.router_platform import router as platform_router
+from app.modules.platform.router_stores import router as stores_router
 
 logger = logging.getLogger("bagodi.platform")
 settings = get_settings()
@@ -47,12 +49,21 @@ if settings.cors_origin_list:
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     request_id = getattr(request.state, "request_id", None)
+    if isinstance(exc.detail, dict):
+        code = exc.detail.get("code", f"HTTP_{exc.status_code}")
+        message = exc.detail.get("message", "Request failed")
+        details = exc.detail.get("details")
+    else:
+        code = f"HTTP_{exc.status_code}"
+        message = str(exc.detail) if exc.detail else "Request failed"
+        details = None
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
-            "code": f"HTTP_{exc.status_code}",
-            "message": exc.detail if isinstance(exc.detail, str) else "Request failed",
-            "details": exc.detail if not isinstance(exc.detail, str) else None,
+            "code": code,
+            "message": message,
+            "details": details,
             "request_id": request_id,
         },
         headers={"X-Request-ID": request_id} if request_id else None,
@@ -75,3 +86,5 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(health_router, prefix=settings.api_v1_prefix)
+app.include_router(platform_router, prefix=settings.api_v1_prefix)
+app.include_router(stores_router, prefix=settings.api_v1_prefix)

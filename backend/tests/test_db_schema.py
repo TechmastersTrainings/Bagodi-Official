@@ -49,3 +49,4 @@ async def test_database_contains_zero_dummy_records():
             result = await conn.execute(text(f"SELECT count(*) FROM {table}"))
             count = result.scalar()
             assert count == 0, f"Table {table} must be empty, but found {count} records"
+
