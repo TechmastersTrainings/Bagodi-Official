@@ -1,16 +1,16 @@
-import uuid
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_cross_tenant_isolation_and_suspension(client: AsyncClient):
-    platform_admin_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Platform-User": "true",
-        "X-Permissions": "platform.*",
-    }
+async def test_cross_tenant_isolation_and_suspension(client: AsyncClient, mint_jwt_token):
+    platform_admin_token = mint_jwt_token(
+        is_platform_user=True,
+        permissions=["platform.*"],
+    )
+    platform_admin_headers = {"Authorization": f"Bearer {platform_admin_token}"}
 
     # 1. Onboard Tenant A and Tenant B
     tenant_a_payload = {
@@ -55,12 +55,13 @@ async def test_cross_tenant_isolation_and_suspension(client: AsyncClient):
     assert resp_act_b.status_code == 200
     assert resp_act_b.json()["status"] == "active"
 
-    # 3. Create Store under Tenant A
-    user_a_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Tenant-ID": tenant_a_id,
-        "X-Permissions": "stores.*",
-    }
+    # 3. Create Store under Tenant A using Tenant A's JWT token
+    user_a_token = mint_jwt_token(
+        tenant_id=UUID(tenant_a_id),
+        permissions=["stores.*"],
+    )
+    user_a_headers = {"Authorization": f"Bearer {user_a_token}"}
+
     store_a_payload = {
         "name": "Bagodi Flagship Store Bidar",
         "code": "STORE01",
@@ -77,12 +78,13 @@ async def test_cross_tenant_isolation_and_suspension(client: AsyncClient):
     assert store_a["tenant_id"] == tenant_a_id
     assert store_a["code"] == "STORE01"
 
-    # 4. Create Store under Tenant B with the SAME store code "STORE01" (proves tenant-scoped uniqueness)
-    user_b_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Tenant-ID": tenant_b_id,
-        "X-Permissions": "stores.*",
-    }
+    # 4. Create Store under Tenant B with the SAME store code "STORE01" using Tenant B's JWT token
+    user_b_token = mint_jwt_token(
+        tenant_id=UUID(tenant_b_id),
+        permissions=["stores.*"],
+    )
+    user_b_headers = {"Authorization": f"Bearer {user_b_token}"}
+
     store_b_payload = {
         "name": "Second Merchant Main Store",
         "code": "STORE01",

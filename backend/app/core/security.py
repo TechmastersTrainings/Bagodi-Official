@@ -2,7 +2,16 @@ from dataclasses import dataclass, field
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.tokens import decode_access_token
+from app.db.session import get_db
+from app.modules.identity.models import UserSession
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 @dataclass(frozen=True)
@@ -10,6 +19,7 @@ class SecurityPrincipal:
     user_id: UUID
     is_platform_user: bool = False
     tenant_id: UUID | None = None
+    session_id: UUID | None = None
     roles: tuple[str, ...] = field(default_factory=tuple)
     permissions: frozenset[str] = field(default_factory=frozenset)
 
@@ -24,51 +34,65 @@ class SecurityPrincipal:
         return False
 
 
-def get_security_principal(
-    x_user_id: Annotated[str | None, Header(alias="X-User-ID")] = None,
-    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
-    x_platform_user: Annotated[str | None, Header(alias="X-Platform-User")] = None,
-    x_roles: Annotated[str | None, Header(alias="X-Roles")] = None,
-    x_permissions: Annotated[str | None, Header(alias="X-Permissions")] = None,
+async def get_security_principal(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SecurityPrincipal:
-    """Extract authenticated principal context.
+    """Extract and cryptographically verify the authenticated principal from the JWT Bearer token.
 
-    In Phase 1, extracts authenticated context from server-verified headers.
-    Phase 2 will integrate the cryptographic JWT verification provider.
+    Never trusts client-supplied identity or tenant headers.
     """
-    if not x_user_id:
+    if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "AUTHENTICATION_REQUIRED", "message": "Authentication is required."},
         )
 
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
     try:
-        user_uuid = UUID(x_user_id)
-    except ValueError:
+        user_uuid = UUID(payload["sub"])
+    except (KeyError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "INVALID_PRINCIPAL", "message": "Invalid user identity."},
+            detail={"code": "INVALID_PRINCIPAL", "message": "Invalid token subject."},
         ) from None
 
     tenant_uuid: UUID | None = None
-    if x_tenant_id:
+    if payload.get("tenant_id"):
         try:
-            tenant_uuid = UUID(x_tenant_id)
+            tenant_uuid = UUID(payload["tenant_id"])
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_TENANT_ID", "message": "Invalid tenant identifier format."},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "INVALID_TENANT_ID", "message": "Invalid tenant ID in token."},
             ) from None
 
-    is_platform = (x_platform_user or "").strip().lower() in {"true", "1", "yes"}
+    session_uuid: UUID | None = None
+    if payload.get("session_id"):
+        try:
+            session_uuid = UUID(payload["session_id"])
+            # Verify session revocation status
+            stmt = select(UserSession).where(UserSession.id == session_uuid)
+            session = (await db.execute(stmt)).scalar_one_or_none()
+            if session and session.is_revoked:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={"code": "SESSION_REVOKED", "message": "Session has been revoked. Please log in again."},
+                )
+        except ValueError:
+            pass
 
-    roles = tuple(r.strip() for r in (x_roles or "").split(",") if r.strip())
-    permissions = frozenset(p.strip() for p in (x_permissions or "").split(",") if p.strip())
+    is_platform = bool(payload.get("is_platform_user", False))
+    roles = tuple(payload.get("roles", []))
+    permissions = frozenset(payload.get("permissions", []))
 
     return SecurityPrincipal(
         user_id=user_uuid,
         is_platform_user=is_platform,
         tenant_id=tenant_uuid,
+        session_id=session_uuid,
         roles=roles,
         permissions=permissions,
     )

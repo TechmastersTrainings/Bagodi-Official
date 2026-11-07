@@ -72,3 +72,4 @@ async def get_current_tenant(
 def scoped_query(stmt: Select, model, tenant: TenantContext) -> Select:
     """Ensure every tenant-owned model query is strictly scoped to the authenticated tenant."""
     return stmt.where(model.tenant_id == tenant.tenant_id)
+

@@ -1,21 +1,21 @@
-import uuid
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_rbac_permissions_and_role_boundaries(client: AsyncClient):
-    platform_admin_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Platform-User": "true",
-        "X-Permissions": "platform.*",
-    }
+async def test_rbac_permissions_and_role_boundaries(client: AsyncClient, mint_jwt_token):
+    platform_admin_token = mint_jwt_token(
+        is_platform_user=True,
+        permissions=["platform.*"],
+    )
+    platform_admin_headers = {"Authorization": f"Bearer {platform_admin_token}"}
 
     # 1. Onboard an active merchant for RBAC testing
     tenant_payload = {
         "name": "RBAC Test Merchant",
-        "slug": f"rbac-test-{uuid.uuid4().hex[:8]}",
+        "slug": "rbac-test-merchant",
         "legal_name": "RBAC Merchant Pvt Ltd",
     }
     resp_tenant = await client.post("/api/v1/platform/tenants", json=tenant_payload, headers=platform_admin_headers)
@@ -34,11 +34,11 @@ async def test_rbac_permissions_and_role_boundaries(client: AsyncClient):
     assert resp_unauth.json()["code"] == "AUTHENTICATION_REQUIRED"
 
     # 3. User with NO permissions attempts to create store
-    no_perm_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Tenant-ID": tenant_id,
-        "X-Permissions": "unrelated.permission",
-    }
+    no_perm_token = mint_jwt_token(
+        tenant_id=UUID(tenant_id),
+        permissions=["unrelated.permission"],
+    )
+    no_perm_headers = {"Authorization": f"Bearer {no_perm_token}"}
     store_payload = {
         "name": "Unauthorized Store",
         "code": "UNAUTH01",
@@ -53,11 +53,11 @@ async def test_rbac_permissions_and_role_boundaries(client: AsyncClient):
     assert resp_platform_forbidden.json()["code"] == "PLATFORM_ADMIN_REQUIRED"
 
     # 5. User with specific "stores.create" permission creates store successfully
-    create_perm_headers = {
-        "X-User-ID": str(uuid.uuid4()),
-        "X-Tenant-ID": tenant_id,
-        "X-Permissions": "stores.create",
-    }
+    create_perm_token = mint_jwt_token(
+        tenant_id=UUID(tenant_id),
+        permissions=["stores.create"],
+    )
+    create_perm_headers = {"Authorization": f"Bearer {create_perm_token}"}
     store_payload = {
         "name": "Authorized Branch",
         "code": "BRANCH01",

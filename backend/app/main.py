@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
 from app.modules.health.router import router as health_router
+from app.modules.identity.router import router as auth_router
 from app.modules.platform.router_platform import router as platform_router
 from app.modules.platform.router_stores import router as stores_router
 
@@ -86,5 +87,6 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(health_router, prefix=settings.api_v1_prefix)
+app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(platform_router, prefix=settings.api_v1_prefix)
 app.include_router(stores_router, prefix=settings.api_v1_prefix)

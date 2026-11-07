@@ -69,3 +69,4 @@ async def update_tenant_status(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await TenantService.update_tenant_status(db, tenant_id, data.status)
+

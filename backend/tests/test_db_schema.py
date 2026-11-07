@@ -22,6 +22,8 @@ async def test_database_tables_exist():
         "permissions",
         "user_roles",
         "role_permissions",
+        "otp_requests",
+        "user_sessions",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -43,10 +45,11 @@ async def test_database_contains_zero_dummy_records():
         "permissions",
         "user_roles",
         "role_permissions",
+        "otp_requests",
+        "user_sessions",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:
             result = await conn.execute(text(f"SELECT count(*) FROM {table}"))
             count = result.scalar()
             assert count == 0, f"Table {table} must be empty, but found {count} records"
-

@@ -114,3 +114,4 @@ class StoreService:
         await db.commit()
         await db.refresh(store)
         return store
+

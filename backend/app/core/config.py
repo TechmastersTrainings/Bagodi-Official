@@ -11,6 +11,19 @@ class Settings(BaseSettings):
     database_url: str
     cors_origins: str = ""
 
+    # Authentication & JWT configuration
+    jwt_secret_key: str = "BAGODI_DEV_INSECURE_SECRET_KEY_REPLACE_IN_PRODUCTION_32CHARS"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 15
+    jwt_refresh_token_expire_days: int = 7
+
+    # OTP security & throttling configuration
+    otp_expire_seconds: int = 300
+    otp_resend_cooldown_seconds: int = 60
+    otp_max_hourly_requests: int = 5
+    otp_max_attempts: int = 3
+    otp_provider: str = "console"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
