@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bagodi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bagodi}
+      POSTGRES_USER: ${POSTGRES_USER:-bagodi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bagodi_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bagodi} -d ${POSTGRES_DB:-bagodi}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bagodi_postgres_data:

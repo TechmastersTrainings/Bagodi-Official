@@ -1,0 +1,14 @@
+{
+  "name": "bagodi-frontend",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:customer": "pnpm --filter customer-web dev",
+    "dev:merchant": "pnpm --filter merchant-admin dev",
+    "dev:super-admin": "pnpm --filter super-admin dev",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
