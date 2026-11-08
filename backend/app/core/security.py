@@ -98,6 +98,16 @@ async def get_security_principal(
     )
 
 
+async def get_optional_security_principal(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> SecurityPrincipal | None:
+    """Extract and cryptographically verify the principal if a token is provided; otherwise returns None."""
+    if not credentials or not credentials.credentials:
+        return None
+    return await get_security_principal(credentials, db)
+
+
 def require_permission(permission: str):
     """Factory dependency enforcing that the calling principal holds the specified permission."""
 

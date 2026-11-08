@@ -753,3 +753,4 @@ async def test_cross_tenant_and_cross_store_isolation(client: AsyncClient, setup
         headers=headers_a,
     )
     assert resp_cross_trf.status_code == 404
+

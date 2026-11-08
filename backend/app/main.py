@@ -14,6 +14,9 @@ from app.modules.catalog.router_public import router as public_catalog_router
 from app.modules.health.router import router as health_router
 from app.modules.identity.router import router as auth_router
 from app.modules.inventory.router import router as inventory_router
+from app.modules.orders.router_cart import router as cart_router
+from app.modules.orders.router_orders_customer import router as orders_customer_router
+from app.modules.orders.router_orders_merchant import router as orders_merchant_router
 from app.modules.platform.router_platform import router as platform_router
 from app.modules.platform.router_stores import router as stores_router
 
@@ -100,3 +103,6 @@ app.include_router(merchant_catalog_router, prefix=settings.api_v1_prefix)
 app.include_router(public_catalog_router, prefix=settings.api_v1_prefix)
 app.include_router(barcode_router, prefix=settings.api_v1_prefix)
 app.include_router(inventory_router, prefix=settings.api_v1_prefix)
+app.include_router(cart_router, prefix=settings.api_v1_prefix)
+app.include_router(orders_customer_router, prefix=settings.api_v1_prefix)
+app.include_router(orders_merchant_router, prefix=settings.api_v1_prefix)

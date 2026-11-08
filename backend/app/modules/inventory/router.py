@@ -405,3 +405,4 @@ async def receive_transfer(
     return await StoreTransferService.receive_transfer(
         db, tenant.tenant_id, transfer_id, data, principal.user_id
     )
+

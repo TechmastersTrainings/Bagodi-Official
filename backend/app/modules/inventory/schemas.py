@@ -258,3 +258,4 @@ class StoreTransferResponse(BaseModel):
     items: list[StoreTransferItemResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
