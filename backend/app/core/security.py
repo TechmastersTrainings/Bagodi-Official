@@ -26,10 +26,11 @@ class SecurityPrincipal:
     def has_permission(self, permission: str) -> bool:
         if "*" in self.permissions or permission in self.permissions:
             return True
-        # Check domain wildcard, e.g. "stores.*" matches "stores.read"
-        if "." in permission:
-            domain = permission.split(".")[0]
-            if f"{domain}.*" in self.permissions:
+        # Check domain wildcard, e.g. "stores.*" matches "stores.read" or "stores:read"
+        sep = "." if "." in permission else (":" if ":" in permission else None)
+        if sep:
+            domain = permission.split(sep)[0]
+            if f"{domain}.*" in self.permissions or f"{domain}:*" in self.permissions:
                 return True
         return False
 

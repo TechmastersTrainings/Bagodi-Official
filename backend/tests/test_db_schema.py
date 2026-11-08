@@ -48,6 +48,10 @@ async def test_database_tables_exist():
         "coupons",
         "coupon_redemptions",
         "pricing_audit_logs",
+        "refunds",
+        "cod_settlements",
+        "payment_audit_logs",
+        "processed_webhook_events",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -95,6 +99,10 @@ async def test_database_contains_zero_dummy_records():
         "coupons",
         "coupon_redemptions",
         "pricing_audit_logs",
+        "refunds",
+        "cod_settlements",
+        "payment_audit_logs",
+        "processed_webhook_events",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:

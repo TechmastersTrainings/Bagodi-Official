@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 3
     otp_provider: str = "console"
 
+    # Payment Gateway Configuration
+    payment_gateway_provider: str = "mock"
+    payment_mock_secret: str = "BAGODI_DEV_PAYMENT_SECRET_KEY_32CHARS"
+    payment_webhook_secret: str = "BAGODI_DEV_PAYMENT_WEBHOOK_SECRET_KEY_32CHARS"
+    payment_webhook_timestamp_tolerance_seconds: int = 300
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

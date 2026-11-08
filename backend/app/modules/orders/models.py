@@ -184,8 +184,16 @@ class PaymentTransaction(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     payment_method: Mapped[str] = mapped_column(String(30), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
-    status: Mapped[str] = mapped_column(String(30), nullable=False, default="initiated")  # initiated, captured, failed, refunded
-    gateway_provider: Mapped[str] = mapped_column(String(50), nullable=False, default="manual_test")
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="initiated")  # initiated, captured, failed, refunded, partially_refunded
+    idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    gateway_provider: Mapped[str] = mapped_column(String(50), nullable=False, default="mock")
+    gateway_order_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    gateway_payment_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    gateway_signature: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    amount_refunded: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
+    gateway_fee: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
+    gateway_tax: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
+    captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     gateway_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 

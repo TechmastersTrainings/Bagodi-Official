@@ -24,7 +24,8 @@ async def cleanup_db_after_each_test():
     async with engine.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE TABLE pricing_audit_logs, coupon_redemptions, coupons, promotions, "
+                "TRUNCATE TABLE payment_audit_logs, processed_webhook_events, cod_settlements, refunds, "
+                "pricing_audit_logs, coupon_redemptions, coupons, promotions, "
                 "payment_transactions, order_status_history, order_items, orders, "
                 "cart_items, carts, "
                 "store_transfer_items, store_transfers, stock_receipt_items, "

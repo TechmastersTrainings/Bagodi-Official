@@ -525,7 +525,19 @@ class OrderService:
                     amount=total_amount,
                     currency="INR",
                     status="initiated",
-                    gateway_provider="manual_test",
+                    gateway_provider="mock",
+                )
+            )
+        elif data.payment_method == "cod":
+            order.payments.append(
+                PaymentTransaction(
+                    tenant_id=tenant_id,
+                    transaction_reference=f"TXN-{order_number}-COD",
+                    payment_method="cod",
+                    amount=total_amount,
+                    currency="INR",
+                    status="pending",
+                    gateway_provider="cod",
                 )
             )
 
@@ -665,6 +677,16 @@ class OrderService:
                 order.reservation_released = True
             if order.coupon_id:
                 await PricingService.revert_coupon_redemption(db, tenant_id=tenant_id, order_id=order.id)
+            if order.payment_status in ("captured", "partially_refunded"):
+                from app.modules.payments.services import PaymentService
+
+                await PaymentService.trigger_order_refund_if_captured(
+                    db,
+                    tenant_id=tenant_id,
+                    order=order,
+                    reason=data.notes or "Order cancelled",
+                    actor_id=valid_user_id,
+                )
 
         elif target_status == "RETURNED":
             # Return inspected goods back into stock
@@ -682,6 +704,16 @@ class OrderService:
                     user_id=valid_user_id,
                 )
             order.fulfillment_status = "returned"
+            if order.payment_status in ("captured", "partially_refunded"):
+                from app.modules.payments.services import PaymentService
+
+                await PaymentService.trigger_order_refund_if_captured(
+                    db,
+                    tenant_id=tenant_id,
+                    order=order,
+                    reason=data.notes or "Customer return restocked and refunded",
+                    actor_id=valid_user_id,
+                )
 
         order.status = target_status
         order.status_history.append(

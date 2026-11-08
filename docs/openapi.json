@@ -5244,6 +5244,933 @@
           }
         }
       }
+    },
+    "/api/v1/payments/initiate": {
+      "post": {
+        "tags": [
+          "Customer Payments"
+        ],
+        "summary": "Initiate Payment",
+        "operationId": "initiate_payment_api_v1_payments_initiate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInitiateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInitiateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/verify": {
+      "post": {
+        "tags": [
+          "Customer Payments"
+        ],
+        "summary": "Verify Payment",
+        "operationId": "verify_payment_api_v1_payments_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__modules__payments__schemas__PaymentTransactionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{order_id}/payments": {
+      "get": {
+        "tags": [
+          "Customer Payments"
+        ],
+        "summary": "Get Order Payments",
+        "operationId": "get_order_payments_api_v1_orders__order_id__payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/app__modules__payments__schemas__PaymentTransactionResponse"
+                  },
+                  "title": "Response Get Order Payments Api V1 Orders  Order Id  Payments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}/refunds": {
+      "get": {
+        "tags": [
+          "Customer Payments"
+        ],
+        "summary": "Get Order Refunds",
+        "operationId": "get_order_refunds_api_v1_orders__order_id__refunds_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RefundResponse"
+                  },
+                  "title": "Response Get Order Refunds Api V1 Orders  Order Id  Refunds Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "List Payments",
+        "operationId": "list_payments_api_v1_merchant_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/app__modules__payments__schemas__PaymentTransactionResponse"
+                  },
+                  "title": "Response List Payments Api V1 Merchant Payments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/orders/{order_id}/refund": {
+      "post": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "Create Refund",
+        "operationId": "create_refund_api_v1_merchant_payments_orders__order_id__refund_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/refunds/list": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "List Refunds",
+        "operationId": "list_refunds_api_v1_merchant_payments_refunds_list_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RefundResponse"
+                  },
+                  "title": "Response List Refunds Api V1 Merchant Payments Refunds List Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/cod/{order_id}/collect": {
+      "post": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "Record Cod Collection",
+        "operationId": "record_cod_collection_api_v1_merchant_payments_cod__order_id__collect_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodSettlementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/cod/{settlement_id}/reconcile": {
+      "post": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "Reconcile Cod Settlement",
+        "operationId": "reconcile_cod_settlement_api_v1_merchant_payments_cod__settlement_id__reconcile_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "settlement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Settlement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodReconcileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodSettlementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/cod/settlements": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "List Cod Settlements",
+        "operationId": "list_cod_settlements_api_v1_merchant_payments_cod_settlements_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "settlement_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Settlement Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CodSettlementResponse"
+                  },
+                  "title": "Response List Cod Settlements Api V1 Merchant Payments Cod Settlements Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/reconciliation/summary": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "Get Reconciliation Summary",
+        "operationId": "get_reconciliation_summary_api_v1_merchant_payments_reconciliation_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationSummaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/audit-logs": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "List Audit Logs",
+        "operationId": "list_audit_logs_api_v1_merchant_payments_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "payment_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payment Id"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentAuditLogResponse"
+                  },
+                  "title": "Response List Audit Logs Api V1 Merchant Payments Audit Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/payments/{payment_id}": {
+      "get": {
+        "tags": [
+          "Merchant Payments & Reconciliation"
+        ],
+        "summary": "Get Payment",
+        "operationId": "get_payment_api_v1_merchant_payments__payment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__modules__payments__schemas__PaymentTransactionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/webhooks/{provider}": {
+      "post": {
+        "tags": [
+          "Payment Webhooks"
+        ],
+        "summary": "Handle Payment Webhook",
+        "description": "Public webhook receiver for third-party payment gateways.\nAuthenticated via HMAC-SHA256 signatures, timestamp drift checks, and replay deduplication.",
+        "operationId": "handle_payment_webhook_api_v1_payments_webhooks__provider__post",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Handle Payment Webhook Api V1 Payments Webhooks  Provider  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5950,6 +6877,190 @@
           "customer_phone"
         ],
         "title": "CheckoutRequest"
+      },
+      "CodCollectionRequest": {
+        "properties": {
+          "amount_collected": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Amount Collected"
+          },
+          "collected_by_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Collected By Name"
+          },
+          "collected_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collected At"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_collected",
+          "collected_by_name"
+        ],
+        "title": "CodCollectionRequest"
+      },
+      "CodReconcileRequest": {
+        "properties": {
+          "bank_deposit_reference": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Bank Deposit Reference"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bank_deposit_reference"
+        ],
+        "title": "CodReconcileRequest"
+      },
+      "CodSettlementResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "payment_transaction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Payment Transaction Id"
+          },
+          "amount_collected": {
+            "type": "string",
+            "title": "Amount Collected"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          },
+          "collected_by_name": {
+            "type": "string",
+            "title": "Collected By Name"
+          },
+          "settlement_status": {
+            "type": "string",
+            "title": "Settlement Status"
+          },
+          "settled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settled At"
+          },
+          "bank_deposit_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Deposit Reference"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "payment_transaction_id",
+          "amount_collected",
+          "currency",
+          "collected_at",
+          "collected_by_name",
+          "settlement_status",
+          "settled_at",
+          "bank_deposit_reference",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CodSettlementResponse"
       },
       "CouponCreate": {
         "properties": {
@@ -7038,7 +8149,7 @@
           },
           "payments": {
             "items": {
-              "$ref": "#/components/schemas/PaymentTransactionResponse"
+              "$ref": "#/components/schemas/app__modules__orders__schemas__PaymentTransactionResponse"
             },
             "type": "array",
             "title": "Payments"
@@ -7181,6 +8292,95 @@
         ],
         "title": "OrderStatusUpdateRequest"
       },
+      "PaymentAuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id"
+          },
+          "payment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Id"
+          },
+          "refund_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Id"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "payment_id",
+          "refund_id",
+          "event_type",
+          "actor_id",
+          "payload",
+          "created_at"
+        ],
+        "title": "PaymentAuditLogResponse"
+      },
       "PaymentCallbackRequest": {
         "properties": {
           "transaction_reference": {
@@ -7228,20 +8428,80 @@
         ],
         "title": "PaymentCallbackRequest"
       },
-      "PaymentTransactionResponse": {
+      "PaymentInitiateRequest": {
         "properties": {
-          "id": {
+          "order_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Id"
+            "title": "Order Id"
+          },
+          "payment_method": {
+            "type": "string",
+            "maxLength": 30,
+            "title": "Payment Method",
+            "default": "online"
+          },
+          "gateway_provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway Provider"
+          },
+          "return_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Url"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id"
+        ],
+        "title": "PaymentInitiateRequest"
+      },
+      "PaymentInitiateResponse": {
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Transaction Id"
           },
           "transaction_reference": {
             "type": "string",
             "title": "Transaction Reference"
           },
-          "payment_method": {
+          "order_id": {
             "type": "string",
-            "title": "Payment Method"
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "order_number": {
+            "type": "string",
+            "title": "Order Number"
           },
           "amount": {
             "type": "string",
@@ -7259,7 +8519,7 @@
             "type": "string",
             "title": "Gateway Provider"
           },
-          "error_message": {
+          "gateway_order_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -7268,27 +8528,72 @@
                 "type": "null"
               }
             ],
-            "title": "Error Message"
+            "title": "Gateway Order Id"
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
+          "checkout_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Url"
+          },
+          "checkout_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Checkout Payload"
           }
         },
         "type": "object",
         "required": [
-          "id",
+          "transaction_id",
           "transaction_reference",
-          "payment_method",
+          "order_id",
+          "order_number",
           "amount",
           "currency",
           "status",
           "gateway_provider",
-          "error_message",
-          "created_at"
+          "gateway_order_id",
+          "checkout_url",
+          "checkout_payload"
         ],
-        "title": "PaymentTransactionResponse"
+        "title": "PaymentInitiateResponse"
+      },
+      "PaymentVerifyRequest": {
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Transaction Id"
+          },
+          "gateway_order_id": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Gateway Order Id"
+          },
+          "gateway_payment_id": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Gateway Payment Id"
+          },
+          "gateway_signature": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Gateway Signature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transaction_id",
+          "gateway_order_id",
+          "gateway_payment_id",
+          "gateway_signature"
+        ],
+        "title": "PaymentVerifyRequest"
       },
       "PriceQuoteItem": {
         "properties": {
@@ -8839,6 +10144,224 @@
           "updated_at"
         ],
         "title": "PurchaseOrderResponse"
+      },
+      "ReconciliationSummaryResponse": {
+        "properties": {
+          "total_captured_amount": {
+            "type": "string",
+            "title": "Total Captured Amount"
+          },
+          "total_refunded_amount": {
+            "type": "string",
+            "title": "Total Refunded Amount"
+          },
+          "net_settled_amount": {
+            "type": "string",
+            "title": "Net Settled Amount"
+          },
+          "total_gateway_fees": {
+            "type": "string",
+            "title": "Total Gateway Fees"
+          },
+          "total_gateway_taxes": {
+            "type": "string",
+            "title": "Total Gateway Taxes"
+          },
+          "cod_collected_amount": {
+            "type": "string",
+            "title": "Cod Collected Amount"
+          },
+          "cod_pending_deposit_amount": {
+            "type": "string",
+            "title": "Cod Pending Deposit Amount"
+          },
+          "cod_reconciled_amount": {
+            "type": "string",
+            "title": "Cod Reconciled Amount"
+          },
+          "transactions_count": {
+            "type": "integer",
+            "title": "Transactions Count"
+          },
+          "refunds_count": {
+            "type": "integer",
+            "title": "Refunds Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_captured_amount",
+          "total_refunded_amount",
+          "net_settled_amount",
+          "total_gateway_fees",
+          "total_gateway_taxes",
+          "cod_collected_amount",
+          "cod_pending_deposit_amount",
+          "cod_reconciled_amount",
+          "transactions_count",
+          "refunds_count"
+        ],
+        "title": "ReconciliationSummaryResponse"
+      },
+      "RefundCreateRequest": {
+        "properties": {
+          "payment_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Transaction Id"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "Leave null for full remaining balance"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Reason"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "RefundCreateRequest"
+      },
+      "RefundResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "payment_transaction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Payment Transaction Id"
+          },
+          "refund_reference": {
+            "type": "string",
+            "title": "Refund Reference"
+          },
+          "gateway_refund_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway Refund Id"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "initiated_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initiated By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "payment_transaction_id",
+          "refund_reference",
+          "gateway_refund_id",
+          "idempotency_key",
+          "amount",
+          "currency",
+          "status",
+          "reason",
+          "initiated_by_user_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RefundResponse"
       },
       "ShippingAddressSchema": {
         "properties": {
@@ -10462,6 +11985,188 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "app__modules__orders__schemas__PaymentTransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "transaction_reference": {
+            "type": "string",
+            "title": "Transaction Reference"
+          },
+          "payment_method": {
+            "type": "string",
+            "title": "Payment Method"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "gateway_provider": {
+            "type": "string",
+            "title": "Gateway Provider"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "transaction_reference",
+          "payment_method",
+          "amount",
+          "currency",
+          "status",
+          "gateway_provider",
+          "error_message",
+          "created_at"
+        ],
+        "title": "PaymentTransactionResponse"
+      },
+      "app__modules__payments__schemas__PaymentTransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "transaction_reference": {
+            "type": "string",
+            "title": "Transaction Reference"
+          },
+          "payment_method": {
+            "type": "string",
+            "title": "Payment Method"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "amount_refunded": {
+            "type": "string",
+            "title": "Amount Refunded"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "gateway_provider": {
+            "type": "string",
+            "title": "Gateway Provider"
+          },
+          "gateway_order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway Order Id"
+          },
+          "gateway_payment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway Payment Id"
+          },
+          "gateway_fee": {
+            "type": "string",
+            "title": "Gateway Fee"
+          },
+          "gateway_tax": {
+            "type": "string",
+            "title": "Gateway Tax"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "transaction_reference",
+          "payment_method",
+          "amount",
+          "amount_refunded",
+          "currency",
+          "status",
+          "gateway_provider",
+          "gateway_order_id",
+          "gateway_payment_id",
+          "gateway_fee",
+          "gateway_tax",
+          "captured_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PaymentTransactionResponse"
       }
     },
     "securitySchemes": {
