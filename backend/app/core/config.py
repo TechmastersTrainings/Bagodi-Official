@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     payment_webhook_secret: str = "BAGODI_DEV_PAYMENT_WEBHOOK_SECRET_KEY_32CHARS"
     payment_webhook_timestamp_tolerance_seconds: int = 300
 
+    # Notification & Customer Communication Configuration
+    notification_default_provider: str = "mock"
+    notification_webhook_secret: str = "BAGODI_DEV_NOTIFICATION_WEBHOOK_SECRET_32CHARS"
+    notification_max_retries: int = 3
+    notification_base_retry_delay_seconds: int = 30
+    notification_outbox_batch_size: int = 50
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

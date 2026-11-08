@@ -320,6 +320,27 @@ class PaymentService:
             },
         )
 
+        from app.modules.notifications.services import NotificationService
+
+        await NotificationService.enqueue_outbox_event(
+            db,
+            tenant_id=tenant_id,
+            event_type="payment.captured",
+            aggregate_type="payment",
+            aggregate_id=str(txn.id),
+            payload={
+                "payment_id": str(txn.id),
+                "order_id": str(order.id),
+                "order_number": order.order_number,
+                "amount": str(txn.amount),
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone,
+                "customer_email": order.customer_email,
+                "customer_id": str(order.customer_id) if order.customer_id else None,
+            },
+            idempotency_key=f"outbox-pay-{txn.id}",
+        )
+
         await db.commit()
         await db.refresh(txn)
         return txn
@@ -565,6 +586,28 @@ class PaymentService:
             },
         )
 
+        from app.modules.notifications.services import NotificationService
+
+        await NotificationService.enqueue_outbox_event(
+            db,
+            tenant_id=tenant_id,
+            event_type="refund.succeeded",
+            aggregate_type="refund",
+            aggregate_id=str(refund.id),
+            payload={
+                "refund_id": str(refund.id),
+                "refund_reference": refund_ref,
+                "order_id": str(order.id),
+                "order_number": order.order_number,
+                "amount": str(target_amount),
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone,
+                "customer_email": order.customer_email,
+                "customer_id": str(order.customer_id) if order.customer_id else None,
+            },
+            idempotency_key=f"outbox-refund-{refund.id}",
+        )
+
         await db.commit()
         await db.refresh(refund)
         return refund
@@ -658,6 +701,28 @@ class PaymentService:
                 "amount_collected": str(data.amount_collected),
                 "collected_by": data.collected_by_name,
             },
+        )
+
+        from app.modules.notifications.services import NotificationService
+
+        await NotificationService.enqueue_outbox_event(
+            db,
+            tenant_id=tenant_id,
+            event_type="cod.collected",
+            aggregate_type="payment",
+            aggregate_id=str(txn.id),
+            payload={
+                "payment_id": str(txn.id),
+                "order_id": str(order.id),
+                "order_number": order.order_number,
+                "amount": str(data.amount_collected),
+                "collected_by": data.collected_by_name,
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone,
+                "customer_email": order.customer_email,
+                "customer_id": str(order.customer_id) if order.customer_id else None,
+            },
+            idempotency_key=f"outbox-cod-{settlement.id}",
         )
 
         await db.commit()

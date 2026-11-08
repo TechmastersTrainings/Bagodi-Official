@@ -560,6 +560,28 @@ class OrderService:
             await db.delete(c_item)
         cart.coupon_code = None
 
+        # 10. Atomically enqueue notification outbox event
+        from app.modules.notifications.services import NotificationService
+
+        await NotificationService.enqueue_outbox_event(
+            db,
+            tenant_id=tenant_id,
+            event_type="order.confirmed" if data.payment_method == "cod" else "order.created",
+            aggregate_type="order",
+            aggregate_id=str(order.id),
+            payload={
+                "order_id": str(order.id),
+                "order_number": order.order_number,
+                "total_amount": str(order.total_amount),
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone,
+                "customer_email": order.customer_email,
+                "customer_id": str(valid_customer_id),
+                "payment_method": order.payment_method,
+            },
+            idempotency_key=f"outbox-order-{order.order_number}",
+        )
+
         await db.commit()
         return await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order.id)
 
@@ -724,6 +746,28 @@ class OrderService:
                 changed_by_user_id=valid_user_id,
             )
         )
+
+        if target_status in ("CONFIRMED", "DISPATCHED", "DELIVERED", "CANCELLED"):
+            from app.modules.notifications.services import NotificationService
+
+            await NotificationService.enqueue_outbox_event(
+                db,
+                tenant_id=tenant_id,
+                event_type=f"order.{target_status.lower()}",
+                aggregate_type="order",
+                aggregate_id=str(order.id),
+                payload={
+                    "order_id": str(order.id),
+                    "order_number": order.order_number,
+                    "total_amount": str(order.total_amount),
+                    "customer_name": order.customer_name,
+                    "customer_phone": order.customer_phone,
+                    "customer_email": order.customer_email,
+                    "customer_id": str(order.customer_id) if order.customer_id else None,
+                    "notes": data.notes,
+                },
+                idempotency_key=f"outbox-order-status-{order.order_number}-{target_status.lower()}",
+            )
 
         await db.commit()
         return await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order.id)
