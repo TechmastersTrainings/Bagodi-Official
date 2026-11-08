@@ -24,7 +24,8 @@ async def cleanup_db_after_each_test():
     async with engine.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE TABLE user_sessions, otp_requests, stores, role_permissions, "
+                "TRUNCATE TABLE product_images, product_variants, products, brands, categories, "
+                "user_sessions, otp_requests, stores, role_permissions, "
                 "user_roles, roles, tenants, users, permissions CASCADE;"
             )
         )

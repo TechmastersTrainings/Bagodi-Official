@@ -7,6 +7,10 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
+from app.modules.catalog.router_barcode import router as barcode_router
+from app.modules.catalog.router_merchant import router as merchant_catalog_router
+from app.modules.catalog.router_platform import router as platform_catalog_router
+from app.modules.catalog.router_public import router as public_catalog_router
 from app.modules.health.router import router as health_router
 from app.modules.identity.router import router as auth_router
 from app.modules.platform.router_platform import router as platform_router
@@ -89,4 +93,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 app.include_router(health_router, prefix=settings.api_v1_prefix)
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(platform_router, prefix=settings.api_v1_prefix)
+app.include_router(platform_catalog_router, prefix=settings.api_v1_prefix)
 app.include_router(stores_router, prefix=settings.api_v1_prefix)
+app.include_router(merchant_catalog_router, prefix=settings.api_v1_prefix)
+app.include_router(public_catalog_router, prefix=settings.api_v1_prefix)
+app.include_router(barcode_router, prefix=settings.api_v1_prefix)

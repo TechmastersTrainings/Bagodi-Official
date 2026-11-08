@@ -24,6 +24,11 @@ async def test_database_tables_exist():
         "role_permissions",
         "otp_requests",
         "user_sessions",
+        "categories",
+        "brands",
+        "products",
+        "product_variants",
+        "product_images",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -47,6 +52,11 @@ async def test_database_contains_zero_dummy_records():
         "role_permissions",
         "otp_requests",
         "user_sessions",
+        "categories",
+        "brands",
+        "products",
+        "product_variants",
+        "product_images",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:
