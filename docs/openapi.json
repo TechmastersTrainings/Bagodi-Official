@@ -1801,6 +1801,1257 @@
           }
         }
       }
+    },
+    "/api/v1/merchant/inventory/balances": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Query real-time stock balances across stores and variants",
+        "operationId": "list_stock_balances_api_v1_merchant_inventory_balances_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by physical or virtual store",
+              "title": "Store Id"
+            },
+            "description": "Filter by physical or virtual store"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by specific product variant",
+              "title": "Variant Id"
+            },
+            "description": "Filter by specific product variant"
+          },
+          {
+            "name": "low_stock_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Filter items at or below reorder threshold",
+              "default": false,
+              "title": "Low Stock Only"
+            },
+            "description": "Filter items at or below reorder threshold"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockBalanceResponse"
+                  },
+                  "title": "Response List Stock Balances Api V1 Merchant Inventory Balances Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/balances/{store_id}/{variant_id}": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Get exact real-time balance for a specific store and variant",
+        "operationId": "get_stock_balance_api_v1_merchant_inventory_balances__store_id___variant_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockBalanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/ledger": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Query audit-grade immutable double-entry stock ledger history",
+        "operationId": "list_inventory_ledger_api_v1_merchant_inventory_ledger_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by store",
+              "title": "Store Id"
+            },
+            "description": "Filter by store"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by variant",
+              "title": "Variant Id"
+            },
+            "description": "Filter by variant"
+          },
+          {
+            "name": "movement_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by ledger movement type",
+              "title": "Movement Type"
+            },
+            "description": "Filter by ledger movement type"
+          },
+          {
+            "name": "reference_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by order/PO/transfer reference ID",
+              "title": "Reference Id"
+            },
+            "description": "Filter by order/PO/transfer reference ID"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryLedgerResponse"
+                  },
+                  "title": "Response List Inventory Ledger Api V1 Merchant Inventory Ledger Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/reservations": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Reserve stock for customer order or cart hold",
+        "operationId": "reserve_stock_api_v1_merchant_inventory_reservations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockReservationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/reservations/release": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Release previously reserved stock back to available pool",
+        "operationId": "release_reservation_api_v1_merchant_inventory_reservations_release_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockReservationRelease"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/dispatch": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Commit physical dispatch and fulfillment of reserved stock",
+        "operationId": "dispatch_stock_api_v1_merchant_inventory_dispatch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockDispatchCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/returns": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Process customer return accepted back into store inventory",
+        "operationId": "return_customer_stock_api_v1_merchant_inventory_returns_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerReturnCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/adjustments": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Record manual stock adjustment (damage, loss, cycle count reconciliation)",
+        "operationId": "adjust_stock_api_v1_merchant_inventory_adjustments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockAdjustmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/suppliers": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Register a procurement supplier",
+        "operationId": "create_supplier_api_v1_merchant_inventory_suppliers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "List procurement suppliers",
+        "operationId": "list_suppliers_api_v1_merchant_inventory_suppliers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Active Only"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierResponse"
+                  },
+                  "title": "Response List Suppliers Api V1 Merchant Inventory Suppliers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/suppliers/{supplier_id}": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Get supplier details",
+        "operationId": "get_supplier_api_v1_merchant_inventory_suppliers__supplier_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "supplier_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Supplier Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Update supplier contact details or status",
+        "operationId": "update_supplier_api_v1_merchant_inventory_suppliers__supplier_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "supplier_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Supplier Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/purchase-orders": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Create a purchase order for procurement (does NOT alter stock)",
+        "operationId": "create_purchase_order_api_v1_merchant_inventory_purchase_orders_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseOrderCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "List purchase orders",
+        "operationId": "list_purchase_orders_api_v1_merchant_inventory_purchase_orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseOrderResponse"
+                  },
+                  "title": "Response List Purchase Orders Api V1 Merchant Inventory Purchase Orders Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/purchase-orders/{po_id}": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Get purchase order details and line items",
+        "operationId": "get_purchase_order_api_v1_merchant_inventory_purchase_orders__po_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "po_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Po Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/receipts": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Accept inward stock receipt (atomically posts PURCHASE_RECEIPT ledger records)",
+        "operationId": "receive_goods_api_v1_merchant_inventory_receipts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockReceiptCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockReceiptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/merchant/inventory/transfers": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Initiate and dispatch stock transfer between stores (places stock in-transit)",
+        "operationId": "create_transfer_api_v1_merchant_inventory_transfers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreTransferCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreTransferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "List store transfers",
+        "operationId": "list_transfers_api_v1_merchant_inventory_transfers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source or destination store",
+              "title": "Store Id"
+            },
+            "description": "Filter by source or destination store"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreTransferResponse"
+                  },
+                  "title": "Response List Transfers Api V1 Merchant Inventory Transfers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/transfers/{transfer_id}": {
+      "get": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Get store transfer details",
+        "operationId": "get_transfer_api_v1_merchant_inventory_transfers__transfer_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreTransferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/inventory/transfers/{transfer_id}/receive": {
+      "post": {
+        "tags": [
+          "Merchant Inventory Engine"
+        ],
+        "summary": "Receive inbound store transfer at destination store (relieves in-transit, adds to on-hand)",
+        "operationId": "receive_transfer_api_v1_merchant_inventory_transfers__transfer_id__receive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transfer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transfer Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreTransferReceive"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreTransferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2133,6 +3384,64 @@
         "type": "object",
         "title": "CategoryUpdate"
       },
+      "CustomerReturnCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "reference_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference Id",
+            "description": "Return Authorization or Order ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "variant_id",
+          "quantity",
+          "reference_id"
+        ],
+        "title": "CustomerReturnCreate"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2145,6 +3454,155 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InventoryLedgerResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "movement_type": {
+            "type": "string",
+            "title": "Movement Type"
+          },
+          "from_account": {
+            "type": "string",
+            "title": "From Account"
+          },
+          "to_account": {
+            "type": "string",
+            "title": "To Account"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "on_hand_delta": {
+            "type": "integer",
+            "title": "On Hand Delta"
+          },
+          "reserved_delta": {
+            "type": "integer",
+            "title": "Reserved Delta"
+          },
+          "in_transit_delta": {
+            "type": "integer",
+            "title": "In Transit Delta"
+          },
+          "balance_after_on_hand": {
+            "type": "integer",
+            "title": "Balance After On Hand"
+          },
+          "balance_after_reserved": {
+            "type": "integer",
+            "title": "Balance After Reserved"
+          },
+          "balance_after_available": {
+            "type": "integer",
+            "title": "Balance After Available"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "reference_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Type"
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "store_id",
+          "variant_id",
+          "movement_type",
+          "from_account",
+          "to_account",
+          "quantity",
+          "on_hand_delta",
+          "reserved_delta",
+          "in_transit_delta",
+          "balance_after_on_hand",
+          "balance_after_reserved",
+          "balance_after_available",
+          "idempotency_key",
+          "reference_type",
+          "reference_id",
+          "notes",
+          "created_by_user_id",
+          "created_at"
+        ],
+        "title": "InventoryLedgerResponse"
       },
       "LogoutRequest": {
         "properties": {
@@ -2965,6 +4423,745 @@
         "type": "object",
         "title": "ProductVariantUpdate"
       },
+      "PurchaseOrderCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "po_number": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "pattern": "^[A-Z0-9_\\-]+$",
+            "title": "Po Number"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOrderItemCreate"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "po_number",
+          "items"
+        ],
+        "title": "PurchaseOrderCreate"
+      },
+      "PurchaseOrderItemCreate": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_ordered": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity Ordered"
+          },
+          "unit_cost": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unit Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "quantity_ordered",
+          "unit_cost"
+        ],
+        "title": "PurchaseOrderItemCreate"
+      },
+      "PurchaseOrderItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_ordered": {
+            "type": "integer",
+            "title": "Quantity Ordered"
+          },
+          "quantity_received": {
+            "type": "integer",
+            "title": "Quantity Received"
+          },
+          "unit_cost": {
+            "type": "string",
+            "title": "Unit Cost"
+          },
+          "total_cost": {
+            "type": "string",
+            "title": "Total Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "variant_id",
+          "quantity_ordered",
+          "quantity_received",
+          "unit_cost",
+          "total_cost"
+        ],
+        "title": "PurchaseOrderItemResponse"
+      },
+      "PurchaseOrderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "po_number": {
+            "type": "string",
+            "title": "Po Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOrderItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "store_id",
+          "supplier_id",
+          "po_number",
+          "status",
+          "total_amount",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PurchaseOrderResponse"
+      },
+      "StockAdjustmentCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "damage",
+              "loss",
+              "reconciliation_gain",
+              "reconciliation_loss"
+            ],
+            "title": "Reason"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "variant_id",
+          "reason",
+          "quantity"
+        ],
+        "title": "StockAdjustmentCreate"
+      },
+      "StockBalanceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "on_hand_qty": {
+            "type": "integer",
+            "title": "On Hand Qty"
+          },
+          "reserved_qty": {
+            "type": "integer",
+            "title": "Reserved Qty"
+          },
+          "available_qty": {
+            "type": "integer",
+            "title": "Available Qty"
+          },
+          "in_transit_qty": {
+            "type": "integer",
+            "title": "In Transit Qty"
+          },
+          "reorder_threshold": {
+            "type": "integer",
+            "title": "Reorder Threshold"
+          },
+          "low_stock_alert": {
+            "type": "boolean",
+            "title": "Low Stock Alert"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "store_id",
+          "variant_id",
+          "on_hand_qty",
+          "reserved_qty",
+          "available_qty",
+          "in_transit_qty",
+          "reorder_threshold",
+          "low_stock_alert",
+          "updated_at"
+        ],
+        "title": "StockBalanceResponse"
+      },
+      "StockDispatchCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "reference_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference Id",
+            "description": "Order ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "variant_id",
+          "quantity",
+          "reference_id"
+        ],
+        "title": "StockDispatchCreate"
+      },
+      "StockReceiptCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "purchase_order_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Order Id"
+          },
+          "receipt_number": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "pattern": "^[A-Z0-9_\\-]+$",
+            "title": "Receipt Number"
+          },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockReceiptItemCreate"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "receipt_number",
+          "items"
+        ],
+        "title": "StockReceiptCreate"
+      },
+      "StockReceiptItemCreate": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_received": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity Received"
+          },
+          "unit_cost": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unit Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "quantity_received",
+          "unit_cost"
+        ],
+        "title": "StockReceiptItemCreate"
+      },
+      "StockReceiptItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_received": {
+            "type": "integer",
+            "title": "Quantity Received"
+          },
+          "unit_cost": {
+            "type": "string",
+            "title": "Unit Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "variant_id",
+          "quantity_received",
+          "unit_cost"
+        ],
+        "title": "StockReceiptItemResponse"
+      },
+      "StockReceiptResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "purchase_order_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Order Id"
+          },
+          "receipt_number": {
+            "type": "string",
+            "title": "Receipt Number"
+          },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockReceiptItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "store_id",
+          "purchase_order_id",
+          "receipt_number",
+          "invoice_number",
+          "notes",
+          "created_at"
+        ],
+        "title": "StockReceiptResponse"
+      },
+      "StockReservationCreate": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "reference_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference Id",
+            "description": "Order ID or Checkout ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "variant_id",
+          "quantity",
+          "reference_id"
+        ],
+        "title": "StockReservationCreate"
+      },
+      "StockReservationRelease": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "reference_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference Id",
+            "description": "Order ID or Checkout ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "variant_id",
+          "quantity",
+          "reference_id"
+        ],
+        "title": "StockReservationRelease"
+      },
       "StoreCreate": {
         "properties": {
           "name": {
@@ -3171,6 +5368,505 @@
           "status"
         ],
         "title": "StoreStatusUpdate"
+      },
+      "StoreTransferCreate": {
+        "properties": {
+          "source_store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Store Id"
+          },
+          "destination_store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Destination Store Id"
+          },
+          "transfer_number": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "pattern": "^[A-Z0-9_\\-]+$",
+            "title": "Transfer Number"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoreTransferItemCreate"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_store_id",
+          "destination_store_id",
+          "transfer_number",
+          "items"
+        ],
+        "title": "StoreTransferCreate"
+      },
+      "StoreTransferItemCreate": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_shipped": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity Shipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "quantity_shipped"
+        ],
+        "title": "StoreTransferItemCreate"
+      },
+      "StoreTransferItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity_shipped": {
+            "type": "integer",
+            "title": "Quantity Shipped"
+          },
+          "quantity_received": {
+            "type": "integer",
+            "title": "Quantity Received"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "variant_id",
+          "quantity_shipped",
+          "quantity_received"
+        ],
+        "title": "StoreTransferItemResponse"
+      },
+      "StoreTransferReceive": {
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "StoreTransferReceive"
+      },
+      "StoreTransferResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "source_store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Store Id"
+          },
+          "destination_store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Destination Store Id"
+          },
+          "transfer_number": {
+            "type": "string",
+            "title": "Transfer Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoreTransferItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "source_store_id",
+          "destination_store_id",
+          "transfer_number",
+          "status",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "StoreTransferResponse"
+      },
+      "SupplierCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "pattern": "^[A-Z0-9_\\-]+$",
+            "title": "Code"
+          },
+          "contact_person": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Person"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "code"
+        ],
+        "title": "SupplierCreate"
+      },
+      "SupplierResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "contact_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Person"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "name",
+          "code",
+          "contact_person",
+          "email",
+          "phone",
+          "address",
+          "gstin",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SupplierResponse"
+      },
+      "SupplierUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "contact_person": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Person"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "SupplierUpdate"
       },
       "TenantCreate": {
         "properties": {

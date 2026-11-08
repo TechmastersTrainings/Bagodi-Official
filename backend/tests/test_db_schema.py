@@ -29,6 +29,15 @@ async def test_database_tables_exist():
         "products",
         "product_variants",
         "product_images",
+        "suppliers",
+        "stock_balances",
+        "inventory_ledger",
+        "purchase_orders",
+        "purchase_order_items",
+        "stock_receipts",
+        "stock_receipt_items",
+        "store_transfers",
+        "store_transfer_items",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -57,6 +66,15 @@ async def test_database_contains_zero_dummy_records():
         "products",
         "product_variants",
         "product_images",
+        "suppliers",
+        "stock_balances",
+        "inventory_ledger",
+        "purchase_orders",
+        "purchase_order_items",
+        "stock_receipts",
+        "stock_receipt_items",
+        "store_transfers",
+        "store_transfer_items",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:
