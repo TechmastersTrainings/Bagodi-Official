@@ -16,6 +16,7 @@ from app.modules.orders import models as orders_models  # noqa: F401
 from app.modules.payments import models as payments_models  # noqa: F401
 from app.modules.platform import models as platform_models  # noqa: F401
 from app.modules.pricing import models as pricing_models  # noqa: F401
+from app.modules.reports import models as reports_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

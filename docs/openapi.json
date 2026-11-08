@@ -8583,6 +8583,1449 @@
           }
         }
       }
+    },
+    "/api/v1/merchant/reports/dashboard": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Merchant Dashboard",
+        "operationId": "get_merchant_dashboard_api_v1_merchant_reports_dashboard_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantDashboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/sales": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Sales Report",
+        "operationId": "get_sales_report_api_v1_merchant_reports_sales_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "daily, weekly, monthly",
+              "default": "daily",
+              "title": "Granularity"
+            },
+            "description": "daily, weekly, monthly"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/products": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Product Performance",
+        "operationId": "get_product_performance_api_v1_merchant_reports_products_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Result count limit",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Result count limit"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort by units_sold or revenue",
+              "default": "units_sold",
+              "title": "Sort By"
+            },
+            "description": "Sort by units_sold or revenue"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPerformanceReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/categories": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Category Performance",
+        "operationId": "get_category_performance_api_v1_merchant_reports_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryPerformanceReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/inventory": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Inventory Report",
+        "operationId": "get_inventory_report_api_v1_merchant_reports_inventory_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window for movements",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window for movements"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/orders": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Order Analytics",
+        "operationId": "get_order_analytics_api_v1_merchant_reports_orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/payments": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Payment Report",
+        "operationId": "get_payment_report_api_v1_merchant_reports_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/delivery": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Delivery Analytics",
+        "operationId": "get_delivery_analytics_api_v1_merchant_reports_delivery_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional store ID",
+              "title": "Store Id"
+            },
+            "description": "Optional store ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/customers": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Customer Analytics",
+        "operationId": "get_customer_analytics_api_v1_merchant_reports_customers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/stores": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "Get Multi Store Comparison",
+        "operationId": "get_multi_store_comparison_api_v1_merchant_reports_stores_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiStoreReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/reports/exports/history": {
+      "get": {
+        "tags": [
+          "Merchant Reports & Analytics"
+        ],
+        "summary": "List Export History",
+        "operationId": "list_export_history_api_v1_merchant_reports_exports_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Max log entries",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max log entries"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportExportLogResponse"
+                  },
+                  "title": "Response List Export History Api V1 Merchant Reports Exports History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/reports/overview": {
+      "get": {
+        "tags": [
+          "Platform Super Admin Analytics"
+        ],
+        "summary": "Get Platform Overview",
+        "operationId": "get_platform_overview_api_v1_platform_reports_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/reports/tenants-comparison": {
+      "get": {
+        "tags": [
+          "Platform Super Admin Analytics"
+        ],
+        "summary": "Get Tenants Comparison",
+        "operationId": "get_tenants_comparison_api_v1_platform_reports_tenants_comparison_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "time_window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Preset window",
+              "default": "last_30_days",
+              "title": "Time Window"
+            },
+            "description": "Preset window"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom start date",
+              "title": "Start Date"
+            },
+            "description": "Optional custom start date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom end date",
+              "title": "End Date"
+            },
+            "description": "Optional custom end date"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "description": "Output format",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Output format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantComparisonRecord"
+                  },
+                  "title": "Response Get Tenants Comparison Api V1 Platform Reports Tenants Comparison Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9040,6 +10483,85 @@
         ],
         "title": "CategoryCreate"
       },
+      "CategoryPerformanceRecord": {
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "category_name": {
+            "type": "string",
+            "title": "Category Name"
+          },
+          "units_sold": {
+            "type": "integer",
+            "title": "Units Sold",
+            "default": 0
+          },
+          "gross_revenue": {
+            "type": "string",
+            "title": "Gross Revenue",
+            "default": "0.00"
+          },
+          "orders_count": {
+            "type": "integer",
+            "title": "Orders Count",
+            "default": 0
+          },
+          "revenue_share_percentage": {
+            "type": "string",
+            "title": "Revenue Share Percentage",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_name"
+        ],
+        "title": "CategoryPerformanceRecord"
+      },
+      "CategoryPerformanceReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryPerformanceRecord"
+            },
+            "type": "array",
+            "title": "Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "records"
+        ],
+        "title": "CategoryPerformanceReportResponse"
+      },
       "CategoryResponse": {
         "properties": {
           "id": {
@@ -9473,6 +10995,42 @@
           "updated_at"
         ],
         "title": "CodSettlementResponse"
+      },
+      "CodSettlementSummary": {
+        "properties": {
+          "total_cod_orders": {
+            "type": "integer",
+            "title": "Total Cod Orders",
+            "default": 0
+          },
+          "total_cod_collected": {
+            "type": "string",
+            "title": "Total Cod Collected",
+            "default": "0.00"
+          },
+          "pending_deposit_amount": {
+            "type": "string",
+            "title": "Pending Deposit Amount",
+            "default": "0.00"
+          },
+          "deposited_amount": {
+            "type": "string",
+            "title": "Deposited Amount",
+            "default": "0.00"
+          },
+          "reconciled_amount": {
+            "type": "string",
+            "title": "Reconciled Amount",
+            "default": "0.00"
+          },
+          "discrepancy_amount": {
+            "type": "string",
+            "title": "Discrepancy Amount",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "title": "CodSettlementSummary"
       },
       "CouponCreate": {
         "properties": {
@@ -9915,6 +11473,101 @@
         "type": "object",
         "title": "CouponUpdate"
       },
+      "CourierPerformanceRecord": {
+        "properties": {
+          "courier_provider": {
+            "type": "string",
+            "title": "Courier Provider"
+          },
+          "total_booked": {
+            "type": "integer",
+            "title": "Total Booked",
+            "default": 0
+          },
+          "total_delivered": {
+            "type": "integer",
+            "title": "Total Delivered",
+            "default": 0
+          },
+          "total_rto": {
+            "type": "integer",
+            "title": "Total Rto",
+            "default": 0
+          },
+          "success_rate": {
+            "type": "string",
+            "title": "Success Rate",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "courier_provider"
+        ],
+        "title": "CourierPerformanceRecord"
+      },
+      "CustomerAnalyticsResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_unique_customers": {
+            "type": "integer",
+            "title": "Total Unique Customers",
+            "default": 0
+          },
+          "new_customers_count": {
+            "type": "integer",
+            "title": "New Customers Count",
+            "default": 0
+          },
+          "repeat_customers_count": {
+            "type": "integer",
+            "title": "Repeat Customers Count",
+            "default": 0
+          },
+          "repeat_customer_rate": {
+            "type": "string",
+            "title": "Repeat Customer Rate",
+            "default": "0.00"
+          },
+          "purchase_frequency_distribution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Purchase Frequency Distribution"
+          },
+          "top_customers": {
+            "items": {
+              "$ref": "#/components/schemas/TopCustomerRecord"
+            },
+            "type": "array",
+            "title": "Top Customers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "purchase_frequency_distribution",
+          "top_customers"
+        ],
+        "title": "CustomerAnalyticsResponse"
+      },
       "CustomerCommunicationPreferenceResponse": {
         "properties": {
           "id": {
@@ -10075,6 +11728,136 @@
           "reference_id"
         ],
         "title": "CustomerReturnCreate"
+      },
+      "DamagedStockReportRecord": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "store_name": {
+            "type": "string",
+            "title": "Store Name"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "movement_type": {
+            "type": "string",
+            "title": "Movement Type"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity",
+            "default": 0
+          },
+          "total_cost_impact": {
+            "type": "string",
+            "title": "Total Cost Impact",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "store_name",
+          "variant_id",
+          "sku",
+          "product_name",
+          "movement_type"
+        ],
+        "title": "DamagedStockReportRecord"
+      },
+      "DeliveryAnalyticsResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_shipments": {
+            "type": "integer",
+            "title": "Total Shipments",
+            "default": 0
+          },
+          "internal_fleet_count": {
+            "type": "integer",
+            "title": "Internal Fleet Count",
+            "default": 0
+          },
+          "courier_count": {
+            "type": "integer",
+            "title": "Courier Count",
+            "default": 0
+          },
+          "first_attempt_delivery_rate": {
+            "type": "string",
+            "title": "First Attempt Delivery Rate",
+            "default": "0.00"
+          },
+          "overall_delivery_success_rate": {
+            "type": "string",
+            "title": "Overall Delivery Success Rate",
+            "default": "0.00"
+          },
+          "rto_rate": {
+            "type": "string",
+            "title": "Rto Rate",
+            "default": "0.00"
+          },
+          "failure_reasons": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Failure Reasons"
+          },
+          "rider_performance": {
+            "items": {
+              "$ref": "#/components/schemas/RiderPerformanceRecord"
+            },
+            "type": "array",
+            "title": "Rider Performance"
+          },
+          "courier_performance": {
+            "items": {
+              "$ref": "#/components/schemas/CourierPerformanceRecord"
+            },
+            "type": "array",
+            "title": "Courier Performance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "failure_reasons",
+          "rider_performance",
+          "courier_performance"
+        ],
+        "title": "DeliveryAnalyticsResponse"
       },
       "DeliveryAuditLogResponse": {
         "properties": {
@@ -11543,6 +13326,29 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InventoryLedgerMovementSummary": {
+        "properties": {
+          "movement_type": {
+            "type": "string",
+            "title": "Movement Type"
+          },
+          "transactions_count": {
+            "type": "integer",
+            "title": "Transactions Count",
+            "default": 0
+          },
+          "units_moved": {
+            "type": "integer",
+            "title": "Units Moved",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "movement_type"
+        ],
+        "title": "InventoryLedgerMovementSummary"
+      },
       "InventoryLedgerResponse": {
         "properties": {
           "id": {
@@ -11692,6 +13498,91 @@
         ],
         "title": "InventoryLedgerResponse"
       },
+      "InventoryReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Id"
+          },
+          "total_on_hand_units": {
+            "type": "integer",
+            "title": "Total On Hand Units",
+            "default": 0
+          },
+          "total_reserved_units": {
+            "type": "integer",
+            "title": "Total Reserved Units",
+            "default": 0
+          },
+          "total_available_units": {
+            "type": "integer",
+            "title": "Total Available Units",
+            "default": 0
+          },
+          "total_valuation_at_cost": {
+            "type": "string",
+            "title": "Total Valuation At Cost",
+            "default": "0.00"
+          },
+          "total_valuation_at_retail": {
+            "type": "string",
+            "title": "Total Valuation At Retail",
+            "default": "0.00"
+          },
+          "low_stock_count": {
+            "type": "integer",
+            "title": "Low Stock Count",
+            "default": 0
+          },
+          "out_of_stock_count": {
+            "type": "integer",
+            "title": "Out Of Stock Count",
+            "default": 0
+          },
+          "stock_records": {
+            "items": {
+              "$ref": "#/components/schemas/StockBalanceReportRecord"
+            },
+            "type": "array",
+            "title": "Stock Records"
+          },
+          "damaged_records": {
+            "items": {
+              "$ref": "#/components/schemas/DamagedStockReportRecord"
+            },
+            "type": "array",
+            "title": "Damaged Records"
+          },
+          "ledger_movements": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryLedgerMovementSummary"
+            },
+            "type": "array",
+            "title": "Ledger Movements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "stock_records",
+          "damaged_records",
+          "ledger_movements"
+        ],
+        "title": "InventoryReportResponse"
+      },
       "LogoutRequest": {
         "properties": {
           "refresh_token": {
@@ -11709,6 +13600,77 @@
         "type": "object",
         "title": "LogoutRequest"
       },
+      "MerchantDashboardResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "store_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Id"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/SalesKpiCard"
+          },
+          "time_series": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesPoint"
+            },
+            "type": "array",
+            "title": "Time Series"
+          },
+          "top_selling_products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPerformanceRecord"
+            },
+            "type": "array",
+            "title": "Top Selling Products"
+          },
+          "order_status_summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Order Status Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "period",
+          "start_date",
+          "end_date",
+          "kpis",
+          "time_series",
+          "top_selling_products",
+          "order_status_summary"
+        ],
+        "title": "MerchantDashboardResponse"
+      },
       "MessageResponse": {
         "properties": {
           "message": {
@@ -11721,6 +13683,40 @@
           "message"
         ],
         "title": "MessageResponse"
+      },
+      "MultiStoreReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "stores": {
+            "items": {
+              "$ref": "#/components/schemas/StoreComparisonRecord"
+            },
+            "type": "array",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "stores"
+        ],
+        "title": "MultiStoreReportResponse"
       },
       "NotificationAuditLogResponse": {
         "properties": {
@@ -12315,6 +14311,87 @@
         ],
         "title": "OTPVerifyRequest"
       },
+      "OrderAnalyticsResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "status_breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/OrderStatusBreakdown"
+            },
+            "type": "array",
+            "title": "Status Breakdown"
+          },
+          "cancellation_count": {
+            "type": "integer",
+            "title": "Cancellation Count",
+            "default": 0
+          },
+          "cancellation_rate": {
+            "type": "string",
+            "title": "Cancellation Rate",
+            "default": "0.00"
+          },
+          "return_count": {
+            "type": "integer",
+            "title": "Return Count",
+            "default": 0
+          },
+          "return_rate": {
+            "type": "string",
+            "title": "Return Rate",
+            "default": "0.00"
+          },
+          "average_fulfillment_lead_time_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Fulfillment Lead Time Hours"
+          },
+          "average_delivery_transit_time_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Delivery Transit Time Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "status_breakdown"
+        ],
+        "title": "OrderAnalyticsResponse"
+      },
       "OrderCancelRequest": {
         "properties": {
           "reason": {
@@ -12636,6 +14713,34 @@
           "updated_at"
         ],
         "title": "OrderResponse"
+      },
+      "OrderStatusBreakdown": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "percentage": {
+            "type": "string",
+            "title": "Percentage",
+            "default": "0.00"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OrderStatusBreakdown"
       },
       "OrderStatusHistoryResponse": {
         "properties": {
@@ -13031,6 +15136,97 @@
         ],
         "title": "PaymentInitiateResponse"
       },
+      "PaymentMethodSummary": {
+        "properties": {
+          "payment_method": {
+            "type": "string",
+            "title": "Payment Method"
+          },
+          "transaction_count": {
+            "type": "integer",
+            "title": "Transaction Count",
+            "default": 0
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount",
+            "default": "0.00"
+          },
+          "share_percentage": {
+            "type": "string",
+            "title": "Share Percentage",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_method"
+        ],
+        "title": "PaymentMethodSummary"
+      },
+      "PaymentReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_captured_amount": {
+            "type": "string",
+            "title": "Total Captured Amount",
+            "default": "0.00"
+          },
+          "total_refunded_amount": {
+            "type": "string",
+            "title": "Total Refunded Amount",
+            "default": "0.00"
+          },
+          "total_gateway_fees": {
+            "type": "string",
+            "title": "Total Gateway Fees",
+            "default": "0.00"
+          },
+          "total_gateway_tax": {
+            "type": "string",
+            "title": "Total Gateway Tax",
+            "default": "0.00"
+          },
+          "net_realized_revenue": {
+            "type": "string",
+            "title": "Net Realized Revenue",
+            "default": "0.00"
+          },
+          "payment_methods": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodSummary"
+            },
+            "type": "array",
+            "title": "Payment Methods"
+          },
+          "cod_settlement": {
+            "$ref": "#/components/schemas/CodSettlementSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "payment_methods",
+          "cod_settlement"
+        ],
+        "title": "PaymentReportResponse"
+      },
       "PaymentVerifyRequest": {
         "properties": {
           "transaction_id": {
@@ -13062,6 +15258,64 @@
           "gateway_signature"
         ],
         "title": "PaymentVerifyRequest"
+      },
+      "PlatformOverviewResponse": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_active_tenants": {
+            "type": "integer",
+            "title": "Total Active Tenants",
+            "default": 0
+          },
+          "total_physical_stores": {
+            "type": "integer",
+            "title": "Total Physical Stores",
+            "default": 0
+          },
+          "platform_total_orders": {
+            "type": "integer",
+            "title": "Platform Total Orders",
+            "default": 0
+          },
+          "platform_gmv": {
+            "type": "string",
+            "title": "Platform Gmv",
+            "default": "0.00"
+          },
+          "platform_average_order_value": {
+            "type": "string",
+            "title": "Platform Average Order Value",
+            "default": "0.00"
+          },
+          "total_registered_users": {
+            "type": "integer",
+            "title": "Total Registered Users",
+            "default": 0
+          },
+          "tenants": {
+            "items": {
+              "$ref": "#/components/schemas/TenantComparisonRecord"
+            },
+            "type": "array",
+            "title": "Tenants"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "tenants"
+        ],
+        "title": "PlatformOverviewResponse"
       },
       "PriceQuoteItem": {
         "properties": {
@@ -13546,6 +15800,110 @@
           "created_at"
         ],
         "title": "ProductImageResponse"
+      },
+      "ProductPerformanceRecord": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
+          "units_sold": {
+            "type": "integer",
+            "title": "Units Sold",
+            "default": 0
+          },
+          "gross_revenue": {
+            "type": "string",
+            "title": "Gross Revenue",
+            "default": "0.00"
+          },
+          "net_revenue": {
+            "type": "string",
+            "title": "Net Revenue",
+            "default": "0.00"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "current_stock_on_hand": {
+            "type": "integer",
+            "title": "Current Stock On Hand",
+            "default": 0
+          },
+          "movement_status": {
+            "type": "string",
+            "title": "Movement Status",
+            "default": "STEADY"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "product_name"
+        ],
+        "title": "ProductPerformanceRecord"
+      },
+      "ProductPerformanceReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "total_products_sold": {
+            "type": "integer",
+            "title": "Total Products Sold",
+            "default": 0
+          },
+          "total_units_sold": {
+            "type": "integer",
+            "title": "Total Units Sold",
+            "default": 0
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPerformanceRecord"
+            },
+            "type": "array",
+            "title": "Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "records"
+        ],
+        "title": "ProductPerformanceReportResponse"
       },
       "ProductUpdate": {
         "properties": {
@@ -15026,6 +17384,157 @@
         ],
         "title": "RefundResponse"
       },
+      "ReportExportLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type"
+          },
+          "export_format": {
+            "type": "string",
+            "title": "Export Format"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "user_id",
+          "report_type",
+          "export_format",
+          "parameters",
+          "row_count",
+          "file_name",
+          "ip_address",
+          "created_at"
+        ],
+        "title": "ReportExportLogResponse"
+      },
+      "RiderPerformanceRecord": {
+        "properties": {
+          "personnel_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Personnel Id"
+          },
+          "employee_code": {
+            "type": "string",
+            "title": "Employee Code"
+          },
+          "rider_name": {
+            "type": "string",
+            "title": "Rider Name"
+          },
+          "total_assigned": {
+            "type": "integer",
+            "title": "Total Assigned",
+            "default": 0
+          },
+          "total_delivered": {
+            "type": "integer",
+            "title": "Total Delivered",
+            "default": 0
+          },
+          "total_failed": {
+            "type": "integer",
+            "title": "Total Failed",
+            "default": 0
+          },
+          "success_rate": {
+            "type": "string",
+            "title": "Success Rate",
+            "default": "0.00"
+          },
+          "cod_collected": {
+            "type": "string",
+            "title": "Cod Collected",
+            "default": "0.00"
+          },
+          "average_delivery_time_minutes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Delivery Time Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personnel_id",
+          "employee_code",
+          "rider_name"
+        ],
+        "title": "RiderPerformanceRecord"
+      },
       "RtoRequest": {
         "properties": {
           "reason": {
@@ -15051,6 +17560,185 @@
           "reason"
         ],
         "title": "RtoRequest"
+      },
+      "SalesIntervalRecord": {
+        "properties": {
+          "interval_date": {
+            "type": "string",
+            "title": "Interval Date"
+          },
+          "orders_count": {
+            "type": "integer",
+            "title": "Orders Count",
+            "default": 0
+          },
+          "gross_sales": {
+            "type": "string",
+            "title": "Gross Sales",
+            "default": "0.00"
+          },
+          "discounts": {
+            "type": "string",
+            "title": "Discounts",
+            "default": "0.00"
+          },
+          "shipping_fees": {
+            "type": "string",
+            "title": "Shipping Fees",
+            "default": "0.00"
+          },
+          "net_sales": {
+            "type": "string",
+            "title": "Net Sales",
+            "default": "0.00"
+          },
+          "captured_revenue": {
+            "type": "string",
+            "title": "Captured Revenue",
+            "default": "0.00"
+          },
+          "refunded_amount": {
+            "type": "string",
+            "title": "Refunded Amount",
+            "default": "0.00"
+          },
+          "aov": {
+            "type": "string",
+            "title": "Aov",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "interval_date"
+        ],
+        "title": "SalesIntervalRecord"
+      },
+      "SalesKpiCard": {
+        "properties": {
+          "gross_sales": {
+            "type": "string",
+            "title": "Gross Sales",
+            "default": "0.00"
+          },
+          "discount_total": {
+            "type": "string",
+            "title": "Discount Total",
+            "default": "0.00"
+          },
+          "shipping_fee_total": {
+            "type": "string",
+            "title": "Shipping Fee Total",
+            "default": "0.00"
+          },
+          "net_sales": {
+            "type": "string",
+            "title": "Net Sales",
+            "default": "0.00"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "delivered_orders": {
+            "type": "integer",
+            "title": "Delivered Orders",
+            "default": 0
+          },
+          "cancelled_orders": {
+            "type": "integer",
+            "title": "Cancelled Orders",
+            "default": 0
+          },
+          "returned_orders": {
+            "type": "integer",
+            "title": "Returned Orders",
+            "default": 0
+          },
+          "aov": {
+            "type": "string",
+            "title": "Aov",
+            "default": "0.00"
+          },
+          "cancellation_rate": {
+            "type": "string",
+            "title": "Cancellation Rate",
+            "default": "0.00"
+          },
+          "return_rate": {
+            "type": "string",
+            "title": "Return Rate",
+            "default": "0.00"
+          },
+          "pending_fulfillment_orders": {
+            "type": "integer",
+            "title": "Pending Fulfillment Orders",
+            "default": 0
+          },
+          "out_for_delivery_shipments": {
+            "type": "integer",
+            "title": "Out For Delivery Shipments",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SalesKpiCard"
+      },
+      "SalesReportResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "store_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date"
+          },
+          "granularity": {
+            "type": "string",
+            "title": "Granularity"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SalesKpiCard"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/SalesIntervalRecord"
+            },
+            "type": "array",
+            "title": "Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "start_date",
+          "end_date",
+          "granularity",
+          "summary",
+          "records"
+        ],
+        "title": "SalesReportResponse"
       },
       "ServiceabilityCheckRequest": {
         "properties": {
@@ -15849,6 +18537,86 @@
         ],
         "title": "StockAdjustmentCreate"
       },
+      "StockBalanceReportRecord": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "variant_name": {
+            "type": "string",
+            "title": "Variant Name"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "store_name": {
+            "type": "string",
+            "title": "Store Name"
+          },
+          "on_hand_qty": {
+            "type": "integer",
+            "title": "On Hand Qty",
+            "default": 0
+          },
+          "reserved_qty": {
+            "type": "integer",
+            "title": "Reserved Qty",
+            "default": 0
+          },
+          "available_qty": {
+            "type": "integer",
+            "title": "Available Qty",
+            "default": 0
+          },
+          "in_transit_qty": {
+            "type": "integer",
+            "title": "In Transit Qty",
+            "default": 0
+          },
+          "unit_cost": {
+            "type": "string",
+            "title": "Unit Cost",
+            "default": "0.00"
+          },
+          "valuation_at_cost": {
+            "type": "string",
+            "title": "Valuation At Cost",
+            "default": "0.00"
+          },
+          "valuation_at_retail": {
+            "type": "string",
+            "title": "Valuation At Retail",
+            "default": "0.00"
+          },
+          "low_stock_alert": {
+            "type": "boolean",
+            "title": "Low Stock Alert",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "sku",
+          "product_name",
+          "variant_name",
+          "store_id",
+          "store_name"
+        ],
+        "title": "StockBalanceReportRecord"
+      },
       "StockBalanceResponse": {
         "properties": {
           "id": {
@@ -16313,6 +19081,70 @@
           "reference_id"
         ],
         "title": "StockReservationRelease"
+      },
+      "StoreComparisonRecord": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Store Id"
+          },
+          "store_name": {
+            "type": "string",
+            "title": "Store Name"
+          },
+          "store_code": {
+            "type": "string",
+            "title": "Store Code"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "gross_sales": {
+            "type": "string",
+            "title": "Gross Sales",
+            "default": "0.00"
+          },
+          "net_sales": {
+            "type": "string",
+            "title": "Net Sales",
+            "default": "0.00"
+          },
+          "revenue_share_percentage": {
+            "type": "string",
+            "title": "Revenue Share Percentage",
+            "default": "0.00"
+          },
+          "stock_units_on_hand": {
+            "type": "integer",
+            "title": "Stock Units On Hand",
+            "default": 0
+          },
+          "stock_valuation_at_cost": {
+            "type": "string",
+            "title": "Stock Valuation At Cost",
+            "default": "0.00"
+          },
+          "active_shipments_count": {
+            "type": "integer",
+            "title": "Active Shipments Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "store_name",
+          "store_code",
+          "city"
+        ],
+        "title": "StoreComparisonRecord"
       },
       "StoreCreate": {
         "properties": {
@@ -17020,6 +19852,61 @@
         "type": "object",
         "title": "SupplierUpdate"
       },
+      "TenantComparisonRecord": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "tenant_name": {
+            "type": "string",
+            "title": "Tenant Name"
+          },
+          "tenant_slug": {
+            "type": "string",
+            "title": "Tenant Slug"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "store_count": {
+            "type": "integer",
+            "title": "Store Count",
+            "default": 0
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "gross_merchandise_value": {
+            "type": "string",
+            "title": "Gross Merchandise Value",
+            "default": "0.00"
+          },
+          "active_products_count": {
+            "type": "integer",
+            "title": "Active Products Count",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "tenant_name",
+          "tenant_slug",
+          "status",
+          "created_at"
+        ],
+        "title": "TenantComparisonRecord"
+      },
       "TenantCreate": {
         "properties": {
           "name": {
@@ -17174,6 +20061,34 @@
         ],
         "title": "TenantStatusUpdate"
       },
+      "TimeSeriesPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "orders_count": {
+            "type": "integer",
+            "title": "Orders Count",
+            "default": 0
+          },
+          "gross_sales": {
+            "type": "string",
+            "title": "Gross Sales",
+            "default": "0.00"
+          },
+          "net_sales": {
+            "type": "string",
+            "title": "Net Sales",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "TimeSeriesPoint"
+      },
       "TokenRefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -17219,6 +20134,62 @@
           "user"
         ],
         "title": "TokenResponse"
+      },
+      "TopCustomerRecord": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "customer_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Email"
+          },
+          "customer_phone": {
+            "type": "string",
+            "title": "Customer Phone"
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "total_spend": {
+            "type": "string",
+            "title": "Total Spend",
+            "default": "0.00"
+          },
+          "average_order_value": {
+            "type": "string",
+            "title": "Average Order Value",
+            "default": "0.00"
+          },
+          "last_order_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Order Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "customer_name",
+          "customer_phone",
+          "last_order_date"
+        ],
+        "title": "TopCustomerRecord"
       },
       "UserProfileResponse": {
         "properties": {

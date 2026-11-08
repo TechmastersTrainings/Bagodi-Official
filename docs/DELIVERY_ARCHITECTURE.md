@@ -214,3 +214,4 @@ All shipment lifecycle events persist to `notification_outbox` in the same datab
 ### 9.2 Audit Logging
 Every operational action writes an immutable record to `delivery_audit_logs`:
 - `tenant_id`, `shipment_id`, `actor_id`, `action`, `from_status`, `to_status`, `payload`, `created_at`.
+

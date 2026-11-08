@@ -66,6 +66,7 @@ async def test_database_tables_exist():
         "delivery_tracking_events",
         "proof_of_deliveries",
         "delivery_audit_logs",
+        "report_export_logs",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -131,6 +132,7 @@ async def test_database_contains_zero_dummy_records():
         "delivery_tracking_events",
         "proof_of_deliveries",
         "delivery_audit_logs",
+        "report_export_logs",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:
