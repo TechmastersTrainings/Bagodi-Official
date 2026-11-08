@@ -44,6 +44,10 @@ async def test_database_tables_exist():
         "order_items",
         "order_status_history",
         "payment_transactions",
+        "promotions",
+        "coupons",
+        "coupon_redemptions",
+        "pricing_audit_logs",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -87,6 +91,10 @@ async def test_database_contains_zero_dummy_records():
         "order_items",
         "order_status_history",
         "payment_transactions",
+        "promotions",
+        "coupons",
+        "coupon_redemptions",
+        "pricing_audit_logs",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:

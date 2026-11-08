@@ -676,3 +676,4 @@ async def test_cross_customer_and_cross_tenant_order_isolation(client: AsyncClie
         headers=merchant_b_headers,
     )
     assert mb_patch.status_code == 404
+

@@ -19,6 +19,8 @@ from app.modules.orders.router_orders_customer import router as orders_customer_
 from app.modules.orders.router_orders_merchant import router as orders_merchant_router
 from app.modules.platform.router_platform import router as platform_router
 from app.modules.platform.router_stores import router as stores_router
+from app.modules.pricing.router_customer import router as pricing_customer_router
+from app.modules.pricing.router_merchant import router as pricing_merchant_router
 
 logger = logging.getLogger("bagodi.platform")
 settings = get_settings()
@@ -106,3 +108,5 @@ app.include_router(inventory_router, prefix=settings.api_v1_prefix)
 app.include_router(cart_router, prefix=settings.api_v1_prefix)
 app.include_router(orders_customer_router, prefix=settings.api_v1_prefix)
 app.include_router(orders_merchant_router, prefix=settings.api_v1_prefix)
+app.include_router(pricing_merchant_router, prefix=settings.api_v1_prefix)
+app.include_router(pricing_customer_router, prefix=settings.api_v1_prefix)

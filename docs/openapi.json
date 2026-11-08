@@ -4301,10 +4301,1011 @@
           }
         ]
       }
+    },
+    "/api/v1/merchant/pricing/promotions": {
+      "post": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Create a new promotional discount rule",
+        "operationId": "create_promotion_api_v1_merchant_pricing_promotions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "List merchant promotional discount rules",
+        "operationId": "list_promotions_api_v1_merchant_pricing_promotions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status: active, inactive, archived",
+              "title": "Status"
+            },
+            "description": "Filter by status: active, inactive, archived"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by scope: VARIANT, PRODUCT, CATEGORY, CART",
+              "title": "Scope"
+            },
+            "description": "Filter by scope: VARIANT, PRODUCT, CATEGORY, CART"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PromotionResponse"
+                  },
+                  "title": "Response List Promotions Api V1 Merchant Pricing Promotions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/pricing/promotions/{promotion_id}": {
+      "get": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Get promotion rule details",
+        "operationId": "get_promotion_api_v1_merchant_pricing_promotions__promotion_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "promotion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Promotion Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Update promotion rule",
+        "operationId": "update_promotion_api_v1_merchant_pricing_promotions__promotion_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "promotion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Promotion Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Archive promotional discount rule",
+        "operationId": "delete_promotion_api_v1_merchant_pricing_promotions__promotion_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "promotion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Promotion Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/pricing/coupons": {
+      "post": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Create a new merchant coupon code",
+        "operationId": "create_coupon_api_v1_merchant_pricing_coupons_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "List merchant coupon campaigns",
+        "operationId": "list_coupons_api_v1_merchant_pricing_coupons_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status",
+              "title": "Status"
+            },
+            "description": "Filter by status"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CouponResponse"
+                  },
+                  "title": "Response List Coupons Api V1 Merchant Pricing Coupons Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/pricing/coupons/{coupon_id}": {
+      "get": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Get coupon campaign details",
+        "operationId": "get_coupon_api_v1_merchant_pricing_coupons__coupon_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Coupon Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Update coupon campaign",
+        "operationId": "update_coupon_api_v1_merchant_pricing_coupons__coupon_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Coupon Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "Expire coupon campaign",
+        "operationId": "delete_coupon_api_v1_merchant_pricing_coupons__coupon_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Coupon Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/pricing/audit-logs": {
+      "get": {
+        "tags": [
+          "Merchant Pricing & Promotions"
+        ],
+        "summary": "View pricing, promotion, and coupon audit history",
+        "operationId": "list_pricing_audit_logs_api_v1_merchant_pricing_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by promotion or coupon",
+              "title": "Entity Type"
+            },
+            "description": "Filter by promotion or coupon"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PricingAuditLogResponse"
+                  },
+                  "title": "Response List Pricing Audit Logs Api V1 Merchant Pricing Audit Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pricing/quote": {
+      "get": {
+        "tags": [
+          "Customer Pricing & Coupons"
+        ],
+        "summary": "Get authoritative price quote and discount breakdown for current cart",
+        "operationId": "get_cart_price_quote_api_v1_pricing_quote_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional coupon code to preview",
+              "title": "Coupon Code"
+            },
+            "description": "Optional coupon code to preview"
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fulfilling store location",
+              "title": "Store Id"
+            },
+            "description": "Fulfilling store location"
+          },
+          {
+            "name": "X-Session-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceQuoteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cart/coupon": {
+      "post": {
+        "tags": [
+          "Customer Pricing & Coupons"
+        ],
+        "summary": "Apply coupon code to active shopping cart",
+        "operationId": "apply_coupon_to_cart_api_v1_cart_coupon_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fulfilling store location",
+              "title": "Store Id"
+            },
+            "description": "Fulfilling store location"
+          },
+          {
+            "name": "X-Session-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartCouponApplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customer Pricing & Coupons"
+        ],
+        "summary": "Remove coupon code from active shopping cart",
+        "operationId": "remove_coupon_from_cart_api_v1_cart_coupon_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fulfilling store location",
+              "title": "Store Id"
+            },
+            "description": "Fulfilling store location"
+          },
+          {
+            "name": "X-Session-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AppliedCouponDetail": {
+        "properties": {
+          "coupon_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Coupon Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "discount_amount": {
+            "type": "string",
+            "title": "Discount Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coupon_id",
+          "code",
+          "name",
+          "discount_amount"
+        ],
+        "title": "AppliedCouponDetail"
+      },
+      "AppliedPromotionDetail": {
+        "properties": {
+          "promotion_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Promotion Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "discount_amount": {
+            "type": "string",
+            "title": "Discount Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "promotion_id",
+          "title",
+          "scope",
+          "discount_amount"
+        ],
+        "title": "AppliedPromotionDetail"
+      },
       "BarcodeLookupResponse": {
         "properties": {
           "variant": {
@@ -4426,6 +5427,22 @@
           "updated_at"
         ],
         "title": "BrandResponse"
+      },
+      "CartCouponApplyRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code",
+            "description": "Coupon code to apply to cart"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "CartCouponApplyRequest"
       },
       "CartItemAdd": {
         "properties": {
@@ -4572,6 +5589,17 @@
             ],
             "title": "Session Id"
           },
+          "coupon_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Code"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/CartItemResponse"
@@ -4586,6 +5614,16 @@
           "subtotal": {
             "type": "string",
             "title": "Subtotal"
+          },
+          "discount_amount": {
+            "type": "string",
+            "title": "Discount Amount",
+            "default": "0.00"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount",
+            "default": "0.00"
           },
           "updated_at": {
             "type": "string",
@@ -4878,6 +5916,19 @@
             ],
             "title": "Notes"
           },
+          "coupon_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Code",
+            "description": "Optional promotional coupon code"
+          },
           "idempotency_key": {
             "anyOf": [
               {
@@ -4899,6 +5950,447 @@
           "customer_phone"
         ],
         "title": "CheckoutRequest"
+      },
+      "CouponCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Code",
+            "description": "Alphanumeric coupon code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Campaign title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Terms and conditions"
+          },
+          "discount_type": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED_AMOUNT"
+            ],
+            "title": "Discount Type",
+            "description": "PERCENTAGE or FIXED_AMOUNT"
+          },
+          "discount_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Discount Value",
+            "description": "Discount rate or amount"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount",
+            "description": "Max monetary cap for percentage discount"
+          },
+          "min_order_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Min Order Amount",
+            "description": "Minimum order subtotal",
+            "default": "0.00"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "Effective start date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date",
+            "description": "Effective expiry date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "expired"
+            ],
+            "title": "Status",
+            "description": "active, inactive, or expired",
+            "default": "active"
+          },
+          "total_usage_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Usage Limit",
+            "description": "Overall max redemptions (NULL for unlimited)"
+          },
+          "usage_limit_per_customer": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Usage Limit Per Customer",
+            "description": "Max redemptions per customer",
+            "default": 1
+          },
+          "is_stackable": {
+            "type": "boolean",
+            "title": "Is Stackable",
+            "description": "Whether coupon stacks with other promotions",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "discount_type",
+          "discount_value",
+          "start_date",
+          "end_date"
+        ],
+        "title": "CouponCreate"
+      },
+      "CouponResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Code",
+            "description": "Alphanumeric coupon code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Campaign title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Terms and conditions"
+          },
+          "discount_type": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED_AMOUNT"
+            ],
+            "title": "Discount Type",
+            "description": "PERCENTAGE or FIXED_AMOUNT"
+          },
+          "discount_value": {
+            "type": "string",
+            "title": "Discount Value",
+            "description": "Discount rate or amount"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount",
+            "description": "Max monetary cap for percentage discount"
+          },
+          "min_order_amount": {
+            "type": "string",
+            "title": "Min Order Amount",
+            "description": "Minimum order subtotal",
+            "default": "0.00"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "Effective start date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date",
+            "description": "Effective expiry date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "expired"
+            ],
+            "title": "Status",
+            "description": "active, inactive, or expired",
+            "default": "active"
+          },
+          "total_usage_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Usage Limit",
+            "description": "Overall max redemptions (NULL for unlimited)"
+          },
+          "usage_limit_per_customer": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Usage Limit Per Customer",
+            "description": "Max redemptions per customer",
+            "default": 1
+          },
+          "is_stackable": {
+            "type": "boolean",
+            "title": "Is Stackable",
+            "description": "Whether coupon stacks with other promotions",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "total_redeemed_count": {
+            "type": "integer",
+            "title": "Total Redeemed Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "discount_type",
+          "discount_value",
+          "start_date",
+          "end_date",
+          "id",
+          "tenant_id",
+          "total_redeemed_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CouponResponse"
+      },
+      "CouponUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "discount_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Value"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount"
+          },
+          "min_order_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Order Amount"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "expired"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "total_usage_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Usage Limit"
+          },
+          "usage_limit_per_customer": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Limit Per Customer"
+          },
+          "is_stackable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Stackable"
+          }
+        },
+        "type": "object",
+        "title": "CouponUpdate"
       },
       "CustomerReturnCreate": {
         "properties": {
@@ -4957,6 +6449,44 @@
           "reference_id"
         ],
         "title": "CustomerReturnCreate"
+      },
+      "DiscountBreakdown": {
+        "properties": {
+          "item_discounts_total": {
+            "type": "string",
+            "title": "Item Discounts Total",
+            "default": "0.00"
+          },
+          "cart_discount_total": {
+            "type": "string",
+            "title": "Cart Discount Total",
+            "default": "0.00"
+          },
+          "coupon_discount_total": {
+            "type": "string",
+            "title": "Coupon Discount Total",
+            "default": "0.00"
+          },
+          "promotions_applied": {
+            "items": {
+              "$ref": "#/components/schemas/AppliedPromotionDetail"
+            },
+            "type": "array",
+            "title": "Promotions Applied"
+          },
+          "coupon_applied": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppliedCouponDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DiscountBreakdown"
       },
       "HTTPValidationError": {
         "properties": {
@@ -5277,13 +6807,46 @@
             "type": "integer",
             "title": "Quantity"
           },
+          "original_unit_price": {
+            "type": "string",
+            "title": "Original Unit Price",
+            "default": "0.00"
+          },
           "unit_price": {
             "type": "string",
             "title": "Unit Price"
           },
+          "discount_amount": {
+            "type": "string",
+            "title": "Discount Amount",
+            "default": "0.00"
+          },
           "total_price": {
             "type": "string",
             "title": "Total Price"
+          },
+          "applied_promotion_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Promotion Id"
+          },
+          "applied_promotion_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Promotion Title"
           }
         },
         "type": "object",
@@ -5360,6 +6923,41 @@
           "total_amount": {
             "type": "string",
             "title": "Total Amount"
+          },
+          "coupon_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Id"
+          },
+          "coupon_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Code"
+          },
+          "discount_breakdown": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Breakdown"
           },
           "reservation_expires_at": {
             "anyOf": [
@@ -5691,6 +7289,197 @@
           "created_at"
         ],
         "title": "PaymentTransactionResponse"
+      },
+      "PriceQuoteItem": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "variant_name": {
+            "type": "string",
+            "title": "Variant Name"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "original_unit_price": {
+            "type": "string",
+            "title": "Original Unit Price"
+          },
+          "unit_price": {
+            "type": "string",
+            "title": "Unit Price"
+          },
+          "discount_amount": {
+            "type": "string",
+            "title": "Discount Amount"
+          },
+          "line_total": {
+            "type": "string",
+            "title": "Line Total"
+          },
+          "applied_promotion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppliedPromotionDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "sku",
+          "product_name",
+          "variant_name",
+          "quantity",
+          "original_unit_price",
+          "unit_price",
+          "discount_amount",
+          "line_total"
+        ],
+        "title": "PriceQuoteItem"
+      },
+      "PriceQuoteResponse": {
+        "properties": {
+          "subtotal": {
+            "type": "string",
+            "title": "Subtotal"
+          },
+          "item_discount": {
+            "type": "string",
+            "title": "Item Discount"
+          },
+          "cart_discount": {
+            "type": "string",
+            "title": "Cart Discount"
+          },
+          "coupon_discount": {
+            "type": "string",
+            "title": "Coupon Discount"
+          },
+          "total_discount": {
+            "type": "string",
+            "title": "Total Discount"
+          },
+          "shipping_fee": {
+            "type": "string",
+            "title": "Shipping Fee"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PriceQuoteItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "discount_breakdown": {
+            "$ref": "#/components/schemas/DiscountBreakdown"
+          },
+          "coupon_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subtotal",
+          "item_discount",
+          "cart_discount",
+          "coupon_discount",
+          "total_discount",
+          "shipping_fee",
+          "total_amount",
+          "items",
+          "discount_breakdown"
+        ],
+        "title": "PriceQuoteResponse"
+      },
+      "PricingAuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "changed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed By User Id"
+          },
+          "changes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Changes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "entity_type",
+          "entity_id",
+          "action",
+          "changed_by_user_id",
+          "changes",
+          "created_at"
+        ],
+        "title": "PricingAuditLogResponse"
       },
       "ProductCreate": {
         "properties": {
@@ -6396,6 +8185,447 @@
         },
         "type": "object",
         "title": "ProductVariantUpdate"
+      },
+      "PromotionCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Campaign title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Promotion details and T&Cs"
+          },
+          "promotion_type": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED_AMOUNT"
+            ],
+            "title": "Promotion Type",
+            "description": "PERCENTAGE or FIXED_AMOUNT"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "VARIANT",
+              "PRODUCT",
+              "CATEGORY",
+              "CART"
+            ],
+            "title": "Scope",
+            "description": "VARIANT, PRODUCT, CATEGORY, or CART"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id",
+            "description": "Target entity ID; NULL for CART scope"
+          },
+          "discount_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Discount Value",
+            "description": "Discount rate or amount"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount",
+            "description": "Cap on percentage discounts"
+          },
+          "min_order_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Min Order Amount",
+            "description": "Minimum qualifying spend",
+            "default": "0.00"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "Effective start timestamp"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Effective end timestamp (NULL for open-ended)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "archived"
+            ],
+            "title": "Status",
+            "description": "active, inactive, or archived",
+            "default": "active"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority",
+            "description": "Precedence priority; higher number takes precedence",
+            "default": 0
+          },
+          "is_stackable": {
+            "type": "boolean",
+            "title": "Is Stackable",
+            "description": "Whether this promotion combines with other promotions/coupons",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "promotion_type",
+          "scope",
+          "discount_value",
+          "start_date"
+        ],
+        "title": "PromotionCreate"
+      },
+      "PromotionResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Campaign title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Promotion details and T&Cs"
+          },
+          "promotion_type": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED_AMOUNT"
+            ],
+            "title": "Promotion Type",
+            "description": "PERCENTAGE or FIXED_AMOUNT"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "VARIANT",
+              "PRODUCT",
+              "CATEGORY",
+              "CART"
+            ],
+            "title": "Scope",
+            "description": "VARIANT, PRODUCT, CATEGORY, or CART"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id",
+            "description": "Target entity ID; NULL for CART scope"
+          },
+          "discount_value": {
+            "type": "string",
+            "title": "Discount Value",
+            "description": "Discount rate or amount"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount",
+            "description": "Cap on percentage discounts"
+          },
+          "min_order_amount": {
+            "type": "string",
+            "title": "Min Order Amount",
+            "description": "Minimum qualifying spend",
+            "default": "0.00"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "Effective start timestamp"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Effective end timestamp (NULL for open-ended)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "archived"
+            ],
+            "title": "Status",
+            "description": "active, inactive, or archived",
+            "default": "active"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority",
+            "description": "Precedence priority; higher number takes precedence",
+            "default": 0
+          },
+          "is_stackable": {
+            "type": "boolean",
+            "title": "Is Stackable",
+            "description": "Whether this promotion combines with other promotions/coupons",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "promotion_type",
+          "scope",
+          "discount_value",
+          "start_date",
+          "id",
+          "tenant_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PromotionResponse"
+      },
+      "PromotionUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "discount_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Value"
+          },
+          "max_discount_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount Amount"
+          },
+          "min_order_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Order Amount"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "archived"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "is_stackable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Stackable"
+          }
+        },
+        "type": "object",
+        "title": "PromotionUpdate"
       },
       "PurchaseOrderCreate": {
         "properties": {

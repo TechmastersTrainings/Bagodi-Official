@@ -83,3 +83,4 @@ This document specifies the authoritative order states, transition validation ru
 - Every order is pinned to a specific merchant tenant (`tenant_id`) and fulfilling store (`store_id`).
 - For the initial Bagodi deployment, orders are fulfilled by the Bidar physical store (`STORE01`).
 - The schema is architected to allow dynamic store fulfillment routing across multiple physical stores or fulfillment centers in future phases.
+

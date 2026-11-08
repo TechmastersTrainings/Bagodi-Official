@@ -38,6 +38,7 @@ class Cart(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
     )
     session_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    coupon_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     items: Mapped[list["CartItem"]] = relationship(
         "CartItem", cascade="all, delete-orphan", back_populates="cart"
@@ -90,6 +91,11 @@ class Order(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
     shipping_fee: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    coupon_id: Mapped[PG_UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("coupons.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    coupon_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    discount_breakdown: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     reservation_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     reservation_released: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
@@ -132,8 +138,14 @@ class OrderItem(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     product_name: Mapped[str] = mapped_column(String(250), nullable=False)
     variant_name: Mapped[str] = mapped_column(String(200), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    original_unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
     total_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    applied_promotion_id: Mapped[PG_UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("promotions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    applied_promotion_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     order: Mapped["Order"] = relationship("Order", back_populates="items")

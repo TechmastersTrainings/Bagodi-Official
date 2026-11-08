@@ -38,9 +38,12 @@ class CartResponse(BaseModel):
     tenant_id: UUID
     customer_id: UUID | None
     session_id: str | None
+    coupon_code: str | None = None
     items: list[CartItemResponse]
     total_items: int
     subtotal: Decimal
+    discount_amount: Decimal = Decimal("0.00")
+    total_amount: Decimal = Decimal("0.00")
     updated_at: datetime
 
 
@@ -68,6 +71,7 @@ class CheckoutRequest(BaseModel):
     customer_phone: str = Field(..., min_length=10, max_length=50)
     payment_method: Literal["online", "cod"] = "online"
     notes: str | None = Field(default=None, max_length=1000)
+    coupon_code: str | None = Field(default=None, max_length=50, description="Optional promotional coupon code")
     idempotency_key: str | None = Field(default=None, max_length=100)
 
 
@@ -81,8 +85,12 @@ class OrderItemResponse(BaseModel):
     product_name: str
     variant_name: str
     quantity: int
+    original_unit_price: Decimal = Decimal("0.00")
     unit_price: Decimal
+    discount_amount: Decimal = Decimal("0.00")
     total_price: Decimal
+    applied_promotion_id: UUID | None = None
+    applied_promotion_title: str | None = None
 
 
 class OrderStatusHistoryResponse(BaseModel):
@@ -127,6 +135,9 @@ class OrderResponse(BaseModel):
     discount_amount: Decimal
     shipping_fee: Decimal
     total_amount: Decimal
+    coupon_id: UUID | None = None
+    coupon_code: str | None = None
+    discount_breakdown: dict | None = None
     reservation_expires_at: datetime | None
     reservation_released: bool
     shipping_address: dict
@@ -157,3 +168,4 @@ class PaymentCallbackRequest(BaseModel):
     gateway_status: Literal["success", "failure"]
     gateway_payload: dict | None = None
     error_message: str | None = None
+

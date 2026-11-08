@@ -33,6 +33,7 @@ from app.modules.orders.schemas import (
     PaymentCallbackRequest,
 )
 from app.modules.platform.models import Store
+from app.modules.pricing.services import PricingService
 
 
 class CartService:
@@ -300,14 +301,31 @@ class CartService:
                 )
             )
 
+        discount_amount = Decimal("0.00")
+        total_amount = subtotal
+        coupon_code = cart.coupon_code
+
+        if cart.items:
+            try:
+                pricing_quote = await PricingService.calculate_cart_pricing(
+                    db, tenant_id, cart, coupon_code=cart.coupon_code, customer_id=cart.customer_id
+                )
+                discount_amount = pricing_quote.total_discount
+                total_amount = pricing_quote.total_amount
+            except HTTPException:
+                coupon_code = None
+
         return CartResponse(
             id=cart.id,
             tenant_id=cart.tenant_id,
             customer_id=cart.customer_id,
             session_id=cart.session_id,
+            coupon_code=coupon_code,
             items=item_responses,
             total_items=total_items,
             subtotal=subtotal,
+            discount_amount=discount_amount,
+            total_amount=total_amount,
             updated_at=cart.updated_at,
         )
 
@@ -362,9 +380,35 @@ class OrderService:
         # 4. Generate Unique Order Number
         order_number = f"ORD-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6].upper()}"
 
-        # 5. Atomic Stock Reservation and Price Snapshotting
+        # 5. Authoritative Pricing Calculation (Promotions, Coupons, Precedence)
+        effective_coupon_code = data.coupon_code or cart.coupon_code
+        pricing_quote = await PricingService.calculate_cart_pricing(
+            db=db,
+            tenant_id=tenant_id,
+            cart=cart,
+            coupon_code=effective_coupon_code,
+            customer_id=customer_id,
+        )
+
+        subtotal = pricing_quote.subtotal
+        discount_amount = pricing_quote.total_discount
+        shipping_fee = pricing_quote.shipping_fee
+        total_amount = pricing_quote.total_amount
+        coupon_id = (
+            pricing_quote.discount_breakdown.coupon_applied.coupon_id
+            if pricing_quote.discount_breakdown.coupon_applied
+            else None
+        )
+        coupon_code = (
+            pricing_quote.discount_breakdown.coupon_applied.code
+            if pricing_quote.discount_breakdown.coupon_applied
+            else None
+        )
+        discount_breakdown = pricing_quote.discount_breakdown.model_dump(mode="json")
+        calculated_items_map = {item.variant_id: item for item in pricing_quote.items}
+
+        # 6. Atomic Stock Reservation and Price Snapshotting
         order_items: list[OrderItem] = []
-        subtotal = Decimal("0.00")
 
         for item in cart.items:
             variant = item.variant
@@ -373,11 +417,6 @@ class OrderService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail={"code": "ITEM_UNAVAILABLE", "message": f"Item '{variant.name}' is no longer active."},
                 )
-
-            # Authoritative pricing calculated by backend
-            unit_price = variant.base_price
-            line_total = unit_price * Decimal(item.quantity)
-            subtotal += line_total
 
             # Direct integration with InventoryService.reserve_stock (raises 409 if insufficient)
             res_idemp = f"checkout:{data.idempotency_key}:{item.variant_id}" if data.idempotency_key else None
@@ -395,6 +434,22 @@ class OrderService:
                 user_id=customer_id,
             )
 
+            calc_item = calculated_items_map.get(item.variant_id)
+            orig_price = calc_item.original_unit_price if calc_item else variant.base_price
+            eff_price = calc_item.unit_price if calc_item else variant.base_price
+            line_disc = calc_item.discount_amount if calc_item else Decimal("0.00")
+            line_total = calc_item.line_total if calc_item else (eff_price * Decimal(item.quantity))
+            promo_id = (
+                calc_item.applied_promotion.promotion_id
+                if (calc_item and calc_item.applied_promotion)
+                else None
+            )
+            promo_title = (
+                calc_item.applied_promotion.title
+                if (calc_item and calc_item.applied_promotion)
+                else None
+            )
+
             order_items.append(
                 OrderItem(
                     tenant_id=tenant_id,
@@ -403,16 +458,15 @@ class OrderService:
                     product_name=variant.product.name,
                     variant_name=variant.name,
                     quantity=item.quantity,
-                    unit_price=unit_price,
+                    original_unit_price=orig_price,
+                    unit_price=eff_price,
+                    discount_amount=line_disc,
                     total_price=line_total,
+                    applied_promotion_id=promo_id,
+                    applied_promotion_title=promo_title,
                     attributes=variant.attributes,
                 )
             )
-
-        # 6. Pricing calculations (Phase 6 will plug in discounts/coupons engine)
-        discount_amount = Decimal("0.00")
-        shipping_fee = Decimal("0.00")
-        total_amount = subtotal - discount_amount + shipping_fee
 
         # 7. Initial Status based on Payment Method
         initial_status = "CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT"
@@ -420,7 +474,10 @@ class OrderService:
 
         valid_customer_id = await _resolve_user_id(db, customer_id)
         if not valid_customer_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"code": "INVALID_CUSTOMER", "message": "Customer record not found."})
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "INVALID_CUSTOMER", "message": "Customer record not found."},
+            )
 
         order = Order(
             tenant_id=tenant_id,
@@ -436,6 +493,9 @@ class OrderService:
             discount_amount=discount_amount,
             shipping_fee=shipping_fee,
             total_amount=total_amount,
+            coupon_id=coupon_id,
+            coupon_code=coupon_code,
+            discount_breakdown=discount_breakdown,
             reservation_expires_at=expires_at,
             reservation_released=False,
             idempotency_key=data.idempotency_key,
@@ -470,10 +530,23 @@ class OrderService:
             )
 
         db.add(order)
+        await db.flush()
 
-        # 8. Clear checked-out items from cart
+        # 8. Atomically redeem coupon if applied
+        if coupon_id and pricing_quote.coupon_discount > 0:
+            await PricingService.redeem_coupon_transaction_safe(
+                db=db,
+                tenant_id=tenant_id,
+                coupon_id=coupon_id,
+                customer_id=valid_customer_id,
+                order_id=order.id,
+                discount_applied=pricing_quote.coupon_discount,
+            )
+
+        # 9. Clear checked-out items from cart
         for c_item in list(cart.items):
             await db.delete(c_item)
+        cart.coupon_code = None
 
         await db.commit()
         return await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order.id)
@@ -590,6 +663,8 @@ class OrderService:
                         user_id=valid_user_id,
                     )
                 order.reservation_released = True
+            if order.coupon_id:
+                await PricingService.revert_coupon_redemption(db, tenant_id=tenant_id, order_id=order.id)
 
         elif target_status == "RETURNED":
             # Return inspected goods back into stock
@@ -744,6 +819,8 @@ class OrderService:
                 )
             order.reservation_released = True
             order.status = "CANCELLED"
+            if order.coupon_id:
+                await PricingService.revert_coupon_redemption(db, tenant_id=order.tenant_id, order_id=order.id)
             order.status_history.append(
                 OrderStatusHistory(
                     from_status="PENDING_PAYMENT",
