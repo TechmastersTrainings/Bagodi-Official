@@ -47,7 +47,10 @@ class CartService:
         if not customer_id and not session_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "IDENTIFIER_REQUIRED", "message": "Either customer_id or session_id must be provided."},
+                detail={
+                    "code": "IDENTIFIER_REQUIRED",
+                    "message": "Either customer_id or session_id must be provided.",
+                },
             )
 
         stmt = select(Cart).where(Cart.tenant_id == tenant_id)
@@ -57,7 +60,9 @@ class CartService:
             stmt = stmt.where(Cart.session_id == session_id, Cart.customer_id.is_(None))
 
         stmt = stmt.options(
-            selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+            selectinload(Cart.items)
+            .selectinload(CartItem.variant)
+            .selectinload(ProductVariant.product)
         )
         cart = (await db.execute(stmt)).scalar_one_or_none()
 
@@ -93,14 +98,21 @@ class CartService:
         if not variant or variant.status != "active" or not variant.product.is_published:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "PRODUCT_NOT_AVAILABLE", "message": "Product variant is unavailable for purchase."},
+                detail={
+                    "code": "PRODUCT_NOT_AVAILABLE",
+                    "message": "Product variant is unavailable for purchase.",
+                },
             )
 
         # 2. Check real-time stock balance at the store
-        balance = await InventoryService.get_balance(db, tenant_id=tenant_id, store_id=store_id, variant_id=data.variant_id)
+        balance = await InventoryService.get_balance(
+            db, tenant_id=tenant_id, store_id=store_id, variant_id=data.variant_id
+        )
 
         # 3. Check existing item in cart
-        existing_item = next((item for item in cart.items if item.variant_id == data.variant_id), None)
+        existing_item = next(
+            (item for item in cart.items if item.variant_id == data.variant_id), None
+        )
         target_qty = (existing_item.quantity if existing_item else 0) + data.quantity
 
         if balance.available_qty < target_qty:
@@ -135,7 +147,9 @@ class CartService:
             select(Cart)
             .where(Cart.id == cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )
@@ -158,7 +172,9 @@ class CartService:
                 detail={"code": "CART_ITEM_NOT_FOUND", "message": "Cart item not found."},
             )
 
-        balance = await InventoryService.get_balance(db, tenant_id=tenant_id, store_id=store_id, variant_id=item.variant_id)
+        balance = await InventoryService.get_balance(
+            db, tenant_id=tenant_id, store_id=store_id, variant_id=item.variant_id
+        )
         if balance.available_qty < data.quantity:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -176,7 +192,9 @@ class CartService:
             select(Cart)
             .where(Cart.id == cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )
@@ -206,7 +224,9 @@ class CartService:
             select(Cart)
             .where(Cart.id == cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )
@@ -231,18 +251,26 @@ class CartService:
         # Find guest cart
         guest_stmt = (
             select(Cart)
-            .where(Cart.tenant_id == tenant_id, Cart.session_id == guest_session_id, Cart.customer_id.is_(None))
+            .where(
+                Cart.tenant_id == tenant_id,
+                Cart.session_id == guest_session_id,
+                Cart.customer_id.is_(None),
+            )
             .options(selectinload(Cart.items))
         )
         guest_cart = (await db.execute(guest_stmt)).scalar_one_or_none()
         if not guest_cart or not guest_cart.items:
-            customer_cart = await CartService.get_or_create_cart(db, tenant_id, customer_id=customer_id)
+            customer_cart = await CartService.get_or_create_cart(
+                db, tenant_id, customer_id=customer_id
+            )
             return await CartService.build_cart_response(db, tenant_id, customer_cart, store_id)
 
         customer_cart = await CartService.get_or_create_cart(db, tenant_id, customer_id=customer_id)
 
         for g_item in guest_cart.items:
-            c_item = next((i for i in customer_cart.items if i.variant_id == g_item.variant_id), None)
+            c_item = next(
+                (i for i in customer_cart.items if i.variant_id == g_item.variant_id), None
+            )
             if c_item:
                 c_item.quantity += g_item.quantity
             else:
@@ -263,7 +291,9 @@ class CartService:
             select(Cart)
             .where(Cart.id == customer_cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )
@@ -366,11 +396,16 @@ class OrderService:
         if not store or store.status != "active":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "STORE_NOT_AVAILABLE", "message": "Fulfilling store location is unavailable."},
+                detail={
+                    "code": "STORE_NOT_AVAILABLE",
+                    "message": "Fulfilling store location is unavailable.",
+                },
             )
 
         # 3. Retrieve Customer Cart
-        cart = await CartService.get_or_create_cart(db, tenant_id=tenant_id, customer_id=customer_id)
+        cart = await CartService.get_or_create_cart(
+            db, tenant_id=tenant_id, customer_id=customer_id
+        )
         if not cart.items:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -415,11 +450,18 @@ class OrderService:
             if variant.status != "active" or not variant.product.is_published:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "ITEM_UNAVAILABLE", "message": f"Item '{variant.name}' is no longer active."},
+                    detail={
+                        "code": "ITEM_UNAVAILABLE",
+                        "message": f"Item '{variant.name}' is no longer active.",
+                    },
                 )
 
             # Direct integration with InventoryService.reserve_stock (raises 409 if insufficient)
-            res_idemp = f"checkout:{data.idempotency_key}:{item.variant_id}" if data.idempotency_key else None
+            res_idemp = (
+                f"checkout:{data.idempotency_key}:{item.variant_id}"
+                if data.idempotency_key
+                else None
+            )
             await InventoryService.reserve_stock(
                 db=db,
                 tenant_id=tenant_id,
@@ -470,7 +512,9 @@ class OrderService:
 
         # 7. Initial Status based on Payment Method
         initial_status = "CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT"
-        expires_at = datetime.now(UTC) + timedelta(minutes=15) if data.payment_method == "online" else None
+        expires_at = (
+            datetime.now(UTC) + timedelta(minutes=15) if data.payment_method == "online" else None
+        )
 
         valid_customer_id = await _resolve_user_id(db, customer_id)
         if not valid_customer_id:
@@ -645,7 +689,7 @@ class OrderService:
             "PENDING_PAYMENT": ["CONFIRMED", "CANCELLED"],
             "CONFIRMED": ["PROCESSING", "CANCELLED"],
             "PROCESSING": ["DISPATCHED", "CANCELLED"],
-            "DISPATCHED": ["DELIVERED"],
+            "DISPATCHED": ["DELIVERED", "RETURNED"],
             "DELIVERED": ["RETURNED"],
             "CANCELLED": [],
             "RETURNED": [],
@@ -698,7 +742,9 @@ class OrderService:
                     )
                 order.reservation_released = True
             if order.coupon_id:
-                await PricingService.revert_coupon_redemption(db, tenant_id=tenant_id, order_id=order.id)
+                await PricingService.revert_coupon_redemption(
+                    db, tenant_id=tenant_id, order_id=order.id
+                )
             if order.payment_status in ("captured", "partially_refunded"):
                 from app.modules.payments.services import PaymentService
 
@@ -812,7 +858,10 @@ class OrderService:
         order = await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order_id)
 
         # Find or create transaction
-        txn = next((t for t in order.payments if t.transaction_reference == data.transaction_reference), None)
+        txn = next(
+            (t for t in order.payments if t.transaction_reference == data.transaction_reference),
+            None,
+        )
         if not txn:
             txn = PaymentTransaction(
                 tenant_id=tenant_id,
@@ -896,7 +945,9 @@ class OrderService:
             order.reservation_released = True
             order.status = "CANCELLED"
             if order.coupon_id:
-                await PricingService.revert_coupon_redemption(db, tenant_id=order.tenant_id, order_id=order.id)
+                await PricingService.revert_coupon_redemption(
+                    db, tenant_id=order.tenant_id, order_id=order.id
+                )
             order.status_history.append(
                 OrderStatusHistory(
                     from_status="PENDING_PAYMENT",

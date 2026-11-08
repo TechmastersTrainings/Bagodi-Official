@@ -57,6 +57,15 @@ async def test_database_tables_exist():
         "notification_templates",
         "customer_communication_preferences",
         "notification_audit_logs",
+        "delivery_zones",
+        "delivery_zone_pincodes",
+        "delivery_vehicles",
+        "delivery_personnel",
+        "shipments",
+        "shipment_items",
+        "delivery_tracking_events",
+        "proof_of_deliveries",
+        "delivery_audit_logs",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -113,6 +122,15 @@ async def test_database_contains_zero_dummy_records():
         "notification_templates",
         "customer_communication_preferences",
         "notification_audit_logs",
+        "delivery_zones",
+        "delivery_zone_pincodes",
+        "delivery_vehicles",
+        "delivery_personnel",
+        "shipments",
+        "shipment_items",
+        "delivery_tracking_events",
+        "proof_of_deliveries",
+        "delivery_audit_logs",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:

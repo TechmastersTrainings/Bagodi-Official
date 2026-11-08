@@ -11,6 +11,10 @@ from app.modules.catalog.router_barcode import router as barcode_router
 from app.modules.catalog.router_merchant import router as merchant_catalog_router
 from app.modules.catalog.router_platform import router as platform_catalog_router
 from app.modules.catalog.router_public import router as public_catalog_router
+from app.modules.delivery.router_customer import router as delivery_customer_router
+from app.modules.delivery.router_delivery_staff import router as delivery_staff_router
+from app.modules.delivery.router_merchant import router as delivery_merchant_router
+from app.modules.delivery.router_public import router as delivery_public_router
 from app.modules.health.router import router as health_router
 from app.modules.identity.router import router as auth_router
 from app.modules.inventory.router import router as inventory_router
@@ -122,3 +126,7 @@ app.include_router(payments_webhooks_router, prefix=settings.api_v1_prefix)
 app.include_router(notifications_customer_router, prefix=settings.api_v1_prefix)
 app.include_router(notifications_merchant_router, prefix=settings.api_v1_prefix)
 app.include_router(notifications_webhooks_router, prefix=settings.api_v1_prefix)
+app.include_router(delivery_public_router, prefix=settings.api_v1_prefix)
+app.include_router(delivery_customer_router, prefix=settings.api_v1_prefix)
+app.include_router(delivery_staff_router, prefix=settings.api_v1_prefix)
+app.include_router(delivery_merchant_router, prefix=settings.api_v1_prefix)
