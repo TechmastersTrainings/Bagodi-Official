@@ -138,39 +138,43 @@ async def setup_order_ecosystem(client: AsyncClient, mint_jwt_token):
     customer_2_headers = {"Authorization": f"Bearer {cust2_token}"}
 
     # 7. Create Catalogue Category, Product and 2 Variants for Tenant A
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
-        headers=merchant_a_headers,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
+            headers=merchant_a_headers,
+        )
+    ).json()
 
-    prod_a = (await client.post(
-        "/api/v1/merchant/catalog/products",
-        json={
-            "category_id": cat_a["id"],
-            "name": "Bidriware Silver Coaster Set",
-            "slug": "bidriware-silver-coaster-set",
-            "status": "active",
-            "is_published": True,
-            "variants": [
-                {
-                    "sku": "COASTER-SET-4",
-                    "barcode": "8908880001",
-                    "name": "Set of 4 Coasters",
-                    "mrp": "1500.00",
-                    "base_price": "1299.00",
-                },
-                {
-                    "sku": "COASTER-SET-6",
-                    "barcode": "8908880002",
-                    "name": "Set of 6 Coasters",
-                    "mrp": "2200.00",
-                    "base_price": "1899.00",
-                },
-            ],
-        },
-        headers=merchant_a_headers,
-    )).json()
+    prod_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "category_id": cat_a["id"],
+                "name": "Bidriware Silver Coaster Set",
+                "slug": "bidriware-silver-coaster-set",
+                "status": "active",
+                "is_published": True,
+                "variants": [
+                    {
+                        "sku": "COASTER-SET-4",
+                        "barcode": "8908880001",
+                        "name": "Set of 4 Coasters",
+                        "mrp": "1500.00",
+                        "base_price": "1299.00",
+                    },
+                    {
+                        "sku": "COASTER-SET-6",
+                        "barcode": "8908880002",
+                        "name": "Set of 6 Coasters",
+                        "mrp": "2200.00",
+                        "base_price": "1899.00",
+                    },
+                ],
+            },
+            headers=merchant_a_headers,
+        )
+    ).json()
     variant_1_id = UUID(prod_a["variants"][0]["id"])
     variant_2_id = UUID(prod_a["variants"][1]["id"])
 
@@ -262,7 +266,9 @@ async def test_cart_persistence_and_guest_merging(client: AsyncClient, setup_ord
 
 
 @pytest.mark.asyncio
-async def test_checkout_atomicity_price_integrity_and_stock_reservation(client: AsyncClient, setup_order_ecosystem):
+async def test_checkout_atomicity_price_integrity_and_stock_reservation(
+    client: AsyncClient, setup_order_ecosystem
+):
     data = setup_order_ecosystem
     cust_headers = data["customer_1_headers"]
     merchant_headers = data["merchant_a_headers"]
@@ -277,10 +283,12 @@ async def test_checkout_atomicity_price_integrity_and_stock_reservation(client: 
     )
 
     # 2. Check stock before checkout: on_hand = 20, reserved = 0, available = 20
-    bal_before = (await client.get(
-        f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
-        headers=merchant_headers,
-    )).json()
+    bal_before = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_before["on_hand_qty"] == 20
     assert bal_before["reserved_qty"] == 0
     assert bal_before["available_qty"] == 20
@@ -304,7 +312,9 @@ async def test_checkout_atomicity_price_integrity_and_stock_reservation(client: 
         "idempotency_key": "IDEMP-CHECKOUT-001",
     }
 
-    chk_resp = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust_headers)
+    chk_resp = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust_headers
+    )
     assert chk_resp.status_code == 201
     order = chk_resp.json()
     order_number = order["order_number"]
@@ -318,10 +328,12 @@ async def test_checkout_atomicity_price_integrity_and_stock_reservation(client: 
 
     # 4. VERIFY: Stock is reserved atomically via InventoryService!
     # on_hand = 20, reserved = 5, available = 15
-    bal_after = (await client.get(
-        f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
-        headers=merchant_headers,
-    )).json()
+    bal_after = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_after["on_hand_qty"] == 20
     assert bal_after["reserved_qty"] == 5
     assert bal_after["available_qty"] == 15
@@ -332,14 +344,18 @@ async def test_checkout_atomicity_price_integrity_and_stock_reservation(client: 
     assert len(cart_after["items"]) == 0
 
     # 6. VERIFY IDEMPOTENCY: Retrying checkout with same idempotency key returns existing order!
-    chk_retry = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust_headers)
+    chk_retry = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust_headers
+    )
     assert chk_retry.status_code == 201
     assert chk_retry.json()["id"] == order["id"]
     assert chk_retry.json()["order_number"] == order_number
 
 
 @pytest.mark.asyncio
-async def test_concurrent_checkout_and_overselling_prevention(client: AsyncClient, setup_order_ecosystem):
+async def test_concurrent_checkout_and_overselling_prevention(
+    client: AsyncClient, setup_order_ecosystem
+):
     data = setup_order_ecosystem
     cust1_headers = data["customer_1_headers"]
     cust2_headers = data["customer_2_headers"]
@@ -406,7 +422,9 @@ async def test_concurrent_checkout_and_overselling_prevention(client: AsyncClien
 
 
 @pytest.mark.asyncio
-async def test_order_lifecycle_state_machine_and_fulfillment(client: AsyncClient, setup_order_ecosystem):
+async def test_order_lifecycle_state_machine_and_fulfillment(
+    client: AsyncClient, setup_order_ecosystem
+):
     data = setup_order_ecosystem
     cust_headers = data["customer_1_headers"]
     merchant_headers = data["merchant_a_headers"]
@@ -414,25 +432,29 @@ async def test_order_lifecycle_state_machine_and_fulfillment(client: AsyncClient
     store_a_id = str(data["store_a_id"])
 
     # 1. Checkout 2 units
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 2}, headers=cust_headers)
-    order = (await client.post(
-        "/api/v1/orders/checkout",
-        json={
-            "store_id": store_a_id,
-            "shipping_address": {
-                "full_name": "Ramesh",
-                "address_line1": "Bidar",
-                "city": "Bidar",
-                "state": "KA",
-                "postal_code": "585401",
-                "phone": "+919999900001",
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 2}, headers=cust_headers
+    )
+    order = (
+        await client.post(
+            "/api/v1/orders/checkout",
+            json={
+                "store_id": store_a_id,
+                "shipping_address": {
+                    "full_name": "Ramesh",
+                    "address_line1": "Bidar",
+                    "city": "Bidar",
+                    "state": "KA",
+                    "postal_code": "585401",
+                    "phone": "+919999900001",
+                },
+                "customer_name": "Ramesh",
+                "customer_phone": "+919999900001",
+                "payment_method": "online",
             },
-            "customer_name": "Ramesh",
-            "customer_phone": "+919999900001",
-            "payment_method": "online",
-        },
-        headers=cust_headers,
-    )).json()
+            headers=cust_headers,
+        )
+    ).json()
     order_id = order["id"]
     order_number = order["order_number"]
     assert order["status"] == "PENDING_PAYMENT"
@@ -480,7 +502,12 @@ async def test_order_lifecycle_state_machine_and_fulfillment(client: AsyncClient
     assert d_resp.json()["fulfillment_status"] == "fulfilled"
 
     # Verify inventory was written off from on-hand:
-    bal_disp = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal_disp = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_disp["reserved_qty"] == 0
     assert bal_disp["on_hand_qty"] == 18  # 20 - 2
 
@@ -503,13 +530,20 @@ async def test_order_lifecycle_state_machine_and_fulfillment(client: AsyncClient
     assert ret_resp.json()["status"] == "RETURNED"
 
     # Verify stock was restored back into on_hand:
-    bal_ret = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal_ret = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_ret["on_hand_qty"] == 20
     assert bal_ret["available_qty"] == 20
 
 
 @pytest.mark.asyncio
-async def test_order_cancellation_releases_reserved_stock(client: AsyncClient, setup_order_ecosystem):
+async def test_order_cancellation_releases_reserved_stock(
+    client: AsyncClient, setup_order_ecosystem
+):
     data = setup_order_ecosystem
     cust_headers = data["customer_1_headers"]
     merchant_headers = data["merchant_a_headers"]
@@ -517,29 +551,38 @@ async def test_order_cancellation_releases_reserved_stock(client: AsyncClient, s
     store_a_id = str(data["store_a_id"])
 
     # 1. Checkout 4 units
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 4}, headers=cust_headers)
-    order = (await client.post(
-        "/api/v1/orders/checkout",
-        json={
-            "store_id": store_a_id,
-            "shipping_address": {
-                "full_name": "Ramesh",
-                "address_line1": "Bidar",
-                "city": "Bidar",
-                "state": "KA",
-                "postal_code": "585401",
-                "phone": "+919999900001",
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 4}, headers=cust_headers
+    )
+    order = (
+        await client.post(
+            "/api/v1/orders/checkout",
+            json={
+                "store_id": store_a_id,
+                "shipping_address": {
+                    "full_name": "Ramesh",
+                    "address_line1": "Bidar",
+                    "city": "Bidar",
+                    "state": "KA",
+                    "postal_code": "585401",
+                    "phone": "+919999900001",
+                },
+                "customer_name": "Ramesh",
+                "customer_phone": "+919999900001",
+                "payment_method": "cod",
             },
-            "customer_name": "Ramesh",
-            "customer_phone": "+919999900001",
-            "payment_method": "cod",
-        },
-        headers=cust_headers,
-    )).json()
+            headers=cust_headers,
+        )
+    ).json()
     order_number = order["order_number"]
 
     # Stock is reserved: reserved = 4, available = 16
-    bal_res = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal_res = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_res["reserved_qty"] == 4
     assert bal_res["available_qty"] == 16
 
@@ -553,7 +596,12 @@ async def test_order_cancellation_releases_reserved_stock(client: AsyncClient, s
     assert cancel_resp.json()["status"] == "CANCELLED"
 
     # 3. VERIFY: Reserved stock was released back to available pool!
-    bal_rel = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal_rel = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_rel["reserved_qty"] == 0
     assert bal_rel["available_qty"] == 20
 
@@ -567,29 +615,38 @@ async def test_reservation_expiry_background_processor(client: AsyncClient, setu
     store_a_id = str(data["store_a_id"])
 
     # 1. Checkout 3 units online (status=PENDING_PAYMENT, expires in 15 min)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 3}, headers=cust_headers)
-    order = (await client.post(
-        "/api/v1/orders/checkout",
-        json={
-            "store_id": store_a_id,
-            "shipping_address": {
-                "full_name": "Ramesh",
-                "address_line1": "Bidar",
-                "city": "Bidar",
-                "state": "KA",
-                "postal_code": "585401",
-                "phone": "+919999900001",
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 3}, headers=cust_headers
+    )
+    order = (
+        await client.post(
+            "/api/v1/orders/checkout",
+            json={
+                "store_id": store_a_id,
+                "shipping_address": {
+                    "full_name": "Ramesh",
+                    "address_line1": "Bidar",
+                    "city": "Bidar",
+                    "state": "KA",
+                    "postal_code": "585401",
+                    "phone": "+919999900001",
+                },
+                "customer_name": "Ramesh",
+                "customer_phone": "+919999900001",
+                "payment_method": "online",
             },
-            "customer_name": "Ramesh",
-            "customer_phone": "+919999900001",
-            "payment_method": "online",
-        },
-        headers=cust_headers,
-    )).json()
+            headers=cust_headers,
+        )
+    ).json()
     order_id = order["id"]
 
     # Stock is reserved: reserved = 3, available = 17
-    bal1 = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal1 = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal1["reserved_qty"] == 3
     assert bal1["available_qty"] == 17
 
@@ -607,22 +664,33 @@ async def test_reservation_expiry_background_processor(client: AsyncClient, setu
     assert exp_resp.json()["released_count"] == 1
 
     # 4. Verify order is CANCELLED and stock is restored
-    order_check = (await client.get(f"/api/v1/merchant/orders/{order_id}", headers=merchant_headers)).json()
+    order_check = (
+        await client.get(f"/api/v1/merchant/orders/{order_id}", headers=merchant_headers)
+    ).json()
     assert order_check["status"] == "CANCELLED"
     assert order_check["reservation_released"] is True
 
-    bal_restored = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}", headers=merchant_headers)).json()
+    bal_restored = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a_id}/{variant_1_id}",
+            headers=merchant_headers,
+        )
+    ).json()
     assert bal_restored["reserved_qty"] == 0
     assert bal_restored["available_qty"] == 20
 
     # 5. IDEMPOTENT: Running expiry processor again releases 0 orders!
-    exp_retry = await client.post("/api/v1/merchant/orders/process-expiry", headers=merchant_headers)
+    exp_retry = await client.post(
+        "/api/v1/merchant/orders/process-expiry", headers=merchant_headers
+    )
     assert exp_retry.status_code == 200
     assert exp_retry.json()["released_count"] == 0
 
 
 @pytest.mark.asyncio
-async def test_cross_customer_and_cross_tenant_order_isolation(client: AsyncClient, setup_order_ecosystem):
+async def test_cross_customer_and_cross_tenant_order_isolation(
+    client: AsyncClient, setup_order_ecosystem
+):
     data = setup_order_ecosystem
     cust1_headers = data["customer_1_headers"]
     cust2_headers = data["customer_2_headers"]
@@ -631,25 +699,31 @@ async def test_cross_customer_and_cross_tenant_order_isolation(client: AsyncClie
     store_a_id = str(data["store_a_id"])
 
     # Customer 1 places order
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust1_headers)
-    order1 = (await client.post(
-        "/api/v1/orders/checkout",
-        json={
-            "store_id": store_a_id,
-            "shipping_address": {
-                "full_name": "Ramesh",
-                "address_line1": "Bidar",
-                "city": "Bidar",
-                "state": "KA",
-                "postal_code": "585401",
-                "phone": "+919999900001",
-            },
-            "customer_name": "Ramesh",
-            "customer_phone": "+919999900001",
-            "payment_method": "cod",
-        },
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
         headers=cust1_headers,
-    )).json()
+    )
+    order1 = (
+        await client.post(
+            "/api/v1/orders/checkout",
+            json={
+                "store_id": store_a_id,
+                "shipping_address": {
+                    "full_name": "Ramesh",
+                    "address_line1": "Bidar",
+                    "city": "Bidar",
+                    "state": "KA",
+                    "postal_code": "585401",
+                    "phone": "+919999900001",
+                },
+                "customer_name": "Ramesh",
+                "customer_phone": "+919999900001",
+                "payment_method": "cod",
+            },
+            headers=cust1_headers,
+        )
+    ).json()
     order1_id = order1["id"]
     order1_number = order1["order_number"]
 
@@ -676,4 +750,3 @@ async def test_cross_customer_and_cross_tenant_order_isolation(client: AsyncClie
         headers=merchant_b_headers,
     )
     assert mb_patch.status_code == 404
-

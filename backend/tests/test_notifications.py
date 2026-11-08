@@ -68,7 +68,14 @@ async def setup_notification_ecosystem(client: AsyncClient, mint_jwt_token):
     # 3. Create Store for Tenant A
     merchant_a_token = mint_jwt_token(
         tenant_id=tenant_a_id,
-        permissions=["stores.*", "catalog.*", "inventory.*", "orders.*", "payments.*", "notifications.*"],
+        permissions=[
+            "stores.*",
+            "catalog.*",
+            "inventory.*",
+            "orders.*",
+            "payments.*",
+            "notifications.*",
+        ],
     )
     merchant_a_headers = {"Authorization": f"Bearer {merchant_a_token}"}
 
@@ -89,7 +96,14 @@ async def setup_notification_ecosystem(client: AsyncClient, mint_jwt_token):
     # 4. Create Store for Tenant B
     merchant_b_token = mint_jwt_token(
         tenant_id=tenant_b_id,
-        permissions=["stores.*", "catalog.*", "inventory.*", "orders.*", "payments.*", "notifications.*"],
+        permissions=[
+            "stores.*",
+            "catalog.*",
+            "inventory.*",
+            "orders.*",
+            "payments.*",
+            "notifications.*",
+        ],
     )
     merchant_b_headers = {"Authorization": f"Bearer {merchant_b_token}"}
 
@@ -130,32 +144,36 @@ async def setup_notification_ecosystem(client: AsyncClient, mint_jwt_token):
     customer_2_headers = {"Authorization": f"Bearer {cust2_token}"}
 
     # 6. Create Catalogue Category, Product and Variant
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
-        headers=merchant_a_headers,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
+            headers=merchant_a_headers,
+        )
+    ).json()
 
-    prod_a = (await client.post(
-        "/api/v1/merchant/catalog/products",
-        json={
-            "category_id": cat_a["id"],
-            "name": "Bidri Inlaid Vase",
-            "slug": "bidri-inlaid-vase",
-            "status": "active",
-            "is_published": True,
-            "variants": [
-                {
-                    "sku": "BIDRI-VASE-S",
-                    "barcode": "8908880001",
-                    "name": "Small Inlaid Vase",
-                    "mrp": "1500.00",
-                    "base_price": "1299.00",
-                }
-            ],
-        },
-        headers=merchant_a_headers,
-    )).json()
+    prod_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "category_id": cat_a["id"],
+                "name": "Bidri Inlaid Vase",
+                "slug": "bidri-inlaid-vase",
+                "status": "active",
+                "is_published": True,
+                "variants": [
+                    {
+                        "sku": "BIDRI-VASE-S",
+                        "barcode": "8908880001",
+                        "name": "Small Inlaid Vase",
+                        "mrp": "1500.00",
+                        "base_price": "1299.00",
+                    }
+                ],
+            },
+            headers=merchant_a_headers,
+        )
+    ).json()
     variant_1_id = UUID(prod_a["variants"][0]["id"])
 
     # Inward stock (50 units)
@@ -289,7 +307,9 @@ async def test_template_versioning_and_rendering(client: AsyncClient, setup_noti
     assert rendered == "Hello Ramesh, your order #ORD-999 for Rs.1500.00 is confirmed."
 
     # 2. Test sensitive key sanitization
-    sanitized = sanitize_context({"otp": "123456", "password": "mypassword", "card_number": "4111111111111111"})
+    sanitized = sanitize_context(
+        {"otp": "123456", "password": "mypassword", "card_number": "4111111111111111"}
+    )
     assert sanitized["password"] == "[REDACTED]"
     assert sanitized["card_number"] == "[REDACTED]"
     assert sanitized["otp"] == "123456"
@@ -312,13 +332,17 @@ async def test_template_versioning_and_rendering(client: AsyncClient, setup_noti
     assert "Namaskara" in tmpl["body_template"]
 
     # 4. List templates
-    list_resp = await client.get("/api/v1/merchant/notifications/templates", headers=merchant_headers)
+    list_resp = await client.get(
+        "/api/v1/merchant/notifications/templates", headers=merchant_headers
+    )
     assert list_resp.status_code == 200
     assert len(list_resp.json()) >= 1
 
 
 @pytest.mark.asyncio
-async def test_transactional_outbox_atomicity_and_event_integration(client: AsyncClient, setup_notification_ecosystem):
+async def test_transactional_outbox_atomicity_and_event_integration(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
@@ -326,11 +350,15 @@ async def test_transactional_outbox_atomicity_and_event_integration(client: Asyn
     variant_id = env["variant_1_id"]
 
     # Checkout an order
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # Inspect Outbox via merchant API: verify outbox event was recorded atomically with order checkout
-    outbox_resp = await client.get("/api/v1/merchant/notifications/outbox", headers=merchant_headers)
+    outbox_resp = await client.get(
+        "/api/v1/merchant/notifications/outbox", headers=merchant_headers
+    )
     assert outbox_resp.status_code == 200
     items = outbox_resp.json()
     assert len(items) >= 1
@@ -344,7 +372,9 @@ async def test_transactional_outbox_atomicity_and_event_integration(client: Asyn
 
 
 @pytest.mark.asyncio
-async def test_outbox_batch_processing_and_channel_dispatch(client: AsyncClient, setup_notification_ecosystem):
+async def test_outbox_batch_processing_and_channel_dispatch(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
@@ -352,21 +382,29 @@ async def test_outbox_batch_processing_and_channel_dispatch(client: AsyncClient,
     variant_id = env["variant_1_id"]
 
     # Checkout order
-    await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
 
     # Trigger outbox processor
-    proc_resp = await client.post("/api/v1/merchant/notifications/outbox/process", headers=merchant_headers)
+    proc_resp = await client.post(
+        "/api/v1/merchant/notifications/outbox/process", headers=merchant_headers
+    )
     assert proc_resp.status_code == 200
     proc_data = proc_resp.json()
     assert proc_data["processed_count"] >= 1
     assert proc_data["dispatched_messages_count"] >= 1
 
     # Outbox item is now processed
-    outbox_items = (await client.get("/api/v1/merchant/notifications/outbox", headers=merchant_headers)).json()
+    outbox_items = (
+        await client.get("/api/v1/merchant/notifications/outbox", headers=merchant_headers)
+    ).json()
     assert all(i["status"] == "processed" for i in outbox_items)
 
     # Messages dispatched
-    msgs_resp = await client.get("/api/v1/merchant/notifications/messages", headers=merchant_headers)
+    msgs_resp = await client.get(
+        "/api/v1/merchant/notifications/messages", headers=merchant_headers
+    )
     assert msgs_resp.status_code == 200
     messages = msgs_resp.json()
     assert len(messages) >= 1
@@ -374,12 +412,16 @@ async def test_outbox_batch_processing_and_channel_dispatch(client: AsyncClient,
     assert any(m["status"] == "sent" for m in messages)
 
     # Re-running outbox processing is idempotent (0 remaining items processed)
-    proc_retry = await client.post("/api/v1/merchant/notifications/outbox/process", headers=merchant_headers)
+    proc_retry = await client.post(
+        "/api/v1/merchant/notifications/outbox/process", headers=merchant_headers
+    )
     assert proc_retry.json()["processed_count"] == 0
 
 
 @pytest.mark.asyncio
-async def test_customer_consent_and_communication_preferences(client: AsyncClient, setup_notification_ecosystem):
+async def test_customer_consent_and_communication_preferences(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
@@ -406,16 +448,22 @@ async def test_customer_consent_and_communication_preferences(client: AsyncClien
     assert updated_pref["preferred_channel"] == "sms"
 
     # 3. Checkout order and process outbox: routes to SMS (not WhatsApp)
-    await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     await client.post("/api/v1/merchant/notifications/outbox/process", headers=merchant_headers)
 
     # Verify dispatched message channel honors SMS preference
-    messages = (await client.get("/api/v1/merchant/notifications/messages", headers=merchant_headers)).json()
+    messages = (
+        await client.get("/api/v1/merchant/notifications/messages", headers=merchant_headers)
+    ).json()
     assert any(m["channel"] == "sms" for m in messages)
 
 
 @pytest.mark.asyncio
-async def test_message_delivery_status_and_webhook_dlr(client: AsyncClient, setup_notification_ecosystem):
+async def test_message_delivery_status_and_webhook_dlr(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     merchant_headers = env["merchant_a_headers"]
 
@@ -426,7 +474,11 @@ async def test_message_delivery_status_and_webhook_dlr(client: AsyncClient, setu
             "recipient": "+919999900001",
             "channel": "sms",
             "template_code": "order_confirmed",
-            "context": {"customer_name": "Ramesh", "order_number": "ORD-DIRECT-1", "total_amount": "999.00"},
+            "context": {
+                "customer_name": "Ramesh",
+                "order_number": "ORD-DIRECT-1",
+                "total_amount": "999.00",
+            },
             "idempotency_key": "idemp_msg_direct_001",
         },
         headers=merchant_headers,
@@ -455,7 +507,11 @@ async def test_message_delivery_status_and_webhook_dlr(client: AsyncClient, setu
     assert dlr_resp.json()["status"] == "acknowledged"
 
     # Verify message status transitioned to 'delivered'
-    msg_verified = (await client.get(f"/api/v1/merchant/notifications/messages/{msg['id']}", headers=merchant_headers)).json()
+    msg_verified = (
+        await client.get(
+            f"/api/v1/merchant/notifications/messages/{msg['id']}", headers=merchant_headers
+        )
+    ).json()
     assert msg_verified["status"] == "delivered"
     assert msg_verified["delivery_timestamp"] is not None
 
@@ -469,7 +525,9 @@ async def test_message_delivery_status_and_webhook_dlr(client: AsyncClient, setu
 
 
 @pytest.mark.asyncio
-async def test_retry_mechanism_exponential_backoff_and_dead_letter(client: AsyncClient, setup_notification_ecosystem):
+async def test_retry_mechanism_exponential_backoff_and_dead_letter(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     merchant_headers = env["merchant_a_headers"]
 
@@ -509,7 +567,9 @@ async def test_retry_mechanism_exponential_backoff_and_dead_letter(client: Async
 
 
 @pytest.mark.asyncio
-async def test_end_to_end_business_event_pipeline(client: AsyncClient, setup_notification_ecosystem):
+async def test_end_to_end_business_event_pipeline(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
@@ -517,18 +577,24 @@ async def test_end_to_end_business_event_pipeline(client: AsyncClient, setup_not
     variant_id = env["variant_1_id"]
 
     # 1. Customer creates order
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # 2. Customer captures payment
-    init_data = (await client.post(
-        "/api/v1/payments/initiate",
-        json={"order_id": order_id, "payment_method": "online"},
-        headers=cust1_headers,
-    )).json()
+    init_data = (
+        await client.post(
+            "/api/v1/payments/initiate",
+            json={"order_id": order_id, "payment_method": "online"},
+            headers=cust1_headers,
+        )
+    ).json()
 
     provider = MockPaymentGatewayProvider()
-    sig = provider.generate_payment_signature(init_data["gateway_order_id"], "pay_e2e_notif_001", Decimal("1299.00"))
+    sig = provider.generate_payment_signature(
+        init_data["gateway_order_id"], "pay_e2e_notif_001", Decimal("1299.00")
+    )
     await client.post(
         "/api/v1/payments/verify",
         json={
@@ -541,7 +607,9 @@ async def test_end_to_end_business_event_pipeline(client: AsyncClient, setup_not
     )
 
     # 3. Process Outbox: Dispatches order creation and payment capture notifications
-    proc1 = await client.post("/api/v1/merchant/notifications/outbox/process", headers=merchant_headers)
+    proc1 = await client.post(
+        "/api/v1/merchant/notifications/outbox/process", headers=merchant_headers
+    )
     assert proc1.status_code == 200
     assert proc1.json()["dispatched_messages_count"] >= 2
 
@@ -553,12 +621,16 @@ async def test_end_to_end_business_event_pipeline(client: AsyncClient, setup_not
     )
 
     # 5. Process Outbox: Dispatches refund notification
-    proc2 = await client.post("/api/v1/merchant/notifications/outbox/process", headers=merchant_headers)
+    proc2 = await client.post(
+        "/api/v1/merchant/notifications/outbox/process", headers=merchant_headers
+    )
     assert proc2.status_code == 200
     assert proc2.json()["dispatched_messages_count"] >= 1
 
     # 6. Verify Audit Logs recorded
-    logs_resp = await client.get("/api/v1/merchant/notifications/audit-logs", headers=merchant_headers)
+    logs_resp = await client.get(
+        "/api/v1/merchant/notifications/audit-logs", headers=merchant_headers
+    )
     assert logs_resp.status_code == 200
     logs = logs_resp.json()
     event_types = [l["event_type"] for l in logs]
@@ -566,7 +638,9 @@ async def test_end_to_end_business_event_pipeline(client: AsyncClient, setup_not
 
 
 @pytest.mark.asyncio
-async def test_cross_tenant_and_cross_customer_isolation(client: AsyncClient, setup_notification_ecosystem):
+async def test_cross_tenant_and_cross_customer_isolation(
+    client: AsyncClient, setup_notification_ecosystem
+):
     env = setup_notification_ecosystem
     cust1_headers = env["customer_1_headers"]
     cust2_headers = env["customer_2_headers"]
@@ -580,20 +654,30 @@ async def test_cross_tenant_and_cross_customer_isolation(client: AsyncClient, se
             "recipient": "+919999900001",
             "channel": "sms",
             "template_code": "order_confirmed",
-            "context": {"customer_name": "Ramesh", "order_number": "ORD-ISO-1", "total_amount": "500.00"},
+            "context": {
+                "customer_name": "Ramesh",
+                "order_number": "ORD-ISO-1",
+                "total_amount": "500.00",
+            },
         },
         headers=merchant_a_headers,
     )
     msg_id = send_resp.json()["id"]
 
     # Customer 2 cannot see Customer 1's messages
-    cust2_msgs = (await client.get("/api/v1/customer/notifications/messages", headers=cust2_headers)).json()
+    cust2_msgs = (
+        await client.get("/api/v1/customer/notifications/messages", headers=cust2_headers)
+    ).json()
     assert not any(m["id"] == msg_id for m in cust2_msgs)
 
     # Customer 1 CAN see their message
-    cust1_msgs = (await client.get("/api/v1/customer/notifications/messages", headers=cust1_headers)).json()
+    cust1_msgs = (
+        await client.get("/api/v1/customer/notifications/messages", headers=cust1_headers)
+    ).json()
     assert any(m["id"] == msg_id for m in cust1_msgs)
 
     # Merchant B (Tenant B) cannot access Merchant A's message -> 404
-    cross_resp = await client.get(f"/api/v1/merchant/notifications/messages/{msg_id}", headers=merchant_b_headers)
+    cross_resp = await client.get(
+        f"/api/v1/merchant/notifications/messages/{msg_id}", headers=merchant_b_headers
+    )
     assert cross_resp.status_code == 404

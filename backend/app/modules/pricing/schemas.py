@@ -21,15 +21,37 @@ class PromotionBase(BaseModel):
     description: str | None = Field(default=None, description="Promotion details and T&Cs")
     promotion_type: PromotionType = Field(..., description="PERCENTAGE or FIXED_AMOUNT")
     scope: PromotionScope = Field(..., description="VARIANT, PRODUCT, CATEGORY, or CART")
-    target_id: UUID | None = Field(default=None, description="Target entity ID; NULL for CART scope")
-    discount_value: Decimal = Field(..., gt=0, max_digits=12, decimal_places=2, description="Discount rate or amount")
-    max_discount_amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2, description="Cap on percentage discounts")
-    min_order_amount: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=12, decimal_places=2, description="Minimum qualifying spend")
+    target_id: UUID | None = Field(
+        default=None, description="Target entity ID; NULL for CART scope"
+    )
+    discount_value: Decimal = Field(
+        ..., gt=0, max_digits=12, decimal_places=2, description="Discount rate or amount"
+    )
+    max_discount_amount: Decimal | None = Field(
+        default=None,
+        gt=0,
+        max_digits=12,
+        decimal_places=2,
+        description="Cap on percentage discounts",
+    )
+    min_order_amount: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=0,
+        max_digits=12,
+        decimal_places=2,
+        description="Minimum qualifying spend",
+    )
     start_date: datetime = Field(..., description="Effective start timestamp")
-    end_date: datetime | None = Field(default=None, description="Effective end timestamp (NULL for open-ended)")
+    end_date: datetime | None = Field(
+        default=None, description="Effective end timestamp (NULL for open-ended)"
+    )
     status: PromotionStatus = Field(default="active", description="active, inactive, or archived")
-    priority: int = Field(default=0, description="Precedence priority; higher number takes precedence")
-    is_stackable: bool = Field(default=False, description="Whether this promotion combines with other promotions/coupons")
+    priority: int = Field(
+        default=0, description="Precedence priority; higher number takes precedence"
+    )
+    is_stackable: bool = Field(
+        default=False, description="Whether this promotion combines with other promotions/coupons"
+    )
 
     @field_validator("target_id")
     @classmethod
@@ -74,15 +96,35 @@ class CouponBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=150, description="Campaign title")
     description: str | None = Field(default=None, description="Terms and conditions")
     discount_type: CouponDiscountType = Field(..., description="PERCENTAGE or FIXED_AMOUNT")
-    discount_value: Decimal = Field(..., gt=0, max_digits=12, decimal_places=2, description="Discount rate or amount")
-    max_discount_amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2, description="Max monetary cap for percentage discount")
-    min_order_amount: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=12, decimal_places=2, description="Minimum order subtotal")
+    discount_value: Decimal = Field(
+        ..., gt=0, max_digits=12, decimal_places=2, description="Discount rate or amount"
+    )
+    max_discount_amount: Decimal | None = Field(
+        default=None,
+        gt=0,
+        max_digits=12,
+        decimal_places=2,
+        description="Max monetary cap for percentage discount",
+    )
+    min_order_amount: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=0,
+        max_digits=12,
+        decimal_places=2,
+        description="Minimum order subtotal",
+    )
     start_date: datetime = Field(..., description="Effective start date")
     end_date: datetime = Field(..., description="Effective expiry date")
     status: CouponStatus = Field(default="active", description="active, inactive, or expired")
-    total_usage_limit: int | None = Field(default=None, gt=0, description="Overall max redemptions (NULL for unlimited)")
-    usage_limit_per_customer: int = Field(default=1, gt=0, description="Max redemptions per customer")
-    is_stackable: bool = Field(default=False, description="Whether coupon stacks with other promotions")
+    total_usage_limit: int | None = Field(
+        default=None, gt=0, description="Overall max redemptions (NULL for unlimited)"
+    )
+    usage_limit_per_customer: int = Field(
+        default=1, gt=0, description="Max redemptions per customer"
+    )
+    is_stackable: bool = Field(
+        default=False, description="Whether coupon stacks with other promotions"
+    )
 
     @field_validator("code")
     @classmethod

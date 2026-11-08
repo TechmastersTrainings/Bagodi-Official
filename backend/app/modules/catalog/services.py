@@ -20,7 +20,9 @@ from app.modules.catalog.schemas import (
 
 class CategoryService:
     @staticmethod
-    async def create_category(db: AsyncSession, data: CategoryCreate, tenant_id: UUID | None = None) -> Category:
+    async def create_category(
+        db: AsyncSession, data: CategoryCreate, tenant_id: UUID | None = None
+    ) -> Category:
         query = select(Category).where(Category.slug == data.slug)
         if tenant_id:
             query = query.where(Category.tenant_id == tenant_id)
@@ -32,7 +34,10 @@ class CategoryService:
             scope = f"merchant {tenant_id}" if tenant_id else "global catalog"
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "CATEGORY_SLUG_EXISTS", "message": f"Category slug '{data.slug}' already exists in {scope}."},
+                detail={
+                    "code": "CATEGORY_SLUG_EXISTS",
+                    "message": f"Category slug '{data.slug}' already exists in {scope}.",
+                },
             )
 
         if data.parent_id:
@@ -41,7 +46,10 @@ class CategoryService:
             if not parent:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "PARENT_CATEGORY_NOT_FOUND", "message": "Parent category not found."},
+                    detail={
+                        "code": "PARENT_CATEGORY_NOT_FOUND",
+                        "message": "Parent category not found.",
+                    },
                 )
 
         category = Category(
@@ -76,7 +84,9 @@ class CategoryService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_category_by_id(db: AsyncSession, category_id: UUID, tenant_id: UUID | None = None) -> Category:
+    async def get_category_by_id(
+        db: AsyncSession, category_id: UUID, tenant_id: UUID | None = None
+    ) -> Category:
         stmt = select(Category).where(Category.id == category_id)
         category = (await db.execute(stmt)).scalar_one_or_none()
         if not category:
@@ -101,7 +111,10 @@ class CategoryService:
         if category.tenant_id is None and tenant_id is not None:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail={"code": "CANNOT_MODIFY_GLOBAL_CATEGORY", "message": "Merchants cannot modify platform master categories."},
+                detail={
+                    "code": "CANNOT_MODIFY_GLOBAL_CATEGORY",
+                    "message": "Merchants cannot modify platform master categories.",
+                },
             )
 
         if data.name is not None:
@@ -122,7 +135,9 @@ class CategoryService:
 
 class BrandService:
     @staticmethod
-    async def create_brand(db: AsyncSession, data: BrandCreate, tenant_id: UUID | None = None) -> Brand:
+    async def create_brand(
+        db: AsyncSession, data: BrandCreate, tenant_id: UUID | None = None
+    ) -> Brand:
         query = select(Brand).where(Brand.slug == data.slug)
         if tenant_id:
             query = query.where(Brand.tenant_id == tenant_id)
@@ -133,7 +148,10 @@ class BrandService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "BRAND_SLUG_EXISTS", "message": f"Brand slug '{data.slug}' already exists."},
+                detail={
+                    "code": "BRAND_SLUG_EXISTS",
+                    "message": f"Brand slug '{data.slug}' already exists.",
+                },
             )
 
         brand = Brand(
@@ -166,7 +184,9 @@ class BrandService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_brand_by_id(db: AsyncSession, brand_id: UUID, tenant_id: UUID | None = None) -> Brand:
+    async def get_brand_by_id(
+        db: AsyncSession, brand_id: UUID, tenant_id: UUID | None = None
+    ) -> Brand:
         stmt = select(Brand).where(Brand.id == brand_id)
         brand = (await db.execute(stmt)).scalar_one_or_none()
         if not brand:
@@ -191,7 +211,10 @@ class ProductService:
         if existing_product:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "PRODUCT_SLUG_EXISTS", "message": f"Product slug '{data.slug}' already exists for this merchant."},
+                detail={
+                    "code": "PRODUCT_SLUG_EXISTS",
+                    "message": f"Product slug '{data.slug}' already exists for this merchant.",
+                },
             )
 
         # 2. Verify category exists and is accessible
@@ -210,18 +233,25 @@ class ProductService:
             if existing_sku:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail={"code": "VARIANT_SKU_EXISTS", "message": f"Variant SKU '{variant_data.sku}' already exists for this merchant."},
+                    detail={
+                        "code": "VARIANT_SKU_EXISTS",
+                        "message": f"Variant SKU '{variant_data.sku}' already exists for this merchant.",
+                    },
                 )
 
             if variant_data.barcode:
                 barcode_stmt = select(ProductVariant).where(
-                    ProductVariant.tenant_id == tenant_id, ProductVariant.barcode == variant_data.barcode
+                    ProductVariant.tenant_id == tenant_id,
+                    ProductVariant.barcode == variant_data.barcode,
                 )
                 existing_barcode = (await db.execute(barcode_stmt)).scalar_one_or_none()
                 if existing_barcode:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
-                        detail={"code": "VARIANT_BARCODE_EXISTS", "message": f"Barcode '{variant_data.barcode}' is already assigned."},
+                        detail={
+                            "code": "VARIANT_BARCODE_EXISTS",
+                            "message": f"Barcode '{variant_data.barcode}' is already assigned.",
+                        },
                     )
 
         # 5. Create base product
@@ -285,7 +315,10 @@ class ProductService:
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "PRODUCT_NOT_FOUND", "message": "Product not found for this merchant."},
+                detail={
+                    "code": "PRODUCT_NOT_FOUND",
+                    "message": "Product not found for this merchant.",
+                },
             )
         return product
 
@@ -351,7 +384,10 @@ class ProductService:
         if (await db.execute(sku_stmt)).scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "VARIANT_SKU_EXISTS", "message": f"Variant SKU '{data.sku}' already exists for this merchant."},
+                detail={
+                    "code": "VARIANT_SKU_EXISTS",
+                    "message": f"Variant SKU '{data.sku}' already exists for this merchant.",
+                },
             )
 
         if data.barcode:
@@ -361,7 +397,10 @@ class ProductService:
             if (await db.execute(barcode_stmt)).scalar_one_or_none():
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail={"code": "VARIANT_BARCODE_EXISTS", "message": f"Barcode '{data.barcode}' already exists for this merchant."},
+                    detail={
+                        "code": "VARIANT_BARCODE_EXISTS",
+                        "message": f"Barcode '{data.barcode}' already exists for this merchant.",
+                    },
                 )
 
         variant = ProductVariant(
@@ -393,7 +432,10 @@ class ProductService:
         if not variant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "VARIANT_NOT_FOUND", "message": "Product variant not found for this merchant."},
+                detail={
+                    "code": "VARIANT_NOT_FOUND",
+                    "message": "Product variant not found for this merchant.",
+                },
             )
 
         if data.barcode is not None and data.barcode != variant.barcode:
@@ -403,7 +445,10 @@ class ProductService:
             if (await db.execute(barcode_stmt)).scalar_one_or_none():
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail={"code": "VARIANT_BARCODE_EXISTS", "message": f"Barcode '{data.barcode}' is already in use."},
+                    detail={
+                        "code": "VARIANT_BARCODE_EXISTS",
+                        "message": f"Barcode '{data.barcode}' is already in use.",
+                    },
                 )
             variant.barcode = data.barcode
 
@@ -516,6 +561,9 @@ class ProductService:
         if not variant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "BARCODE_NOT_FOUND", "message": f"No product variant found for barcode '{barcode}'."},
+                detail={
+                    "code": "BARCODE_NOT_FOUND",
+                    "message": f"No product variant found for barcode '{barcode}'.",
+                },
             )
         return variant, variant.product

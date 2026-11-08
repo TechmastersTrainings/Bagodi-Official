@@ -70,9 +70,7 @@ async def test_database_tables_exist():
     }
     async with engine.connect() as conn:
         result = await conn.execute(
-            text(
-                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-            )
+            text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         )
         existing_tables = {row[0] for row in result.fetchall()}
         assert expected_tables.issubset(existing_tables)

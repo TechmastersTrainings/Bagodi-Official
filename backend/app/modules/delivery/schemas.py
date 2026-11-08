@@ -377,4 +377,3 @@ class DeliveryAuditLogResponse(BaseModel):
     to_status: str | None
     payload: dict[str, Any]
     created_at: datetime
-

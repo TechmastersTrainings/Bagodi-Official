@@ -52,8 +52,12 @@ async def list_promotions(
     tenant: Annotated[TenantContext, Depends(get_current_tenant)],
     _: Annotated[SecurityPrincipal, Depends(require_permission("pricing.read"))],
     db: Annotated[AsyncSession, Depends(get_db)],
-    status: Annotated[str | None, Query(description="Filter by status: active, inactive, archived")] = None,
-    scope: Annotated[str | None, Query(description="Filter by scope: VARIANT, PRODUCT, CATEGORY, CART")] = None,
+    status: Annotated[
+        str | None, Query(description="Filter by status: active, inactive, archived")
+    ] = None,
+    scope: Annotated[
+        str | None, Query(description="Filter by scope: VARIANT, PRODUCT, CATEGORY, CART")
+    ] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
@@ -73,7 +77,9 @@ async def get_promotion(
     _: Annotated[SecurityPrincipal, Depends(require_permission("pricing.read"))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    return await PromotionService.get_promotion(db, tenant_id=tenant.tenant_id, promotion_id=promotion_id)
+    return await PromotionService.get_promotion(
+        db, tenant_id=tenant.tenant_id, promotion_id=promotion_id
+    )
 
 
 @router.patch(
@@ -89,7 +95,11 @@ async def update_promotion(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await PromotionService.update_promotion(
-        db, tenant_id=tenant.tenant_id, promotion_id=promotion_id, data=data, user_id=principal.user_id
+        db,
+        tenant_id=tenant.tenant_id,
+        promotion_id=promotion_id,
+        data=data,
+        user_id=principal.user_id,
     )
 
 

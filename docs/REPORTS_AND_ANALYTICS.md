@@ -130,3 +130,4 @@ Platform super administrators have access to platform-wide macro analytics:
    - Platform reports: Requires `is_platform_user = true` and `platform.reports:read` or `platform.*`.
 3. **Audit Log:**
    Every export writes an immutable record to `report_export_logs` with actor UUID, tenant UUID, report type, format, query filters, row count, and client IP address.
+

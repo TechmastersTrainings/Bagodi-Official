@@ -48,7 +48,12 @@ class CartResponse(BaseModel):
 
 
 class CartMergeRequest(BaseModel):
-    session_id: str = Field(..., min_length=5, max_length=100, description="Guest session ID to merge into customer cart")
+    session_id: str = Field(
+        ...,
+        min_length=5,
+        max_length=100,
+        description="Guest session ID to merge into customer cart",
+    )
 
 
 # --- Address & Checkout Schemas ---
@@ -71,7 +76,9 @@ class CheckoutRequest(BaseModel):
     customer_phone: str = Field(..., min_length=10, max_length=50)
     payment_method: Literal["online", "cod"] = "online"
     notes: str | None = Field(default=None, max_length=1000)
-    coupon_code: str | None = Field(default=None, max_length=50, description="Optional promotional coupon code")
+    coupon_code: str | None = Field(
+        default=None, max_length=50, description="Optional promotional coupon code"
+    )
     idempotency_key: str | None = Field(default=None, max_length=100)
 
 
@@ -168,4 +175,3 @@ class PaymentCallbackRequest(BaseModel):
     gateway_status: Literal["success", "failure"]
     gateway_payload: dict | None = None
     error_message: str | None = None
-

@@ -49,12 +49,8 @@ async def list_public_products(
     tenant_id: Annotated[
         UUID | None, Query(description="Filter products by merchant organization")
     ] = None,
-    category_id: Annotated[
-        UUID | None, Query(description="Filter products by category")
-    ] = None,
-    search: Annotated[
-        str | None, Query(description="Search products by title or keyword")
-    ] = None,
+    category_id: Annotated[UUID | None, Query(description="Filter products by category")] = None,
+    search: Annotated[str | None, Query(description="Search products by title or keyword")] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
@@ -76,8 +72,6 @@ async def list_public_products(
 async def get_public_product(
     slug: str,
     db: Annotated[AsyncSession, Depends(get_db)],
-    tenant_id: Annotated[
-        UUID | None, Query(description="Optional merchant context")
-    ] = None,
+    tenant_id: Annotated[UUID | None, Query(description="Optional merchant context")] = None,
 ):
     return await ProductService.get_public_product_by_slug(db, slug=slug, tenant_id=tenant_id)

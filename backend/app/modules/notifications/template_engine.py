@@ -1,7 +1,15 @@
 import re
 from typing import Any
 
-SENSITIVE_KEYS = {"password", "token", "secret", "cvv", "card_number", "access_token", "refresh_token"}
+SENSITIVE_KEYS = {
+    "password",
+    "token",
+    "secret",
+    "cvv",
+    "card_number",
+    "access_token",
+    "refresh_token",
+}
 
 DEFAULT_TEMPLATES: dict[str, dict[str, dict[str, str]]] = {
     "auth_otp": {

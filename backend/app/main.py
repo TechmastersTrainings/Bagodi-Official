@@ -1,5 +1,6 @@
 import logging
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,11 +50,18 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings.validate_production_configuration()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
     version="0.1.0",
     description="Bagodi multi-tenant retail e-commerce platform API",
+    lifespan=lifespan,
 )
 
 app.add_middleware(RequestIdMiddleware)

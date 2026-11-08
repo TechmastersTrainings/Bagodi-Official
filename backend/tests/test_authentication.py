@@ -88,22 +88,30 @@ async def test_otp_attempt_limits_lock(client: AsyncClient):
     assert send_resp.status_code == 200
 
     # Attempt 1: wrong code
-    resp1 = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "000000"})
+    resp1 = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "000000"}
+    )
     assert resp1.status_code == 400
     assert resp1.json()["code"] == "OTP_INVALID"
 
     # Attempt 2: wrong code
-    resp2 = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "111111"})
+    resp2 = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "111111"}
+    )
     assert resp2.status_code == 400
     assert resp2.json()["code"] == "OTP_INVALID"
 
     # Attempt 3: wrong code
-    resp3 = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "222222"})
+    resp3 = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "222222"}
+    )
     assert resp3.status_code == 400
     assert resp3.json()["code"] == "OTP_INVALID"
 
     # Attempt 4: lock kicks in
-    resp4 = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "333333"})
+    resp4 = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": "333333"}
+    )
     assert resp4.status_code == 400
     assert resp4.json()["code"] == "OTP_MAX_ATTEMPTS_EXCEEDED"
 
@@ -114,12 +122,16 @@ async def test_token_refresh_and_rotation(client: AsyncClient):
     await client.post("/api/v1/auth/otp/send", json={"phone_e164": phone})
     otp = InMemoryTestOTPProvider.get_last_otp(phone)
 
-    verify_resp = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp})
+    verify_resp = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp}
+    )
     tokens_v1 = verify_resp.json()
     refresh_token_1 = tokens_v1["refresh_token"]
 
     # Refresh token rotation
-    refresh_resp = await client.post("/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1})
+    refresh_resp = await client.post(
+        "/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1}
+    )
     assert refresh_resp.status_code == 200
     tokens_v2 = refresh_resp.json()
     refresh_token_2 = tokens_v2["refresh_token"]
@@ -134,23 +146,31 @@ async def test_refresh_token_replay_attack_detection(client: AsyncClient):
     await client.post("/api/v1/auth/otp/send", json={"phone_e164": phone})
     otp = InMemoryTestOTPProvider.get_last_otp(phone)
 
-    verify_resp = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp})
+    verify_resp = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp}
+    )
     tokens_v1 = verify_resp.json()
     refresh_token_1 = tokens_v1["refresh_token"]
 
     # Legitimate refresh rotates to tokens_v2
-    refresh_resp = await client.post("/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1})
+    refresh_resp = await client.post(
+        "/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1}
+    )
     assert refresh_resp.status_code == 200
     tokens_v2 = refresh_resp.json()
     refresh_token_2 = tokens_v2["refresh_token"]
 
     # Replay attack: Attacker attempts to use old refresh_token_1 again!
-    replay_resp = await client.post("/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1})
+    replay_resp = await client.post(
+        "/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_1}
+    )
     assert replay_resp.status_code == 401
     assert replay_resp.json()["code"] == "TOKEN_REPLAY_DETECTED"
 
     # Security check: the replacement session tree was also terminated!
-    subsequent_resp = await client.post("/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_2})
+    subsequent_resp = await client.post(
+        "/api/v1/auth/token/refresh", json={"refresh_token": refresh_token_2}
+    )
     assert subsequent_resp.status_code == 401
     assert subsequent_resp.json()["code"] == "TOKEN_REPLAY_DETECTED"
 
@@ -161,7 +181,9 @@ async def test_logout_and_get_me(client: AsyncClient):
     await client.post("/api/v1/auth/otp/send", json={"phone_e164": phone})
     otp = InMemoryTestOTPProvider.get_last_otp(phone)
 
-    verify_resp = await client.post("/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp})
+    verify_resp = await client.post(
+        "/api/v1/auth/otp/verify", json={"phone_e164": phone, "otp": otp}
+    )
     tokens = verify_resp.json()
     access_token = tokens["access_token"]
     refresh_token = tokens["refresh_token"]

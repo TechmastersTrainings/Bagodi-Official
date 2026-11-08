@@ -18,7 +18,9 @@ async def test_rbac_permissions_and_role_boundaries(client: AsyncClient, mint_jw
         "slug": "rbac-test-merchant",
         "legal_name": "RBAC Merchant Pvt Ltd",
     }
-    resp_tenant = await client.post("/api/v1/platform/tenants", json=tenant_payload, headers=platform_admin_headers)
+    resp_tenant = await client.post(
+        "/api/v1/platform/tenants", json=tenant_payload, headers=platform_admin_headers
+    )
     assert resp_tenant.status_code == 201
     tenant_id = resp_tenant.json()["id"]
 
@@ -43,7 +45,9 @@ async def test_rbac_permissions_and_role_boundaries(client: AsyncClient, mint_jw
         "name": "Unauthorized Store",
         "code": "UNAUTH01",
     }
-    resp_forbidden = await client.post("/api/v1/stores", json=store_payload, headers=no_perm_headers)
+    resp_forbidden = await client.post(
+        "/api/v1/stores", json=store_payload, headers=no_perm_headers
+    )
     assert resp_forbidden.status_code == 403
     assert resp_forbidden.json()["code"] == "PERMISSION_DENIED"
 
@@ -63,16 +67,22 @@ async def test_rbac_permissions_and_role_boundaries(client: AsyncClient, mint_jw
         "code": "BRANCH01",
         "city": "Bidar",
     }
-    resp_created = await client.post("/api/v1/stores", json=store_payload, headers=create_perm_headers)
+    resp_created = await client.post(
+        "/api/v1/stores", json=store_payload, headers=create_perm_headers
+    )
     assert resp_created.status_code == 201
     assert resp_created.json()["name"] == "Authorized Branch"
 
     # 6. Duplicate store code within the SAME tenant must fail with 409 Conflict
-    resp_dup_code = await client.post("/api/v1/stores", json=store_payload, headers=create_perm_headers)
+    resp_dup_code = await client.post(
+        "/api/v1/stores", json=store_payload, headers=create_perm_headers
+    )
     assert resp_dup_code.status_code == 409
     assert resp_dup_code.json()["code"] == "STORE_CODE_EXISTS"
 
     # 7. Duplicate slug for tenant must fail with 409 Conflict
-    resp_dup_tenant = await client.post("/api/v1/platform/tenants", json=tenant_payload, headers=platform_admin_headers)
+    resp_dup_tenant = await client.post(
+        "/api/v1/platform/tenants", json=tenant_payload, headers=platform_admin_headers
+    )
     assert resp_dup_tenant.status_code == 409
     assert resp_dup_tenant.json()["code"] == "TENANT_SLUG_EXISTS"

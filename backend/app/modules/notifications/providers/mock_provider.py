@@ -88,7 +88,11 @@ class MockNotificationProvider(BaseNotificationProvider):
             success=True,
             provider_message_id=provider_msg_id,
             status="sent",
-            raw_response={"provider": "mock", "carrier": "local_mock_network", "chars": len(message)},
+            raw_response={
+                "provider": "mock",
+                "carrier": "local_mock_network",
+                "chars": len(message),
+            },
         )
 
     async def send_whatsapp(
@@ -127,7 +131,11 @@ class MockNotificationProvider(BaseNotificationProvider):
             success=True,
             provider_message_id=provider_msg_id,
             status="sent",
-            raw_response={"provider": "mock", "waba_id": "mock_waba_101", "template": template_name},
+            raw_response={
+                "provider": "mock",
+                "waba_id": "mock_waba_101",
+                "template": template_name,
+            },
         )
 
     async def send_email(
@@ -166,7 +174,11 @@ class MockNotificationProvider(BaseNotificationProvider):
             success=True,
             provider_message_id=provider_msg_id,
             status="sent",
-            raw_response={"provider": "mock", "mx": "mail.bagodi.test", "accepted": [recipient_email]},
+            raw_response={
+                "provider": "mock",
+                "mx": "mail.bagodi.test",
+                "accepted": [recipient_email],
+            },
         )
 
     async def verify_webhook_signature(
@@ -247,7 +259,9 @@ class MockNotificationProvider(BaseNotificationProvider):
                 error_message=f"Malformed DLR JSON: {e!s}",
             )
 
-        msg_id = payload.get("provider_message_id") or payload.get("message_id") or payload.get("id")
+        msg_id = (
+            payload.get("provider_message_id") or payload.get("message_id") or payload.get("id")
+        )
         dlr_status = payload.get("status", "delivered").lower()
         error_code = payload.get("error_code")
         error_msg = payload.get("error_message")

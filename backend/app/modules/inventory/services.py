@@ -73,16 +73,24 @@ class InventoryService:
         if not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "STORE_NOT_FOUND", "message": f"Store '{store_id}' not found for merchant."},
+                detail={
+                    "code": "STORE_NOT_FOUND",
+                    "message": f"Store '{store_id}' not found for merchant.",
+                },
             )
 
         # Validate variant belongs to tenant
-        var_stmt = select(ProductVariant).where(ProductVariant.id == variant_id, ProductVariant.tenant_id == tenant_id)
+        var_stmt = select(ProductVariant).where(
+            ProductVariant.id == variant_id, ProductVariant.tenant_id == tenant_id
+        )
         variant = (await db.execute(var_stmt)).scalar_one_or_none()
         if not variant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "VARIANT_NOT_FOUND", "message": f"Variant '{variant_id}' not found for merchant."},
+                detail={
+                    "code": "VARIANT_NOT_FOUND",
+                    "message": f"Variant '{variant_id}' not found for merchant.",
+                },
             )
 
         # Create row
@@ -129,7 +137,10 @@ class InventoryService:
         if quantity <= 0:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={"code": "INVALID_QUANTITY", "message": "Movement quantity must be greater than zero."},
+                detail={
+                    "code": "INVALID_QUANTITY",
+                    "message": "Movement quantity must be greater than zero.",
+                },
             )
 
         # Idempotency guard: if key provided and already processed, return existing record
@@ -361,7 +372,10 @@ class InventoryService:
         else:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={"code": "INVALID_ADJUSTMENT_REASON", "message": f"Unsupported reason '{data.reason}'."},
+                detail={
+                    "code": "INVALID_ADJUSTMENT_REASON",
+                    "message": f"Unsupported reason '{data.reason}'.",
+                },
             )
 
         return await InventoryService.post_movement(
@@ -462,7 +476,10 @@ class SupplierService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "SUPPLIER_CODE_EXISTS", "message": f"Supplier code '{data.code}' already exists."},
+                detail={
+                    "code": "SUPPLIER_CODE_EXISTS",
+                    "message": f"Supplier code '{data.code}' already exists.",
+                },
             )
 
         supplier = Supplier(
@@ -482,7 +499,9 @@ class SupplierService:
         return supplier
 
     @staticmethod
-    async def update_supplier(db: AsyncSession, tenant_id: UUID, supplier_id: UUID, data: SupplierUpdate) -> Supplier:
+    async def update_supplier(
+        db: AsyncSession, tenant_id: UUID, supplier_id: UUID, data: SupplierUpdate
+    ) -> Supplier:
         supplier = (
             await db.execute(
                 select(Supplier).where(Supplier.id == supplier_id, Supplier.tenant_id == tenant_id)
@@ -546,7 +565,9 @@ class PurchaseOrderService:
     ) -> PurchaseOrder:
         # Check store
         store = (
-            await db.execute(select(Store).where(Store.id == data.store_id, Store.tenant_id == tenant_id))
+            await db.execute(
+                select(Store).where(Store.id == data.store_id, Store.tenant_id == tenant_id)
+            )
         ).scalar_one_or_none()
         if not store:
             raise HTTPException(
@@ -565,13 +586,18 @@ class PurchaseOrderService:
         if existing_po:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "PO_NUMBER_EXISTS", "message": f"PO number '{data.po_number}' already exists."},
+                detail={
+                    "code": "PO_NUMBER_EXISTS",
+                    "message": f"PO number '{data.po_number}' already exists.",
+                },
             )
 
         if data.supplier_id:
             supplier = (
                 await db.execute(
-                    select(Supplier).where(Supplier.id == data.supplier_id, Supplier.tenant_id == tenant_id)
+                    select(Supplier).where(
+                        Supplier.id == data.supplier_id, Supplier.tenant_id == tenant_id
+                    )
                 )
             ).scalar_one_or_none()
             if not supplier:
@@ -594,7 +620,10 @@ class PurchaseOrderService:
             if not variant:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "VARIANT_NOT_FOUND", "message": f"Variant '{line.variant_id}' not found."},
+                    detail={
+                        "code": "VARIANT_NOT_FOUND",
+                        "message": f"Variant '{line.variant_id}' not found.",
+                    },
                 )
             line_total = line.unit_cost * Decimal(line.quantity_ordered)
             total_amount += line_total
@@ -649,7 +678,11 @@ class PurchaseOrderService:
         skip: int = 0,
         limit: int = 50,
     ) -> list[PurchaseOrder]:
-        stmt = select(PurchaseOrder).where(PurchaseOrder.tenant_id == tenant_id).options(selectinload(PurchaseOrder.items))
+        stmt = (
+            select(PurchaseOrder)
+            .where(PurchaseOrder.tenant_id == tenant_id)
+            .options(selectinload(PurchaseOrder.items))
+        )
         if store_id:
             stmt = stmt.where(PurchaseOrder.store_id == store_id)
         if status_filter:
@@ -664,7 +697,9 @@ class PurchaseOrderService:
     ) -> StockReceipt:
         # Check store
         store = (
-            await db.execute(select(Store).where(Store.id == data.store_id, Store.tenant_id == tenant_id))
+            await db.execute(
+                select(Store).where(Store.id == data.store_id, Store.tenant_id == tenant_id)
+            )
         ).scalar_one_or_none()
         if not store:
             raise HTTPException(
@@ -676,14 +711,18 @@ class PurchaseOrderService:
         existing_rcp = (
             await db.execute(
                 select(StockReceipt).where(
-                    StockReceipt.tenant_id == tenant_id, StockReceipt.receipt_number == data.receipt_number
+                    StockReceipt.tenant_id == tenant_id,
+                    StockReceipt.receipt_number == data.receipt_number,
                 )
             )
         ).scalar_one_or_none()
         if existing_rcp:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "RECEIPT_NUMBER_EXISTS", "message": f"Receipt '{data.receipt_number}' already exists."},
+                detail={
+                    "code": "RECEIPT_NUMBER_EXISTS",
+                    "message": f"Receipt '{data.receipt_number}' already exists.",
+                },
             )
 
         # Check PO if provided
@@ -692,7 +731,10 @@ class PurchaseOrderService:
             po = (
                 await db.execute(
                     select(PurchaseOrder)
-                    .where(PurchaseOrder.id == data.purchase_order_id, PurchaseOrder.tenant_id == tenant_id)
+                    .where(
+                        PurchaseOrder.id == data.purchase_order_id,
+                        PurchaseOrder.tenant_id == tenant_id,
+                    )
                     .options(selectinload(PurchaseOrder.items))
                     .with_for_update()
                 )
@@ -700,13 +742,18 @@ class PurchaseOrderService:
             if not po:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "PURCHASE_ORDER_NOT_FOUND", "message": "Purchase order not found."},
+                    detail={
+                        "code": "PURCHASE_ORDER_NOT_FOUND",
+                        "message": "Purchase order not found.",
+                    },
                 )
 
         receipt_items: list[StockReceiptItem] = []
         for line in data.items:
             # Post ledger movement for inward receipt
-            item_idempotency = f"{data.idempotency_key}:{line.variant_id}" if data.idempotency_key else None
+            item_idempotency = (
+                f"{data.idempotency_key}:{line.variant_id}" if data.idempotency_key else None
+            )
             await InventoryService.post_movement(
                 db=db,
                 tenant_id=tenant_id,
@@ -774,7 +821,10 @@ class StoreTransferService:
         if data.source_store_id == data.destination_store_id:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={"code": "SAME_STORE_TRANSFER", "message": "Source and destination store must be distinct."},
+                detail={
+                    "code": "SAME_STORE_TRANSFER",
+                    "message": "Source and destination store must be distinct.",
+                },
             )
 
         # Validate source store
@@ -792,33 +842,46 @@ class StoreTransferService:
         # Validate destination store
         dest = (
             await db.execute(
-                select(Store).where(Store.id == data.destination_store_id, Store.tenant_id == tenant_id)
+                select(Store).where(
+                    Store.id == data.destination_store_id, Store.tenant_id == tenant_id
+                )
             )
         ).scalar_one_or_none()
         if not dest:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "DESTINATION_STORE_NOT_FOUND", "message": "Destination store not found."},
+                detail={
+                    "code": "DESTINATION_STORE_NOT_FOUND",
+                    "message": "Destination store not found.",
+                },
             )
 
         # Check unique transfer number
         existing_trf = (
             await db.execute(
                 select(StoreTransfer).where(
-                    StoreTransfer.tenant_id == tenant_id, StoreTransfer.transfer_number == data.transfer_number
+                    StoreTransfer.tenant_id == tenant_id,
+                    StoreTransfer.transfer_number == data.transfer_number,
                 )
             )
         ).scalar_one_or_none()
         if existing_trf:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "TRANSFER_NUMBER_EXISTS", "message": f"Transfer '{data.transfer_number}' already exists."},
+                detail={
+                    "code": "TRANSFER_NUMBER_EXISTS",
+                    "message": f"Transfer '{data.transfer_number}' already exists.",
+                },
             )
 
         transfer_items: list[StoreTransferItem] = []
         for line in data.items:
             # Post dispatch movement from source store on-hand into goods-in-transit
-            line_idempotency = f"{data.idempotency_key}:dispatch:{line.variant_id}" if data.idempotency_key else None
+            line_idempotency = (
+                f"{data.idempotency_key}:dispatch:{line.variant_id}"
+                if data.idempotency_key
+                else None
+            )
             await InventoryService.post_movement(
                 db=db,
                 tenant_id=tenant_id,
@@ -862,7 +925,11 @@ class StoreTransferService:
 
     @staticmethod
     async def receive_transfer(
-        db: AsyncSession, tenant_id: UUID, transfer_id: UUID, data: StoreTransferReceive, user_id: UUID | None
+        db: AsyncSession,
+        tenant_id: UUID,
+        transfer_id: UUID,
+        data: StoreTransferReceive,
+        user_id: UUID | None,
     ) -> StoreTransfer:
         stmt = (
             select(StoreTransfer)
@@ -880,18 +947,28 @@ class StoreTransferService:
         if transfer.status != "in_transit":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "INVALID_TRANSFER_STATUS", "message": f"Transfer is in '{transfer.status}' status and cannot be received."},
+                detail={
+                    "code": "INVALID_TRANSFER_STATUS",
+                    "message": f"Transfer is in '{transfer.status}' status and cannot be received.",
+                },
             )
 
         for line in transfer.items:
             # 1. Relieve in_transit on source store
             src_balance = await InventoryService.get_or_create_balance_for_update(
-                db, tenant_id=tenant_id, store_id=transfer.source_store_id, variant_id=line.variant_id
+                db,
+                tenant_id=tenant_id,
+                store_id=transfer.source_store_id,
+                variant_id=line.variant_id,
             )
             src_balance.in_transit_qty = max(0, src_balance.in_transit_qty - line.quantity_shipped)
 
             # 2. Add stock to destination store on-hand
-            dest_idempotency = f"{data.idempotency_key}:receipt:{line.variant_id}" if data.idempotency_key else None
+            dest_idempotency = (
+                f"{data.idempotency_key}:receipt:{line.variant_id}"
+                if data.idempotency_key
+                else None
+            )
             await InventoryService.post_movement(
                 db=db,
                 tenant_id=tenant_id,
@@ -951,7 +1028,10 @@ class StoreTransferService:
         )
         if store_id:
             stmt = stmt.where(
-                or_(StoreTransfer.source_store_id == store_id, StoreTransfer.destination_store_id == store_id)
+                or_(
+                    StoreTransfer.source_store_id == store_id,
+                    StoreTransfer.destination_store_id == store_id,
+                )
             )
         if status_filter:
             stmt = stmt.where(StoreTransfer.status == status_filter)

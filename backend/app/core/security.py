@@ -80,7 +80,10 @@ async def get_security_principal(
             if session and session.is_revoked:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail={"code": "SESSION_REVOKED", "message": "Session has been revoked. Please log in again."},
+                    detail={
+                        "code": "SESSION_REVOKED",
+                        "message": "Session has been revoked. Please log in again.",
+                    },
                 )
         except ValueError:
             pass

@@ -48,6 +48,47 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
+    def validate_production_configuration(self) -> None:
+        """
+        Validates that production environment is never started with
+        insecure dev secrets, mock providers, or debug flags.
+        Raises ValueError if production invariants are violated.
+        """
+        if self.app_env.lower() == "production":
+            violations = []
+            if (
+                "DEV" in self.jwt_secret_key.upper()
+                or "INSECURE" in self.jwt_secret_key.upper()
+                or len(self.jwt_secret_key) < 32
+            ):
+                violations.append(
+                    "jwt_secret_key must be an authentic random secret >= 32 chars without DEV/INSECURE markers"
+                )
+            if self.payment_gateway_provider.lower() == "mock":
+                violations.append("payment_gateway_provider cannot be 'mock' in production")
+            if (
+                "DEV" in self.payment_mock_secret.upper()
+                or "DEV" in self.payment_webhook_secret.upper()
+            ):
+                violations.append(
+                    "Payment webhook secrets cannot use default dev keys in production"
+                )
+            if self.notification_default_provider.lower() == "mock":
+                violations.append("notification_default_provider cannot be 'mock' in production")
+            if "DEV" in self.notification_webhook_secret.upper():
+                violations.append(
+                    "Notification webhook secrets cannot use default dev keys in production"
+                )
+            if self.otp_provider.lower() == "console":
+                violations.append("otp_provider cannot be 'console' in production")
+            if self.debug:
+                violations.append("debug mode must be disabled in production")
+            if violations:
+                raise ValueError(
+                    "CRITICAL PRODUCTION CONFIGURATION VIOLATION:\n"
+                    + "\n".join(f"- {v}" for v in violations)
+                )
+
 
 @lru_cache
 def get_settings() -> Settings:

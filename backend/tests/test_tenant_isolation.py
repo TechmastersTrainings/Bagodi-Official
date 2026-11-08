@@ -20,7 +20,9 @@ async def test_cross_tenant_isolation_and_suspension(client: AsyncClient, mint_j
         "contact_email": "operations@bagodi.in",
         "contact_phone": "+919876543210",
     }
-    resp_a = await client.post("/api/v1/platform/tenants", json=tenant_a_payload, headers=platform_admin_headers)
+    resp_a = await client.post(
+        "/api/v1/platform/tenants", json=tenant_a_payload, headers=platform_admin_headers
+    )
     assert resp_a.status_code == 201
     tenant_a = resp_a.json()
     tenant_a_id = tenant_a["id"]
@@ -32,7 +34,9 @@ async def test_cross_tenant_isolation_and_suspension(client: AsyncClient, mint_j
         "contact_email": "admin@secondmerchant.in",
         "contact_phone": "+919876543211",
     }
-    resp_b = await client.post("/api/v1/platform/tenants", json=tenant_b_payload, headers=platform_admin_headers)
+    resp_b = await client.post(
+        "/api/v1/platform/tenants", json=tenant_b_payload, headers=platform_admin_headers
+    )
     assert resp_b.status_code == 201
     tenant_b = resp_b.json()
     tenant_b_id = tenant_b["id"]

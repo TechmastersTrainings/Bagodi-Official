@@ -102,7 +102,9 @@ class StockReservationCreate(BaseModel):
     store_id: UUID
     variant_id: UUID
     quantity: int = Field(..., gt=0)
-    reference_id: str = Field(..., min_length=1, max_length=100, description="Order ID or Checkout ID")
+    reference_id: str = Field(
+        ..., min_length=1, max_length=100, description="Order ID or Checkout ID"
+    )
     notes: str | None = Field(default=None, max_length=500)
     idempotency_key: str | None = Field(default=None, max_length=100)
 
@@ -111,7 +113,9 @@ class StockReservationRelease(BaseModel):
     store_id: UUID
     variant_id: UUID
     quantity: int = Field(..., gt=0)
-    reference_id: str = Field(..., min_length=1, max_length=100, description="Order ID or Checkout ID")
+    reference_id: str = Field(
+        ..., min_length=1, max_length=100, description="Order ID or Checkout ID"
+    )
     notes: str | None = Field(default=None, max_length=500)
     idempotency_key: str | None = Field(default=None, max_length=100)
 
@@ -129,7 +133,9 @@ class CustomerReturnCreate(BaseModel):
     store_id: UUID
     variant_id: UUID
     quantity: int = Field(..., gt=0)
-    reference_id: str = Field(..., min_length=1, max_length=100, description="Return Authorization or Order ID")
+    reference_id: str = Field(
+        ..., min_length=1, max_length=100, description="Return Authorization or Order ID"
+    )
     notes: str | None = Field(default=None, max_length=500)
     idempotency_key: str | None = Field(default=None, max_length=100)
 
@@ -258,4 +264,3 @@ class StoreTransferResponse(BaseModel):
     items: list[StoreTransferItemResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
-

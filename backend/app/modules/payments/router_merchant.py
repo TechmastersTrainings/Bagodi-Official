@@ -51,7 +51,9 @@ async def list_payments(
     return [PaymentTransactionResponse.model_validate(t) for t in txns]
 
 
-@router.post("/orders/{order_id}/refund", response_model=RefundResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/orders/{order_id}/refund", response_model=RefundResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_refund(
     order_id: UUID,
     data: RefundCreateRequest,
@@ -100,7 +102,11 @@ async def list_refunds(
     return [RefundResponse.model_validate(r) for r in refunds]
 
 
-@router.post("/cod/{order_id}/collect", response_model=CodSettlementResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/cod/{order_id}/collect",
+    response_model=CodSettlementResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_cod_collection(
     order_id: UUID,
     data: CodCollectionRequest,

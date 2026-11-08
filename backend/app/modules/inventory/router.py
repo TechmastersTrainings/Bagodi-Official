@@ -46,9 +46,15 @@ router = APIRouter(prefix="/merchant/inventory", tags=["Merchant Inventory Engin
 async def list_stock_balances(
     tenant: Annotated[TenantContext, Depends(get_current_tenant)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    store_id: Annotated[UUID | None, Query(description="Filter by physical or virtual store")] = None,
-    variant_id: Annotated[UUID | None, Query(description="Filter by specific product variant")] = None,
-    low_stock_only: Annotated[bool, Query(description="Filter items at or below reorder threshold")] = False,
+    store_id: Annotated[
+        UUID | None, Query(description="Filter by physical or virtual store")
+    ] = None,
+    variant_id: Annotated[
+        UUID | None, Query(description="Filter by specific product variant")
+    ] = None,
+    low_stock_only: Annotated[
+        bool, Query(description="Filter items at or below reorder threshold")
+    ] = False,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
@@ -92,8 +98,12 @@ async def list_inventory_ledger(
     db: Annotated[AsyncSession, Depends(get_db)],
     store_id: Annotated[UUID | None, Query(description="Filter by store")] = None,
     variant_id: Annotated[UUID | None, Query(description="Filter by variant")] = None,
-    movement_type: Annotated[str | None, Query(description="Filter by ledger movement type")] = None,
-    reference_id: Annotated[str | None, Query(description="Filter by order/PO/transfer reference ID")] = None,
+    movement_type: Annotated[
+        str | None, Query(description="Filter by ledger movement type")
+    ] = None,
+    reference_id: Annotated[
+        str | None, Query(description="Filter by order/PO/transfer reference ID")
+    ] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
@@ -331,9 +341,7 @@ async def receive_goods(
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    return await PurchaseOrderService.receive_goods(
-        db, tenant.tenant_id, data, principal.user_id
-    )
+    return await PurchaseOrderService.receive_goods(db, tenant.tenant_id, data, principal.user_id)
 
 
 # --- Store Transfers ---
@@ -364,7 +372,9 @@ async def create_transfer(
 async def list_transfers(
     tenant: Annotated[TenantContext, Depends(get_current_tenant)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    store_id: Annotated[UUID | None, Query(description="Filter by source or destination store")] = None,
+    store_id: Annotated[
+        UUID | None, Query(description="Filter by source or destination store")
+    ] = None,
     status_filter: Annotated[str | None, Query(alias="status")] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
@@ -405,4 +415,3 @@ async def receive_transfer(
     return await StoreTransferService.receive_transfer(
         db, tenant.tenant_id, transfer_id, data, principal.user_id
     )
-

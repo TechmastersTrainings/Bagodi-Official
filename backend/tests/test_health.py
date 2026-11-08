@@ -30,4 +30,3 @@ async def test_readiness_probe_verifies_database_connection(client: AsyncClient)
     assert data["status"] == "ready"
     assert data["database"] == "connected"
     assert "X-Request-ID" in response.headers
-

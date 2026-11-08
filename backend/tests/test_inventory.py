@@ -117,68 +117,76 @@ async def setup_inventory_context(client: AsyncClient, mint_jwt_token):
     store_b1_id = UUID(resp_sb.json()["id"])
 
     # 6. Create Category and Product with Variants for Tenant A
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Bidriware", "slug": "bidriware"},
-        headers=headers_a,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Bidriware", "slug": "bidriware"},
+            headers=headers_a,
+        )
+    ).json()
 
-    prod_a = (await client.post(
-        "/api/v1/merchant/catalog/products",
-        json={
-            "category_id": cat_a["id"],
-            "name": "Handcrafted Bidri Vase",
-            "slug": "handcrafted-bidri-vase",
-            "status": "active",
-            "is_published": True,
-            "variants": [
-                {
-                    "sku": "VASE-6INCH",
-                    "barcode": "890111122201",
-                    "name": "6 Inch Vase",
-                    "mrp": "2500.00",
-                    "base_price": "2100.00",
-                },
-                {
-                    "sku": "VASE-8INCH",
-                    "barcode": "890111122202",
-                    "name": "8 Inch Vase",
-                    "mrp": "3500.00",
-                    "base_price": "2900.00",
-                },
-            ],
-        },
-        headers=headers_a,
-    )).json()
+    prod_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "category_id": cat_a["id"],
+                "name": "Handcrafted Bidri Vase",
+                "slug": "handcrafted-bidri-vase",
+                "status": "active",
+                "is_published": True,
+                "variants": [
+                    {
+                        "sku": "VASE-6INCH",
+                        "barcode": "890111122201",
+                        "name": "6 Inch Vase",
+                        "mrp": "2500.00",
+                        "base_price": "2100.00",
+                    },
+                    {
+                        "sku": "VASE-8INCH",
+                        "barcode": "890111122202",
+                        "name": "8 Inch Vase",
+                        "mrp": "3500.00",
+                        "base_price": "2900.00",
+                    },
+                ],
+            },
+            headers=headers_a,
+        )
+    ).json()
     variant_a1_id = UUID(prod_a["variants"][0]["id"])
     variant_a2_id = UUID(prod_a["variants"][1]["id"])
 
     # 7. Create Category and Product for Tenant B
-    cat_b = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Textiles", "slug": "textiles"},
-        headers=headers_b,
-    )).json()
-    prod_b = (await client.post(
-        "/api/v1/merchant/catalog/products",
-        json={
-            "category_id": cat_b["id"],
-            "name": "Cotton Kurta",
-            "slug": "cotton-kurta",
-            "status": "active",
-            "is_published": True,
-            "variants": [
-                {
-                    "sku": "KURTA-M",
-                    "barcode": "890222233301",
-                    "name": "Medium Size",
-                    "mrp": "1200.00",
-                    "base_price": "999.00",
-                }
-            ],
-        },
-        headers=headers_b,
-    )).json()
+    cat_b = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Textiles", "slug": "textiles"},
+            headers=headers_b,
+        )
+    ).json()
+    prod_b = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "category_id": cat_b["id"],
+                "name": "Cotton Kurta",
+                "slug": "cotton-kurta",
+                "status": "active",
+                "is_published": True,
+                "variants": [
+                    {
+                        "sku": "KURTA-M",
+                        "barcode": "890222233301",
+                        "name": "Medium Size",
+                        "mrp": "1200.00",
+                        "base_price": "999.00",
+                    }
+                ],
+            },
+            headers=headers_b,
+        )
+    ).json()
     variant_b1_id = UUID(prod_b["variants"][0]["id"])
 
     return {
@@ -196,7 +204,9 @@ async def setup_inventory_context(client: AsyncClient, mint_jwt_token):
 
 
 @pytest.mark.asyncio
-async def test_purchase_order_and_inward_receipt_workflow(client: AsyncClient, setup_inventory_context):
+async def test_purchase_order_and_inward_receipt_workflow(
+    client: AsyncClient, setup_inventory_context
+):
     data = setup_inventory_context
     headers_a = data["headers_a"]
     store_a1_id = str(data["store_a1_id"])
@@ -251,10 +261,12 @@ async def test_purchase_order_and_inward_receipt_workflow(client: AsyncClient, s
     po_id = po["id"]
 
     # 4. VERIFY: PO creation does NOT alter inventory balances!
-    bal_after_po = (await client.get(
-        f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
-        headers=headers_a,
-    )).json()
+    bal_after_po = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
+            headers=headers_a,
+        )
+    ).json()
     assert bal_after_po["on_hand_qty"] == 0
     assert bal_after_po["available_qty"] == 0
 
@@ -279,15 +291,19 @@ async def test_purchase_order_and_inward_receipt_workflow(client: AsyncClient, s
     assert rcp1_resp.status_code == 201
 
     # 6. Verify PO status updated to partially_received
-    po_updated = (await client.get(f"/api/v1/merchant/inventory/purchase-orders/{po_id}", headers=headers_a)).json()
+    po_updated = (
+        await client.get(f"/api/v1/merchant/inventory/purchase-orders/{po_id}", headers=headers_a)
+    ).json()
     assert po_updated["status"] == "partially_received"
     assert po_updated["items"][0]["quantity_received"] == 30
 
     # 7. Verify Stock Balance: On-Hand = 30, Available = 30
-    bal_after_rcp1 = (await client.get(
-        f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
-        headers=headers_a,
-    )).json()
+    bal_after_rcp1 = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
+            headers=headers_a,
+        )
+    ).json()
     assert bal_after_rcp1["on_hand_qty"] == 30
     assert bal_after_rcp1["available_qty"] == 30
     assert bal_after_rcp1["reserved_qty"] == 0
@@ -313,23 +329,29 @@ async def test_purchase_order_and_inward_receipt_workflow(client: AsyncClient, s
     assert rcp2_resp.status_code == 201
 
     # 9. Verify PO status updated to received
-    po_final = (await client.get(f"/api/v1/merchant/inventory/purchase-orders/{po_id}", headers=headers_a)).json()
+    po_final = (
+        await client.get(f"/api/v1/merchant/inventory/purchase-orders/{po_id}", headers=headers_a)
+    ).json()
     assert po_final["status"] == "received"
     assert po_final["items"][0]["quantity_received"] == 50
 
     # 10. Verify Stock Balance: On-Hand = 50, Available = 50
-    bal_final = (await client.get(
-        f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
-        headers=headers_a,
-    )).json()
+    bal_final = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}",
+            headers=headers_a,
+        )
+    ).json()
     assert bal_final["on_hand_qty"] == 50
     assert bal_final["available_qty"] == 50
 
     # 11. Verify Double-Entry Ledger entries
-    ledger_entries = (await client.get(
-        f"/api/v1/merchant/inventory/ledger?store_id={store_a1_id}&variant_id={variant_a1_id}",
-        headers=headers_a,
-    )).json()
+    ledger_entries = (
+        await client.get(
+            f"/api/v1/merchant/inventory/ledger?store_id={store_a1_id}&variant_id={variant_a1_id}",
+            headers=headers_a,
+        )
+    ).json()
     assert len(ledger_entries) == 2
     for entry in ledger_entries:
         assert entry["movement_type"] == "PURCHASE_RECEIPT"
@@ -352,7 +374,9 @@ async def test_reservation_release_dispatch_lifecycle(client: AsyncClient, setup
         json={
             "store_id": store_a1_id,
             "receipt_number": "RCP-INWARD-10",
-            "items": [{"variant_id": variant_a1_id, "quantity_received": 10, "unit_cost": "1000.00"}],
+            "items": [
+                {"variant_id": variant_a1_id, "quantity_received": 10, "unit_cost": "1000.00"}
+            ],
         },
         headers=headers_a,
     )
@@ -379,7 +403,11 @@ async def test_reservation_release_dispatch_lifecycle(client: AsyncClient, setup
     assert entry_res["balance_after_available"] == 6
 
     # Verify balance
-    bal1 = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal1 = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal1["on_hand_qty"] == 10
     assert bal1["reserved_qty"] == 4
     assert bal1["available_qty"] == 6
@@ -424,14 +452,20 @@ async def test_reservation_release_dispatch_lifecycle(client: AsyncClient, setup
     assert entry_disp["balance_after_available"] == 7
 
     # Final balance check
-    bal_final = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal_final = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal_final["on_hand_qty"] == 7
     assert bal_final["reserved_qty"] == 0
     assert bal_final["available_qty"] == 7
 
 
 @pytest.mark.asyncio
-async def test_overselling_and_negative_stock_prevention(client: AsyncClient, setup_inventory_context):
+async def test_overselling_and_negative_stock_prevention(
+    client: AsyncClient, setup_inventory_context
+):
     data = setup_inventory_context
     headers_a = data["headers_a"]
     store_a1_id = str(data["store_a1_id"])
@@ -492,7 +526,9 @@ async def test_overselling_and_negative_stock_prevention(client: AsyncClient, se
 
 
 @pytest.mark.asyncio
-async def test_idempotency_protection_against_duplicate_events(client: AsyncClient, setup_inventory_context):
+async def test_idempotency_protection_against_duplicate_events(
+    client: AsyncClient, setup_inventory_context
+):
     data = setup_inventory_context
     headers_a = data["headers_a"]
     store_a1_id = str(data["store_a1_id"])
@@ -504,7 +540,9 @@ async def test_idempotency_protection_against_duplicate_events(client: AsyncClie
         json={
             "store_id": store_a1_id,
             "receipt_number": "RCP-IDEMP-01",
-            "items": [{"variant_id": variant_a1_id, "quantity_received": 10, "unit_cost": "500.00"}],
+            "items": [
+                {"variant_id": variant_a1_id, "quantity_received": 10, "unit_cost": "500.00"}
+            ],
         },
         headers=headers_a,
     )
@@ -543,13 +581,19 @@ async def test_idempotency_protection_against_duplicate_events(client: AsyncClie
     assert entry2["id"] == entry1["id"]
 
     # Verify balance is STILL 7 (did not double decrement to 4!)
-    bal = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal["reserved_qty"] == 3
     assert bal["available_qty"] == 7
 
 
 @pytest.mark.asyncio
-async def test_store_transfers_with_in_transit_reconciliation(client: AsyncClient, setup_inventory_context):
+async def test_store_transfers_with_in_transit_reconciliation(
+    client: AsyncClient, setup_inventory_context
+):
     data = setup_inventory_context
     headers_a = data["headers_a"]
     store_a1_id = str(data["store_a1_id"])  # Flagship Store
@@ -562,7 +606,9 @@ async def test_store_transfers_with_in_transit_reconciliation(client: AsyncClien
         json={
             "store_id": store_a1_id,
             "receipt_number": "RCP-TRANSFER-INIT",
-            "items": [{"variant_id": variant_a1_id, "quantity_received": 20, "unit_cost": "1000.00"}],
+            "items": [
+                {"variant_id": variant_a1_id, "quantity_received": 20, "unit_cost": "1000.00"}
+            ],
         },
         headers=headers_a,
     )
@@ -586,13 +632,21 @@ async def test_store_transfers_with_in_transit_reconciliation(client: AsyncClien
 
     # 3. VERIFY IN-TRANSIT STATE:
     # Source Store A1: on_hand = 12, in_transit = 8, available = 12
-    bal_src = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal_src = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal_src["on_hand_qty"] == 12
     assert bal_src["in_transit_qty"] == 8
     assert bal_src["available_qty"] == 12
 
     # Destination Store A2: on_hand = 0, available = 0 (goods still on the truck!)
-    bal_dest_before = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a2_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal_dest_before = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a2_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal_dest_before["on_hand_qty"] == 0
     assert bal_dest_before["available_qty"] == 0
 
@@ -607,19 +661,29 @@ async def test_store_transfers_with_in_transit_reconciliation(client: AsyncClien
 
     # 5. VERIFY POST-TRANSFER BALANCES:
     # Source Store A1: in_transit relieved -> in_transit = 0, on_hand = 12
-    bal_src_final = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal_src_final = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a1_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal_src_final["on_hand_qty"] == 12
     assert bal_src_final["in_transit_qty"] == 0
     assert bal_src_final["available_qty"] == 12
 
     # Destination Store A2: on_hand = 8, available = 8
-    bal_dest_final = (await client.get(f"/api/v1/merchant/inventory/balances/{store_a2_id}/{variant_a1_id}", headers=headers_a)).json()
+    bal_dest_final = (
+        await client.get(
+            f"/api/v1/merchant/inventory/balances/{store_a2_id}/{variant_a1_id}", headers=headers_a
+        )
+    ).json()
     assert bal_dest_final["on_hand_qty"] == 8
     assert bal_dest_final["available_qty"] == 8
 
 
 @pytest.mark.asyncio
-async def test_adjustments_damage_loss_and_reconciliation(client: AsyncClient, setup_inventory_context):
+async def test_adjustments_damage_loss_and_reconciliation(
+    client: AsyncClient, setup_inventory_context
+):
     data = setup_inventory_context
     headers_a = data["headers_a"]
     store_a1_id = str(data["store_a1_id"])
@@ -631,7 +695,9 @@ async def test_adjustments_damage_loss_and_reconciliation(client: AsyncClient, s
         json={
             "store_id": store_a1_id,
             "receipt_number": "RCP-ADJUST-INIT",
-            "items": [{"variant_id": variant_a1_id, "quantity_received": 25, "unit_cost": "800.00"}],
+            "items": [
+                {"variant_id": variant_a1_id, "quantity_received": 25, "unit_cost": "800.00"}
+            ],
         },
         headers=headers_a,
     )
@@ -716,7 +782,9 @@ async def test_cross_tenant_and_cross_store_isolation(client: AsyncClient, setup
         json={
             "store_id": store_a1_id,
             "receipt_number": "RCP-TENANT-A",
-            "items": [{"variant_id": variant_a1_id, "quantity_received": 15, "unit_cost": "750.00"}],
+            "items": [
+                {"variant_id": variant_a1_id, "quantity_received": 15, "unit_cost": "750.00"}
+            ],
         },
         headers=headers_a,
     )
@@ -753,4 +821,3 @@ async def test_cross_tenant_and_cross_store_isolation(client: AsyncClient, setup
         headers=headers_a,
     )
     assert resp_cross_trf.status_code == 404
-

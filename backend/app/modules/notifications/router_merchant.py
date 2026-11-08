@@ -25,7 +25,9 @@ from app.modules.notifications.schemas import (
 )
 from app.modules.notifications.services import NotificationService
 
-router = APIRouter(prefix="/merchant/notifications", tags=["Merchant Communication & Outbox Operations"])
+router = APIRouter(
+    prefix="/merchant/notifications", tags=["Merchant Communication & Outbox Operations"]
+)
 
 
 @router.get("/outbox", response_model=list[NotificationOutboxResponse])
@@ -90,7 +92,9 @@ async def list_templates(
     return [NotificationTemplateResponse.model_validate(t) for t in templates]
 
 
-@router.post("/templates", response_model=NotificationTemplateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/templates", response_model=NotificationTemplateResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_or_override_template(
     data: NotificationTemplateCreateRequest,
     principal: Annotated[SecurityPrincipal, Depends(require_permission("notifications.update"))],
@@ -120,7 +124,9 @@ async def create_or_override_template(
     return NotificationTemplateResponse.model_validate(template)
 
 
-@router.post("/send-direct", response_model=NotificationMessageResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/send-direct", response_model=NotificationMessageResponse, status_code=status.HTTP_200_OK
+)
 async def send_direct_notification(
     data: NotificationDirectSendRequest,
     principal: Annotated[SecurityPrincipal, Depends(require_permission("notifications.update"))],

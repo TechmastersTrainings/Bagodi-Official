@@ -16,7 +16,10 @@ class TenantService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "TENANT_SLUG_EXISTS", "message": f"Tenant slug '{data.slug}' already exists."},
+                detail={
+                    "code": "TENANT_SLUG_EXISTS",
+                    "message": f"Tenant slug '{data.slug}' already exists.",
+                },
             )
 
         tenant = Tenant(
@@ -114,4 +117,3 @@ class StoreService:
         await db.commit()
         await db.refresh(store)
         return store
-

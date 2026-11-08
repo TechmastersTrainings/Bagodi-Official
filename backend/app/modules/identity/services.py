@@ -156,14 +156,20 @@ class AuthService:
         if not otp_record:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "OTP_NOT_FOUND", "message": "No active OTP request found for this number."},
+                detail={
+                    "code": "OTP_NOT_FOUND",
+                    "message": "No active OTP request found for this number.",
+                },
             )
 
         # 2. Check expiration
         if now > otp_record.expires_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "OTP_EXPIRED", "message": "OTP has expired. Please request a new code."},
+                detail={
+                    "code": "OTP_EXPIRED",
+                    "message": "OTP has expired. Please request a new code.",
+                },
             )
 
         # 3. Check attempt limit

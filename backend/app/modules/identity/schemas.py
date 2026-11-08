@@ -4,7 +4,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class OTPSendRequest(BaseModel):
-    phone_e164: str = Field(..., pattern=r"^\+[1-9]\d{1,14}$", description="Mobile number in E.164 format")
+    phone_e164: str = Field(
+        ..., pattern=r"^\+[1-9]\d{1,14}$", description="Mobile number in E.164 format"
+    )
     purpose: str = Field(default="login", max_length=50)
 
 
@@ -18,7 +20,9 @@ class OTPSendResponse(BaseModel):
 class OTPVerifyRequest(BaseModel):
     phone_e164: str = Field(..., pattern=r"^\+[1-9]\d{1,14}$")
     otp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
-    tenant_id: UUID | None = Field(default=None, description="Optional tenant context for staff/merchant login")
+    tenant_id: UUID | None = Field(
+        default=None, description="Optional tenant context for staff/merchant login"
+    )
 
 
 class UserProfileResponse(BaseModel):

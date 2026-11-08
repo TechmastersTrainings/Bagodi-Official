@@ -45,7 +45,10 @@ async def checkout_order(
     if not resolved_tenant:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "TENANT_REQUIRED", "message": "Merchant context is required for checkout."},
+            detail={
+                "code": "TENANT_REQUIRED",
+                "message": "Merchant context is required for checkout.",
+            },
         )
     return await OrderService.checkout(
         db=db,
@@ -154,4 +157,3 @@ async def payment_callback(
     return await OrderService.process_payment_callback(
         db=db, tenant_id=resolved_tenant, order_id=order_id, data=data
     )
-

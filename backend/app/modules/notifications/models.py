@@ -30,11 +30,16 @@ class NotificationOutbox(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     __tablename__ = "notification_outbox"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "idempotency_key", name="uq_notification_outbox_tenant_idemp"),
+        UniqueConstraint(
+            "tenant_id", "idempotency_key", name="uq_notification_outbox_tenant_idemp"
+        ),
     )
 
     tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     aggregate_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
@@ -44,7 +49,9 @@ class NotificationOutbox(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
-    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    next_retry_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -59,17 +66,27 @@ class NotificationMessage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     __tablename__ = "notification_messages"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "idempotency_key", name="uq_notification_messages_tenant_idemp"),
+        UniqueConstraint(
+            "tenant_id", "idempotency_key", name="uq_notification_messages_tenant_idemp"
+        ),
     )
 
     tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     outbox_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("notification_outbox.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("notification_outbox.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     recipient: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    channel: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # sms, whatsapp, email
+    channel: Mapped[str] = mapped_column(
+        String(30), nullable=False, index=True
+    )  # sms, whatsapp, email
     template_code: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     template_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -77,10 +94,14 @@ class NotificationMessage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="queued", index=True)
     provider: Mapped[str] = mapped_column(String(50), nullable=False, default="mock", index=True)
     provider_message_id: Mapped[str | None] = mapped_column(String(150), nullable=True, index=True)
-    delivery_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delivery_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
-    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    next_retry_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
@@ -99,10 +120,15 @@ class NotificationTemplate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "notification_templates"
 
     tenant_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     code: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    channel: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # sms, whatsapp, email
+    channel: Mapped[str] = mapped_column(
+        String(30), nullable=False, index=True
+    )  # sms, whatsapp, email
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en", index=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     subject_template: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -123,10 +149,16 @@ class CustomerCommunicationPreference(UUIDPrimaryKeyMixin, TimestampMixin, Base)
     )
 
     tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     customer_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     email_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sms_opt_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -147,17 +179,28 @@ class NotificationAuditLog(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "notification_audit_logs"
 
     tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     message_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("notification_messages.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("notification_messages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     actor_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
 
     tenant: Mapped["Tenant"] = relationship("Tenant")
     message: Mapped["NotificationMessage | None"] = relationship("NotificationMessage")

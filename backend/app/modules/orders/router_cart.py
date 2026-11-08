@@ -34,37 +34,54 @@ async def resolve_cart_context(
     if not resolved_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "TENANT_REQUIRED", "message": "Merchant context (tenant_id) is required."},
+            detail={
+                "code": "TENANT_REQUIRED",
+                "message": "Merchant context (tenant_id) is required.",
+            },
         )
 
     # Validate tenant is active
     tenant = (
-        await db.execute(select(Tenant).where(Tenant.id == resolved_tenant_id, Tenant.status == "active"))
+        await db.execute(
+            select(Tenant).where(Tenant.id == resolved_tenant_id, Tenant.status == "active")
+        )
     ).scalar_one_or_none()
     if not tenant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "TENANT_NOT_FOUND", "message": "Merchant organization not found or inactive."},
+            detail={
+                "code": "TENANT_NOT_FOUND",
+                "message": "Merchant organization not found or inactive.",
+            },
         )
 
     # Resolve fulfilling store
     resolved_store_id = store_id
     if not resolved_store_id:
         store = (
-            await db.execute(
-                select(Store)
-                .where(Store.tenant_id == resolved_tenant_id, Store.status == "active")
-                .order_by(Store.code.asc())
+            (
+                await db.execute(
+                    select(Store)
+                    .where(Store.tenant_id == resolved_tenant_id, Store.status == "active")
+                    .order_by(Store.code.asc())
+                )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "STORE_NOT_FOUND", "message": "No active store found for merchant."},
+                detail={
+                    "code": "STORE_NOT_FOUND",
+                    "message": "No active store found for merchant.",
+                },
             )
         resolved_store_id = store.id
 
-    customer_id = (principal.user_id if not principal.is_platform_user else None) if principal else None
+    customer_id = (
+        (principal.user_id if not principal.is_platform_user else None) if principal else None
+    )
     if not customer_id and not x_session_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -89,7 +106,9 @@ async def get_cart(
     cart = await CartService.get_or_create_cart(
         db, tenant_id=tenant_id, customer_id=customer_id, session_id=session_id
     )
-    return await CartService.build_cart_response(db, tenant_id=tenant_id, cart=cart, store_id=store_id)
+    return await CartService.build_cart_response(
+        db, tenant_id=tenant_id, cart=cart, store_id=store_id
+    )
 
 
 @router.post(
@@ -181,7 +200,10 @@ async def merge_cart(
     if not customer_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "AUTHENTICATION_REQUIRED", "message": "Customer login is required to merge carts."},
+            detail={
+                "code": "AUTHENTICATION_REQUIRED",
+                "message": "Customer login is required to merge carts.",
+            },
         )
     return await CartService.merge_guest_cart(
         db,

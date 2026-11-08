@@ -199,7 +199,9 @@ async def test_brand_global_and_merchant_isolation(client: AsyncClient, setup_te
 
 
 @pytest.mark.asyncio
-async def test_merchant_product_variant_and_image_management(client: AsyncClient, setup_tenants_and_users):
+async def test_merchant_product_variant_and_image_management(
+    client: AsyncClient, setup_tenants_and_users
+):
     data = setup_tenants_and_users
     headers_a = data["tenant_a_headers"]
 
@@ -259,7 +261,9 @@ async def test_merchant_product_variant_and_image_management(client: AsyncClient
         ],
     }
 
-    resp = await client.post("/api/v1/merchant/catalog/products", json=product_payload, headers=headers_a)
+    resp = await client.post(
+        "/api/v1/merchant/catalog/products", json=product_payload, headers=headers_a
+    )
     assert resp.status_code == 201
     prod = resp.json()
     prod_id = prod["id"]
@@ -336,16 +340,20 @@ async def test_sku_and_barcode_uniqueness_enforcement(client: AsyncClient, setup
     headers_b = data["tenant_b_headers"]
 
     # Create category for products
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Clothing A", "slug": "clothing-a"},
-        headers=headers_a,
-    )).json()
-    cat_b = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Clothing B", "slug": "clothing-b"},
-        headers=headers_b,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Clothing A", "slug": "clothing-a"},
+            headers=headers_a,
+        )
+    ).json()
+    cat_b = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Clothing B", "slug": "clothing-b"},
+            headers=headers_b,
+        )
+    ).json()
 
     # Merchant A creates Product 1
     p1_payload = {
@@ -363,7 +371,9 @@ async def test_sku_and_barcode_uniqueness_enforcement(client: AsyncClient, setup
             }
         ],
     }
-    resp1 = await client.post("/api/v1/merchant/catalog/products", json=p1_payload, headers=headers_a)
+    resp1 = await client.post(
+        "/api/v1/merchant/catalog/products", json=p1_payload, headers=headers_a
+    )
     assert resp1.status_code == 201
     p1_id = resp1.json()["id"]
 
@@ -415,7 +425,9 @@ async def test_sku_and_barcode_uniqueness_enforcement(client: AsyncClient, setup
             }
         ],
     }
-    resp_b = await client.post("/api/v1/merchant/catalog/products", json=p_b_payload, headers=headers_b)
+    resp_b = await client.post(
+        "/api/v1/merchant/catalog/products", json=p_b_payload, headers=headers_b
+    )
     assert resp_b.status_code == 201
 
 
@@ -425,11 +437,13 @@ async def test_cross_tenant_product_isolation(client: AsyncClient, setup_tenants
     headers_a = data["tenant_a_headers"]
     headers_b = data["tenant_b_headers"]
 
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Jewelry", "slug": "jewelry"},
-        headers=headers_a,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Jewelry", "slug": "jewelry"},
+            headers=headers_a,
+        )
+    ).json()
 
     # Merchant A creates Product A
     resp_a = await client.post(
@@ -509,11 +523,13 @@ async def test_public_customer_catalogue_visibility(client: AsyncClient, setup_t
     headers_a = data["tenant_a_headers"]
     tenant_a_id = data["tenant_a_id"]
 
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Sweets & Confectionery", "slug": "sweets"},
-        headers=headers_a,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Sweets & Confectionery", "slug": "sweets"},
+            headers=headers_a,
+        )
+    ).json()
 
     # 1. Product 1: Live & Published
     resp_p1 = await client.post(
@@ -625,11 +641,13 @@ async def test_barcode_lookup_scanner(client: AsyncClient, setup_tenants_and_use
 
     barcode = "8905556667778"
 
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Organic Grocery", "slug": "organic-grocery"},
-        headers=headers_a,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Organic Grocery", "slug": "organic-grocery"},
+            headers=headers_a,
+        )
+    ).json()
 
     # Merchant A creates a product with barcode
     resp_create = await client.post(

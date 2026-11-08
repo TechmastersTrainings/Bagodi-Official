@@ -48,9 +48,7 @@ async def verify_otp(
 ):
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("User-Agent")
-    return await AuthService.verify_otp(
-        db, data, ip_address=ip_address, user_agent=user_agent
-    )
+    return await AuthService.verify_otp(db, data, ip_address=ip_address, user_agent=user_agent)
 
 
 @router.post(

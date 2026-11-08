@@ -59,7 +59,9 @@ class PaymentTransactionResponse(BaseModel):
 
 class RefundCreateRequest(BaseModel):
     payment_transaction_id: UUID | None = None
-    amount: Decimal | None = Field(default=None, gt=Decimal("0.00"), description="Leave null for full remaining balance")
+    amount: Decimal | None = Field(
+        default=None, gt=Decimal("0.00"), description="Leave null for full remaining balance"
+    )
     reason: str = Field(max_length=500)
     idempotency_key: str | None = Field(default=None, max_length=100)
 

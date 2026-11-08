@@ -30,23 +30,37 @@ class Refund(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     tenant_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     order_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("orders.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     payment_transaction_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("payment_transactions.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("payment_transactions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     refund_reference: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     gateway_refund_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
-    status: Mapped[str] = mapped_column(String(30), nullable=False, default="initiated", index=True)  # initiated, pending, succeeded, failed
+    status: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="initiated", index=True
+    )  # initiated, pending, succeeded, failed
     reason: Mapped[str] = mapped_column(String(500), nullable=False)
     initiated_by_user_id: Mapped[PG_UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     gateway_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -64,21 +78,34 @@ class CodSettlement(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     tenant_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     order_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("orders.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     payment_transaction_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("payment_transactions.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("payment_transactions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     amount_collected: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     collected_by_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    settlement_status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending_deposit", index=True)  # pending_deposit, deposited_to_bank, reconciled, discrepancy
+    settlement_status: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="pending_deposit", index=True
+    )  # pending_deposit, deposited_to_bank, reconciled, discrepancy
     settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    bank_deposit_reference: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    bank_deposit_reference: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     tenant: Mapped["Tenant"] = relationship("Tenant")
@@ -90,33 +117,58 @@ class PaymentAuditLog(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "payment_audit_logs"
 
     tenant_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     order_id: Mapped[PG_UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     payment_id: Mapped[PG_UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("payment_transactions.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("payment_transactions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     refund_id: Mapped[PG_UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("refunds.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("refunds.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     actor_id: Mapped[PG_UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
 
 
 class ProcessedWebhookEvent(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "processed_webhook_events"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "provider", "event_id", name="uq_processed_webhook_events_tenant_provider_event"),
+        UniqueConstraint(
+            "tenant_id",
+            "provider",
+            "event_id",
+            name="uq_processed_webhook_events_tenant_provider_event",
+        ),
     )
 
     tenant_id: Mapped[PG_UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     provider: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     event_id: Mapped[str] = mapped_column(String(150), nullable=False, index=True)

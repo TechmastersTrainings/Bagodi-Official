@@ -263,7 +263,9 @@ async def test_promotion_crud_and_audit_logging(client: AsyncClient, setup_prici
         "priority": 5,
         "is_stackable": False,
     }
-    create_resp = await client.post("/api/v1/merchant/pricing/promotions", json=create_payload, headers=merchant_headers)
+    create_resp = await client.post(
+        "/api/v1/merchant/pricing/promotions", json=create_payload, headers=merchant_headers
+    )
     assert create_resp.status_code == 201
     promo = create_resp.json()
     promo_id = promo["id"]
@@ -271,7 +273,9 @@ async def test_promotion_crud_and_audit_logging(client: AsyncClient, setup_prici
     assert promo["discount_value"] == "10.00"
 
     # 2. Get Promotion by ID
-    get_resp = await client.get(f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers)
+    get_resp = await client.get(
+        f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers
+    )
     assert get_resp.status_code == 200
     assert get_resp.json()["id"] == promo_id
 
@@ -286,7 +290,9 @@ async def test_promotion_crud_and_audit_logging(client: AsyncClient, setup_prici
     assert patch_resp.json()["discount_value"] == "15.00"
 
     # 4. Check Audit Logs: Should contain CREATE and UPDATE entries
-    audit_resp = await client.get("/api/v1/merchant/pricing/audit-logs?entity_type=promotion", headers=merchant_headers)
+    audit_resp = await client.get(
+        "/api/v1/merchant/pricing/audit-logs?entity_type=promotion", headers=merchant_headers
+    )
     assert audit_resp.status_code == 200
     logs = audit_resp.json()
     assert len(logs) >= 2
@@ -295,11 +301,15 @@ async def test_promotion_crud_and_audit_logging(client: AsyncClient, setup_prici
     assert "UPDATE" in actions
 
     # 5. Archive (Delete) Promotion
-    del_resp = await client.delete(f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers)
+    del_resp = await client.delete(
+        f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers
+    )
     assert del_resp.status_code == 204
 
     # Verify status changed to archived
-    check_del = await client.get(f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers)
+    check_del = await client.get(
+        f"/api/v1/merchant/pricing/promotions/{promo_id}", headers=merchant_headers
+    )
     assert check_del.json()["status"] == "archived"
 
 
@@ -376,8 +386,12 @@ async def test_item_promotion_precedence_hierarchy(client: AsyncClient, setup_pr
     )
 
     # Customer adds 1 unit of V1 (base ₹2000) and 1 unit of V2 (base ₹4000) to cart
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_2_id, "quantity": 1}, headers=cust_headers)
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers
+    )
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_2_id, "quantity": 1}, headers=cust_headers
+    )
 
     # Get authoritative price quote
     quote_resp = await client.get("/api/v1/pricing/quote", headers=cust_headers)
@@ -394,7 +408,9 @@ async def test_item_promotion_precedence_hierarchy(client: AsyncClient, setup_pr
 
     item2 = next(i for i in quote["items"] if i["variant_id"] == variant_2_id)
     assert item2["original_unit_price"] == "4000.00"
-    assert item2["unit_price"] == "3400.00"  # 4000 - 15% (600) (Product promo wins over Category promo!)
+    assert (
+        item2["unit_price"] == "3400.00"
+    )  # 4000 - 15% (600) (Product promo wins over Category promo!)
     assert item2["discount_amount"] == "600.00"
     assert item2["applied_promotion"]["title"] == "Product 15% Off"
 
@@ -403,7 +419,9 @@ async def test_item_promotion_precedence_hierarchy(client: AsyncClient, setup_pr
 
 
 @pytest.mark.asyncio
-async def test_coupon_validation_expiry_and_minimum_order(client: AsyncClient, setup_pricing_ecosystem):
+async def test_coupon_validation_expiry_and_minimum_order(
+    client: AsyncClient, setup_pricing_ecosystem
+):
     data = setup_pricing_ecosystem
     merchant_headers = data["merchant_a_headers"]
     cust_headers = data["customer_1_headers"]
@@ -474,25 +492,35 @@ async def test_coupon_validation_expiry_and_minimum_order(client: AsyncClient, s
     )
 
     # Add 1 unit of V1 (₹2,000) to cart
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers)
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers
+    )
 
     # Try applying INACTIVE10 -> 400 COUPON_INACTIVE
-    resp_inact = await client.post("/api/v1/cart/coupon", json={"code": "INACTIVE10"}, headers=cust_headers)
+    resp_inact = await client.post(
+        "/api/v1/cart/coupon", json={"code": "INACTIVE10"}, headers=cust_headers
+    )
     assert resp_inact.status_code == 400
     assert resp_inact.json()["code"] == "COUPON_INACTIVE"
 
     # Try applying EXPIRED20 -> 400 COUPON_EXPIRED
-    resp_exp = await client.post("/api/v1/cart/coupon", json={"code": "EXPIRED20"}, headers=cust_headers)
+    resp_exp = await client.post(
+        "/api/v1/cart/coupon", json={"code": "EXPIRED20"}, headers=cust_headers
+    )
     assert resp_exp.status_code == 400
     assert resp_exp.json()["code"] == "COUPON_EXPIRED"
 
     # Try applying BIGORDER500 on ₹2000 cart -> 400 COUPON_MIN_ORDER_NOT_MET
-    resp_min = await client.post("/api/v1/cart/coupon", json={"code": "BIGORDER500"}, headers=cust_headers)
+    resp_min = await client.post(
+        "/api/v1/cart/coupon", json={"code": "BIGORDER500"}, headers=cust_headers
+    )
     assert resp_min.status_code == 400
     assert resp_min.json()["code"] == "COUPON_MIN_ORDER_NOT_MET"
 
     # Apply SAVE200 -> 200 OK
-    resp_valid = await client.post("/api/v1/cart/coupon", json={"code": "SAVE200"}, headers=cust_headers)
+    resp_valid = await client.post(
+        "/api/v1/cart/coupon", json={"code": "SAVE200"}, headers=cust_headers
+    )
     assert resp_valid.status_code == 200
     cart_data = resp_valid.json()
     assert cart_data["coupon_code"] == "SAVE200"
@@ -507,7 +535,9 @@ async def test_coupon_validation_expiry_and_minimum_order(client: AsyncClient, s
 
 
 @pytest.mark.asyncio
-async def test_coupon_usage_limits_and_per_customer_limits(client: AsyncClient, setup_pricing_ecosystem):
+async def test_coupon_usage_limits_and_per_customer_limits(
+    client: AsyncClient, setup_pricing_ecosystem
+):
     """Verifies that coupons strictly enforce:
 
     1. usage_limit_per_customer (max redemptions per user)
@@ -558,34 +588,60 @@ async def test_coupon_usage_limits_and_per_customer_limits(client: AsyncClient, 
     }
 
     # 1. Customer 1 checks out with FIRST2USERS -> SUCCESS (1st redemption)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust1_headers)
-    ord1_resp = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust1_headers)
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust1_headers,
+    )
+    ord1_resp = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust1_headers
+    )
     assert ord1_resp.status_code == 201
     ord1 = ord1_resp.json()
     assert ord1["discount_amount"] == "100.00"
     assert ord1["total_amount"] == "1900.00"  # 2000 - 100
 
     # 2. Customer 1 tries to checkout again with FIRST2USERS -> FAILS (per-customer limit exceeded)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust1_headers)
-    ord1_repeat = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust1_headers)
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust1_headers,
+    )
+    ord1_repeat = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust1_headers
+    )
     assert ord1_repeat.status_code == 400
     assert ord1_repeat.json()["code"] == "CUSTOMER_COUPON_LIMIT_EXCEEDED"
 
     # 3. Customer 2 checks out with FIRST2USERS -> SUCCESS (2nd redemption, reaches total limit)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust2_headers)
-    ord2_resp = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust2_headers)
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust2_headers,
+    )
+    ord2_resp = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust2_headers
+    )
     assert ord2_resp.status_code == 201
     assert ord2_resp.json()["total_amount"] == "1900.00"
 
     # 4. Customer 3 tries to checkout with FIRST2USERS -> FAILS (total_usage_limit reached)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust3_headers)
-    ord3_resp = await client.post("/api/v1/orders/checkout", json=checkout_payload, headers=cust3_headers)
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust3_headers,
+    )
+    ord3_resp = await client.post(
+        "/api/v1/orders/checkout", json=checkout_payload, headers=cust3_headers
+    )
     assert ord3_resp.status_code == 400
     assert ord3_resp.json()["code"] == "COUPON_LIMIT_EXCEEDED"
 
 
 @pytest.mark.asyncio
-async def test_order_cancellation_reverts_coupon_redemption(client: AsyncClient, setup_pricing_ecosystem):
+async def test_order_cancellation_reverts_coupon_redemption(
+    client: AsyncClient, setup_pricing_ecosystem
+):
     """Verifies that when an order is cancelled, the coupon redemption is atomically reverted
 
     and the customer can redeem it again.
@@ -618,7 +674,9 @@ async def test_order_cancellation_reverts_coupon_redemption(client: AsyncClient,
     coupon_id = c_resp.json()["id"]
 
     # Customer checks out
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers)
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers
+    )
     ord_resp = await client.post(
         "/api/v1/orders/checkout",
         json={
@@ -643,7 +701,9 @@ async def test_order_cancellation_reverts_coupon_redemption(client: AsyncClient,
     order_number = order_data["order_number"]
 
     # Verify coupon total_redeemed_count is 1
-    c_check = (await client.get(f"/api/v1/merchant/pricing/coupons/{coupon_id}", headers=merchant_headers)).json()
+    c_check = (
+        await client.get(f"/api/v1/merchant/pricing/coupons/{coupon_id}", headers=merchant_headers)
+    ).json()
     assert c_check["total_redeemed_count"] == 1
 
     # Customer cancels order
@@ -656,11 +716,15 @@ async def test_order_cancellation_reverts_coupon_redemption(client: AsyncClient,
     assert cancel_resp.json()["status"] == "CANCELLED"
 
     # Verify coupon total_redeemed_count is reverted to 0
-    c_check2 = (await client.get(f"/api/v1/merchant/pricing/coupons/{coupon_id}", headers=merchant_headers)).json()
+    c_check2 = (
+        await client.get(f"/api/v1/merchant/pricing/coupons/{coupon_id}", headers=merchant_headers)
+    ).json()
     assert c_check2["total_redeemed_count"] == 0
 
     # Customer can successfully redeem ONEUSEONLY again!
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers)
+    await client.post(
+        "/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust_headers
+    )
     re_ord_resp = await client.post(
         "/api/v1/orders/checkout",
         json={
@@ -685,7 +749,9 @@ async def test_order_cancellation_reverts_coupon_redemption(client: AsyncClient,
 
 
 @pytest.mark.asyncio
-async def test_concurrent_coupon_redemption_race_condition(client: AsyncClient, setup_pricing_ecosystem):
+async def test_concurrent_coupon_redemption_race_condition(
+    client: AsyncClient, setup_pricing_ecosystem
+):
     """Verifies PostgreSQL row-level locking (with_for_update) prevents concurrent over-redemption
 
     when two parallel checkout tasks attempt to claim the final single available coupon slot.
@@ -718,8 +784,16 @@ async def test_concurrent_coupon_redemption_race_condition(client: AsyncClient, 
     )
 
     # Customer 1 and Customer 2 both add items to cart
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust1_headers)
-    await client.post("/api/v1/cart/items", json={"variant_id": variant_1_id, "quantity": 1}, headers=cust2_headers)
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust1_headers,
+    )
+    await client.post(
+        "/api/v1/cart/items",
+        json={"variant_id": variant_1_id, "quantity": 1},
+        headers=cust2_headers,
+    )
 
     payload_1 = {
         "store_id": store_a_id,
@@ -766,7 +840,9 @@ async def test_concurrent_coupon_redemption_race_condition(client: AsyncClient, 
 
 
 @pytest.mark.asyncio
-async def test_cross_tenant_pricing_and_coupon_isolation(client: AsyncClient, setup_pricing_ecosystem):
+async def test_cross_tenant_pricing_and_coupon_isolation(
+    client: AsyncClient, setup_pricing_ecosystem
+):
     """Verifies that promotions and coupons belonging to Tenant A cannot be viewed, modified,
 
     or redeemed by Tenant B staff or customers.
@@ -811,11 +887,15 @@ async def test_cross_tenant_pricing_and_coupon_isolation(client: AsyncClient, se
     promo_a_id = p_resp.json()["id"]
 
     # 2. Merchant B staff attempts to access Tenant A's coupon -> 404
-    resp_cross_coupon = await client.get(f"/api/v1/merchant/pricing/coupons/{coupon_a_id}", headers=merchant_b_headers)
+    resp_cross_coupon = await client.get(
+        f"/api/v1/merchant/pricing/coupons/{coupon_a_id}", headers=merchant_b_headers
+    )
     assert resp_cross_coupon.status_code == 404
 
     # 3. Merchant B staff attempts to access Tenant A's promotion -> 404
-    resp_cross_promo = await client.get(f"/api/v1/merchant/pricing/promotions/{promo_a_id}", headers=merchant_b_headers)
+    resp_cross_promo = await client.get(
+        f"/api/v1/merchant/pricing/promotions/{promo_a_id}", headers=merchant_b_headers
+    )
     assert resp_cross_promo.status_code == 404
 
     # 4. Merchant B staff attempts to modify Tenant A's coupon -> 404
@@ -831,9 +911,39 @@ async def test_cross_tenant_pricing_and_coupon_isolation(client: AsyncClient, se
     tenant_b_id = str(data["tenant_b_id"])
 
     # Create dummy variant for Tenant B so they can add to cart
-    cat_b = (await client.post("/api/v1/merchant/catalog/categories", json={"name": "Textiles", "slug": "textiles-b"}, headers=merchant_b_headers)).json()
-    prod_b = (await client.post("/api/v1/merchant/catalog/products", json={"name": "Silk Saree", "slug": "silk-saree-b", "category_id": cat_b["id"], "is_published": True, "status": "active"}, headers=merchant_b_headers)).json()
-    var_b = (await client.post(f"/api/v1/merchant/catalog/products/{prod_b['id']}/variants", json={"name": "Red Saree", "sku": "SAREE-RED-01", "mrp": "3000.00", "base_price": "2500.00", "status": "active"}, headers=merchant_b_headers)).json()
+    cat_b = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Textiles", "slug": "textiles-b"},
+            headers=merchant_b_headers,
+        )
+    ).json()
+    prod_b = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "name": "Silk Saree",
+                "slug": "silk-saree-b",
+                "category_id": cat_b["id"],
+                "is_published": True,
+                "status": "active",
+            },
+            headers=merchant_b_headers,
+        )
+    ).json()
+    var_b = (
+        await client.post(
+            f"/api/v1/merchant/catalog/products/{prod_b['id']}/variants",
+            json={
+                "name": "Red Saree",
+                "sku": "SAREE-RED-01",
+                "mrp": "3000.00",
+                "base_price": "2500.00",
+                "status": "active",
+            },
+            headers=merchant_b_headers,
+        )
+    ).json()
     var_b_id = var_b["id"]
 
     async with engine.begin() as conn:
@@ -847,7 +957,15 @@ async def test_cross_tenant_pricing_and_coupon_isolation(client: AsyncClient, se
 
     # Guest user on Tenant B tries to apply TENANTAONLY -> 404 COUPON_NOT_FOUND
     guest_headers = {"X-Session-ID": "guest-tenant-b-session"}
-    await client.post(f"/api/v1/cart/items?tenant_id={tenant_b_id}&store_id={store_b_id}", json={"variant_id": var_b_id, "quantity": 1}, headers=guest_headers)
-    apply_resp = await client.post(f"/api/v1/cart/coupon?tenant_id={tenant_b_id}&store_id={store_b_id}", json={"code": "TENANTAONLY"}, headers=guest_headers)
+    await client.post(
+        f"/api/v1/cart/items?tenant_id={tenant_b_id}&store_id={store_b_id}",
+        json={"variant_id": var_b_id, "quantity": 1},
+        headers=guest_headers,
+    )
+    apply_resp = await client.post(
+        f"/api/v1/cart/coupon?tenant_id={tenant_b_id}&store_id={store_b_id}",
+        json={"code": "TENANTAONLY"},
+        headers=guest_headers,
+    )
     assert apply_resp.status_code == 404
     assert apply_resp.json()["code"] == "COUPON_NOT_FOUND"

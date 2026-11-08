@@ -48,24 +48,34 @@ class PromotionService:
         if data.scope == "VARIANT":
             variant = (
                 await db.execute(
-                    select(ProductVariant).where(ProductVariant.id == data.target_id, ProductVariant.tenant_id == tenant_id)
+                    select(ProductVariant).where(
+                        ProductVariant.id == data.target_id, ProductVariant.tenant_id == tenant_id
+                    )
                 )
             ).scalar_one_or_none()
             if not variant:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "TARGET_NOT_FOUND", "message": "Target product variant not found in merchant catalogue."},
+                    detail={
+                        "code": "TARGET_NOT_FOUND",
+                        "message": "Target product variant not found in merchant catalogue.",
+                    },
                 )
         elif data.scope == "PRODUCT":
             product = (
                 await db.execute(
-                    select(Product).where(Product.id == data.target_id, Product.tenant_id == tenant_id)
+                    select(Product).where(
+                        Product.id == data.target_id, Product.tenant_id == tenant_id
+                    )
                 )
             ).scalar_one_or_none()
             if not product:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "TARGET_NOT_FOUND", "message": "Target product not found in merchant catalogue."},
+                    detail={
+                        "code": "TARGET_NOT_FOUND",
+                        "message": "Target product not found in merchant catalogue.",
+                    },
                 )
         elif data.scope == "CATEGORY":
             category = (
@@ -125,7 +135,9 @@ class PromotionService:
         data: PromotionUpdate,
         user_id: UUID | None = None,
     ) -> Promotion:
-        stmt = select(Promotion).where(Promotion.id == promotion_id, Promotion.tenant_id == tenant_id)
+        stmt = select(Promotion).where(
+            Promotion.id == promotion_id, Promotion.tenant_id == tenant_id
+        )
         promotion = (await db.execute(stmt)).scalar_one_or_none()
         if not promotion:
             raise HTTPException(
@@ -137,7 +149,9 @@ class PromotionService:
             "name": promotion.name,
             "description": promotion.description,
             "discount_value": str(promotion.discount_value),
-            "max_discount_amount": str(promotion.max_discount_amount) if promotion.max_discount_amount else None,
+            "max_discount_amount": str(promotion.max_discount_amount)
+            if promotion.max_discount_amount
+            else None,
             "min_order_amount": str(promotion.min_order_amount),
             "start_date": promotion.start_date.isoformat(),
             "end_date": promotion.end_date.isoformat() if promotion.end_date else None,
@@ -157,7 +171,10 @@ class PromotionService:
                 entity_id=promotion.id,
                 action="UPDATE",
                 changed_by_user_id=await _resolve_user_id(db, user_id),
-                changes={"old": old_values, "new": data.model_dump(mode="json", exclude_unset=True)},
+                changes={
+                    "old": old_values,
+                    "new": data.model_dump(mode="json", exclude_unset=True),
+                },
                 created_at=datetime.now(UTC),
             )
         )
@@ -172,7 +189,9 @@ class PromotionService:
         promotion_id: UUID,
         user_id: UUID | None = None,
     ) -> None:
-        stmt = select(Promotion).where(Promotion.id == promotion_id, Promotion.tenant_id == tenant_id)
+        stmt = select(Promotion).where(
+            Promotion.id == promotion_id, Promotion.tenant_id == tenant_id
+        )
         promotion = (await db.execute(stmt)).scalar_one_or_none()
         if not promotion:
             raise HTTPException(
@@ -208,12 +227,18 @@ class PromotionService:
             stmt = stmt.where(Promotion.status == status)
         if scope:
             stmt = stmt.where(Promotion.scope == scope)
-        stmt = stmt.order_by(Promotion.priority.desc(), Promotion.created_at.desc()).offset(skip).limit(limit)
+        stmt = (
+            stmt.order_by(Promotion.priority.desc(), Promotion.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
         return list((await db.execute(stmt)).scalars().all())
 
     @staticmethod
     async def get_promotion(db: AsyncSession, tenant_id: UUID, promotion_id: UUID) -> Promotion:
-        stmt = select(Promotion).where(Promotion.id == promotion_id, Promotion.tenant_id == tenant_id)
+        stmt = select(Promotion).where(
+            Promotion.id == promotion_id, Promotion.tenant_id == tenant_id
+        )
         promotion = (await db.execute(stmt)).scalar_one_or_none()
         if not promotion:
             raise HTTPException(
@@ -236,7 +261,10 @@ class CouponService:
         if (await db.execute(dup_stmt)).scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "COUPON_CODE_EXISTS", "message": f"Coupon code '{data.code}' already exists."},
+                detail={
+                    "code": "COUPON_CODE_EXISTS",
+                    "message": f"Coupon code '{data.code}' already exists.",
+                },
             )
 
         coupon = Coupon(
@@ -294,7 +322,9 @@ class CouponService:
             "name": coupon.name,
             "description": coupon.description,
             "discount_value": str(coupon.discount_value),
-            "max_discount_amount": str(coupon.max_discount_amount) if coupon.max_discount_amount else None,
+            "max_discount_amount": str(coupon.max_discount_amount)
+            if coupon.max_discount_amount
+            else None,
             "min_order_amount": str(coupon.min_order_amount),
             "start_date": coupon.start_date.isoformat(),
             "end_date": coupon.end_date.isoformat(),
@@ -315,7 +345,10 @@ class CouponService:
                 entity_id=coupon.id,
                 action="UPDATE",
                 changed_by_user_id=await _resolve_user_id(db, user_id),
-                changes={"old": old_values, "new": data.model_dump(mode="json", exclude_unset=True)},
+                changes={
+                    "old": old_values,
+                    "new": data.model_dump(mode="json", exclude_unset=True),
+                },
                 created_at=datetime.now(UTC),
             )
         )
@@ -446,7 +479,9 @@ class PricingService:
 
             if selected_promo and item_orig_total >= selected_promo.min_order_amount:
                 if selected_promo.promotion_type == "PERCENTAGE":
-                    calc_disc = (original_unit_price * selected_promo.discount_value / Decimal(100)).quantize(Decimal("0.01"))
+                    calc_disc = (
+                        original_unit_price * selected_promo.discount_value / Decimal(100)
+                    ).quantize(Decimal("0.01"))
                     if selected_promo.max_discount_amount:
                         calc_disc = min(calc_disc, selected_promo.max_discount_amount)
                     unit_discount = min(calc_disc, original_unit_price)
@@ -465,7 +500,7 @@ class PricingService:
 
             unit_price = max(Decimal("0.00"), original_unit_price - unit_discount)
             line_total = unit_price * Decimal(qty)
-            item_discounts_total += (unit_discount * Decimal(qty))
+            item_discounts_total += unit_discount * Decimal(qty)
 
             calculated_items.append(
                 PriceQuoteItem(
@@ -491,7 +526,9 @@ class PricingService:
         for cp in cart_promos:
             if net_after_items >= cp.min_order_amount:
                 if cp.promotion_type == "PERCENTAGE":
-                    c_disc = (net_after_items * cp.discount_value / Decimal(100)).quantize(Decimal("0.01"))
+                    c_disc = (net_after_items * cp.discount_value / Decimal(100)).quantize(
+                        Decimal("0.01")
+                    )
                     if cp.max_discount_amount:
                         c_disc = min(c_disc, cp.max_discount_amount)
                     c_disc = min(c_disc, net_after_items)
@@ -525,26 +562,38 @@ class PricingService:
             if not coupon:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "COUPON_NOT_FOUND", "message": f"Coupon '{code_to_eval}' is invalid."},
+                    detail={
+                        "code": "COUPON_NOT_FOUND",
+                        "message": f"Coupon '{code_to_eval}' is invalid.",
+                    },
                 )
 
             # Validity Checks
             if coupon.status != "active":
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "COUPON_INACTIVE", "message": f"Coupon '{code_to_eval}' is no longer active."},
+                    detail={
+                        "code": "COUPON_INACTIVE",
+                        "message": f"Coupon '{code_to_eval}' is no longer active.",
+                    },
                 )
 
             if coupon.start_date > now or coupon.end_date < now:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "COUPON_EXPIRED", "message": f"Coupon '{code_to_eval}' has expired or is not yet valid."},
+                    detail={
+                        "code": "COUPON_EXPIRED",
+                        "message": f"Coupon '{code_to_eval}' has expired or is not yet valid.",
+                    },
                 )
 
             if coupon.total_usage_limit and coupon.total_redeemed_count >= coupon.total_usage_limit:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "COUPON_LIMIT_EXCEEDED", "message": f"Coupon '{code_to_eval}' usage limit reached."},
+                    detail={
+                        "code": "COUPON_LIMIT_EXCEEDED",
+                        "message": f"Coupon '{code_to_eval}' usage limit reached.",
+                    },
                 )
 
             if customer_id:
@@ -588,7 +637,9 @@ class PricingService:
                 base_for_coupon = max(Decimal("0.00"), net_after_items - cart_discount_total)
 
             if coupon.discount_type == "PERCENTAGE":
-                raw_coup_disc = (base_for_coupon * coupon.discount_value / Decimal(100)).quantize(Decimal("0.01"))
+                raw_coup_disc = (base_for_coupon * coupon.discount_value / Decimal(100)).quantize(
+                    Decimal("0.01")
+                )
                 if coupon.max_discount_amount:
                     raw_coup_disc = min(raw_coup_disc, coupon.max_discount_amount)
                 coupon_discount_total = min(raw_coup_disc, base_for_coupon)
@@ -652,7 +703,10 @@ class PricingService:
         if coupon.total_usage_limit and coupon.total_redeemed_count >= coupon.total_usage_limit:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "COUPON_LIMIT_EXCEEDED", "message": "Coupon total redemption limit exceeded."},
+                detail={
+                    "code": "COUPON_LIMIT_EXCEEDED",
+                    "message": "Coupon total redemption limit exceeded.",
+                },
             )
 
         cust_count = (
@@ -668,7 +722,10 @@ class PricingService:
         if cust_count >= coupon.usage_limit_per_customer:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "CUSTOMER_COUPON_LIMIT_EXCEEDED", "message": "Customer coupon limit reached."},
+                detail={
+                    "code": "CUSTOMER_COUPON_LIMIT_EXCEEDED",
+                    "message": "Customer coupon limit reached.",
+                },
             )
 
         redemption = CouponRedemption(

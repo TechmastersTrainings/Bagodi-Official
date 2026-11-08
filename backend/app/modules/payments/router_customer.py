@@ -21,7 +21,9 @@ from app.modules.payments.services import PaymentService
 router = APIRouter(prefix="", tags=["Customer Payments"])
 
 
-@router.post("/payments/initiate", response_model=PaymentInitiateResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/payments/initiate", response_model=PaymentInitiateResponse, status_code=status.HTTP_200_OK
+)
 async def initiate_payment(
     data: PaymentInitiateRequest,
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
@@ -41,7 +43,9 @@ async def initiate_payment(
     )
 
 
-@router.post("/payments/verify", response_model=PaymentTransactionResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/payments/verify", response_model=PaymentTransactionResponse, status_code=status.HTTP_200_OK
+)
 async def verify_payment(
     data: PaymentVerifyRequest,
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
@@ -82,16 +86,27 @@ async def get_order_payments(
             detail={"code": "ORDER_NOT_FOUND", "message": "Order not found."},
         )
 
-    if not principal.is_platform_user and not principal.has_permission("orders.read") and order.customer_id != principal.user_id:
+    if (
+        not principal.is_platform_user
+        and not principal.has_permission("orders.read")
+        and order.customer_id != principal.user_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "You cannot access payments for another customer's order."},
+            detail={
+                "code": "FORBIDDEN",
+                "message": "You cannot access payments for another customer's order.",
+            },
         )
 
-    stmt_txns = select(PaymentTransaction).where(
-        PaymentTransaction.tenant_id == principal.tenant_id,
-        PaymentTransaction.order_id == order_id,
-    ).order_by(PaymentTransaction.created_at.desc())
+    stmt_txns = (
+        select(PaymentTransaction)
+        .where(
+            PaymentTransaction.tenant_id == principal.tenant_id,
+            PaymentTransaction.order_id == order_id,
+        )
+        .order_by(PaymentTransaction.created_at.desc())
+    )
     txns = (await db.execute(stmt_txns)).scalars().all()
     return [PaymentTransactionResponse.model_validate(t) for t in txns]
 
@@ -116,15 +131,26 @@ async def get_order_refunds(
             detail={"code": "ORDER_NOT_FOUND", "message": "Order not found."},
         )
 
-    if not principal.is_platform_user and not principal.has_permission("orders.read") and order.customer_id != principal.user_id:
+    if (
+        not principal.is_platform_user
+        and not principal.has_permission("orders.read")
+        and order.customer_id != principal.user_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "You cannot access refunds for another customer's order."},
+            detail={
+                "code": "FORBIDDEN",
+                "message": "You cannot access refunds for another customer's order.",
+            },
         )
 
-    stmt_refunds = select(Refund).where(
-        Refund.tenant_id == principal.tenant_id,
-        Refund.order_id == order_id,
-    ).order_by(Refund.created_at.desc())
+    stmt_refunds = (
+        select(Refund)
+        .where(
+            Refund.tenant_id == principal.tenant_id,
+            Refund.order_id == order_id,
+        )
+        .order_by(Refund.created_at.desc())
+    )
     refunds = (await db.execute(stmt_refunds)).scalars().all()
     return [RefundResponse.model_validate(r) for r in refunds]

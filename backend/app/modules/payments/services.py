@@ -89,19 +89,28 @@ class PaymentService:
         if customer_id and order.customer_id != customer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail={"code": "FORBIDDEN", "message": "You cannot initiate payment for another customer's order."},
+                detail={
+                    "code": "FORBIDDEN",
+                    "message": "You cannot initiate payment for another customer's order.",
+                },
             )
 
         if order.payment_status == "captured":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "ORDER_ALREADY_PAID", "message": "Order is already paid and captured."},
+                detail={
+                    "code": "ORDER_ALREADY_PAID",
+                    "message": "Order is already paid and captured.",
+                },
             )
 
         if order.status in ("CANCELLED", "RETURNED"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_ORDER_STATUS", "message": f"Cannot initiate payment for {order.status} order."},
+                detail={
+                    "code": "INVALID_ORDER_STATUS",
+                    "message": f"Cannot initiate payment for {order.status} order.",
+                },
             )
 
         # 2. Idempotency Check
@@ -133,7 +142,11 @@ class PaymentService:
 
         # 4. Find or Create Payment Transaction
         pending_txn = next(
-            (t for t in order.payments if t.status in ("initiated", "pending") and t.payment_method == data.payment_method),
+            (
+                t
+                for t in order.payments
+                if t.status in ("initiated", "pending") and t.payment_method == data.payment_method
+            ),
             None,
         )
 
@@ -219,14 +232,20 @@ class PaymentService:
         # 1. Fetch transaction
         stmt = (
             select(PaymentTransaction)
-            .where(PaymentTransaction.id == data.transaction_id, PaymentTransaction.tenant_id == tenant_id)
+            .where(
+                PaymentTransaction.id == data.transaction_id,
+                PaymentTransaction.tenant_id == tenant_id,
+            )
             .options(selectinload(PaymentTransaction.order).selectinload(Order.status_history))
         )
         txn = (await db.execute(stmt)).scalar_one_or_none()
         if not txn:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "TRANSACTION_NOT_FOUND", "message": "Payment transaction not found."},
+                detail={
+                    "code": "TRANSACTION_NOT_FOUND",
+                    "message": "Payment transaction not found.",
+                },
             )
 
         order = txn.order
@@ -239,7 +258,10 @@ class PaymentService:
         if customer_id and order.customer_id != customer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail={"code": "FORBIDDEN", "message": "You cannot verify payment for another customer's order."},
+                detail={
+                    "code": "FORBIDDEN",
+                    "message": "You cannot verify payment for another customer's order.",
+                },
             )
 
         # Idempotent response if already captured
@@ -249,7 +271,10 @@ class PaymentService:
         if txn.status not in ("initiated", "pending"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_TRANSACTION_STATUS", "message": f"Transaction in status '{txn.status}' cannot be verified."},
+                detail={
+                    "code": "INVALID_TRANSACTION_STATUS",
+                    "message": f"Transaction in status '{txn.status}' cannot be verified.",
+                },
             )
 
         # 2. Cryptographic signature verification via provider
@@ -275,12 +300,18 @@ class PaymentService:
                 payment_id=txn.id,
                 actor_id=valid_actor_id,
                 event_type="PAYMENT_FAILED",
-                payload={"error": verification.error_message, "gateway_payment_id": data.gateway_payment_id},
+                payload={
+                    "error": verification.error_message,
+                    "gateway_payment_id": data.gateway_payment_id,
+                },
             )
             await db.commit()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "PAYMENT_VERIFICATION_FAILED", "message": verification.error_message or "Signature mismatch"},
+                detail={
+                    "code": "PAYMENT_VERIFICATION_FAILED",
+                    "message": verification.error_message or "Signature mismatch",
+                },
             )
 
         # 3. Successful Capture Mutation
@@ -359,7 +390,10 @@ class PaymentService:
         if not webhook_result.is_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_WEBHOOK", "message": webhook_result.error_message or "Webhook verification failed"},
+                detail={
+                    "code": "INVALID_WEBHOOK",
+                    "message": webhook_result.error_message or "Webhook verification failed",
+                },
             )
 
         # Locate transaction by gateway_order_id or gateway_payment_id
@@ -483,20 +517,36 @@ class PaymentService:
             if not txn:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "TRANSACTION_NOT_FOUND", "message": "Specified transaction not found on this order."},
+                    detail={
+                        "code": "TRANSACTION_NOT_FOUND",
+                        "message": "Specified transaction not found on this order.",
+                    },
                 )
         else:
-            txn = next((t for t in order.payments if t.status in ("captured", "partially_refunded", "refunded")), None)
+            txn = next(
+                (
+                    t
+                    for t in order.payments
+                    if t.status in ("captured", "partially_refunded", "refunded")
+                ),
+                None,
+            )
             if not txn:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "NO_CAPTURED_PAYMENT", "message": "No captured payment transaction available for refund."},
+                    detail={
+                        "code": "NO_CAPTURED_PAYMENT",
+                        "message": "No captured payment transaction available for refund.",
+                    },
                 )
 
         if txn.status not in ("captured", "partially_refunded", "refunded"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_TRANSACTION_STATUS", "message": f"Cannot refund transaction in status '{txn.status}'."},
+                detail={
+                    "code": "INVALID_TRANSACTION_STATUS",
+                    "message": f"Cannot refund transaction in status '{txn.status}'.",
+                },
             )
 
         # 4. Validate Refundable Amount
@@ -504,14 +554,20 @@ class PaymentService:
         if max_refundable <= Decimal("0.00") or txn.status == "refunded":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "ALREADY_FULLY_REFUNDED", "message": "Transaction is already fully refunded."},
+                detail={
+                    "code": "ALREADY_FULLY_REFUNDED",
+                    "message": "Transaction is already fully refunded.",
+                },
             )
 
         target_amount = data.amount if data.amount is not None else max_refundable
         if target_amount <= Decimal("0.00"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_REFUND_AMOUNT", "message": "Refund amount must be greater than zero."},
+                detail={
+                    "code": "INVALID_REFUND_AMOUNT",
+                    "message": "Refund amount must be greater than zero.",
+                },
             )
 
         if target_amount > max_refundable:
@@ -540,7 +596,10 @@ class PaymentService:
         if not refund_result.is_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "REFUND_FAILED", "message": refund_result.error_message or "Refund processing failed."},
+                detail={
+                    "code": "REFUND_FAILED",
+                    "message": refund_result.error_message or "Refund processing failed.",
+                },
             )
 
         valid_actor_id = await _resolve_user_id(db, actor_id)
@@ -637,7 +696,10 @@ class PaymentService:
         if order.payment_method != "cod":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "NOT_COD_ORDER", "message": "Order payment method is not Cash-On-Delivery."},
+                detail={
+                    "code": "NOT_COD_ORDER",
+                    "message": "Order payment method is not Cash-On-Delivery.",
+                },
             )
 
         # Check existing settlement
@@ -649,7 +711,10 @@ class PaymentService:
         if existing_settlement:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "COD_ALREADY_COLLECTED", "message": "COD settlement already recorded for this order."},
+                detail={
+                    "code": "COD_ALREADY_COLLECTED",
+                    "message": "COD settlement already recorded for this order.",
+                },
             )
 
         # 2. Find or create COD payment transaction
@@ -746,7 +811,10 @@ class PaymentService:
         if not settlement:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "SETTLEMENT_NOT_FOUND", "message": "COD settlement record not found."},
+                detail={
+                    "code": "SETTLEMENT_NOT_FOUND",
+                    "message": "COD settlement record not found.",
+                },
             )
 
         if settlement.settlement_status == "reconciled":
@@ -825,7 +893,10 @@ class PaymentService:
             func.coalesce(
                 func.sum(
                     case(
-                        (CodSettlement.settlement_status == "pending_deposit", CodSettlement.amount_collected),
+                        (
+                            CodSettlement.settlement_status == "pending_deposit",
+                            CodSettlement.amount_collected,
+                        ),
                         else_=Decimal("0.00"),
                     )
                 ),
@@ -834,7 +905,10 @@ class PaymentService:
             func.coalesce(
                 func.sum(
                     case(
-                        (CodSettlement.settlement_status == "reconciled", CodSettlement.amount_collected),
+                        (
+                            CodSettlement.settlement_status == "reconciled",
+                            CodSettlement.amount_collected,
+                        ),
                         else_=Decimal("0.00"),
                     )
                 ),

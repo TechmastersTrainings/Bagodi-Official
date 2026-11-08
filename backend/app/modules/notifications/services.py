@@ -320,7 +320,10 @@ class NotificationService:
                 tenant_id=tenant_id,
                 message_id=message.id,
                 event_type="SENT",
-                payload={"channel": channel, "provider_message_id": send_result.provider_message_id},
+                payload={
+                    "channel": channel,
+                    "provider_message_id": send_result.provider_message_id,
+                },
             )
         else:
             err_code = send_result.error_code if send_result else "UNKNOWN_ERROR"
@@ -335,7 +338,9 @@ class NotificationService:
             else:
                 message.status = "failed"
                 event_type = "FAILED"
-                backoff_delay = settings.notification_base_retry_delay_seconds * (2 ** message.retry_count)
+                backoff_delay = settings.notification_base_retry_delay_seconds * (
+                    2**message.retry_count
+                )
                 message.next_retry_at = datetime.now(UTC) + timedelta(seconds=backoff_delay)
 
             await NotificationService.log_audit_event(
@@ -453,7 +458,7 @@ class NotificationService:
                     item.status = "failed"
                     item.error_message = "All dispatch channels failed after maximum retries"
                 else:
-                    backoff = settings.notification_base_retry_delay_seconds * (2 ** item.retry_count)
+                    backoff = settings.notification_base_retry_delay_seconds * (2**item.retry_count)
                     item.next_retry_at = datetime.now(UTC) + timedelta(seconds=backoff)
 
             await db.commit()
@@ -483,7 +488,10 @@ class NotificationService:
         if not dlr.is_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_DLR_SIGNATURE", "message": dlr.error_message or "Webhook signature failed"},
+                detail={
+                    "code": "INVALID_DLR_SIGNATURE",
+                    "message": dlr.error_message or "Webhook signature failed",
+                },
             )
 
         stmt = select(NotificationMessage).where(
@@ -576,7 +584,10 @@ class NotificationService:
                 tenant_id=tenant_id,
                 message_id=msg.id,
                 event_type="SENT",
-                payload={"manual_retry": True, "provider_message_id": send_result.provider_message_id},
+                payload={
+                    "manual_retry": True,
+                    "provider_message_id": send_result.provider_message_id,
+                },
                 actor_id=actor_id,
             )
         else:

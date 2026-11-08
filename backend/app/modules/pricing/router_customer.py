@@ -67,7 +67,10 @@ async def apply_coupon_to_cart(
     if not cart.items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "EMPTY_CART", "message": "Add items to your cart before applying a coupon."},
+            detail={
+                "code": "EMPTY_CART",
+                "message": "Add items to your cart before applying a coupon.",
+            },
         )
 
     # Validate coupon eligibility against current cart
@@ -82,7 +85,10 @@ async def apply_coupon_to_cart(
     if not quote.discount_breakdown.coupon_applied:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "COUPON_NOT_APPLICABLE", "message": "Coupon code could not be applied to cart."},
+            detail={
+                "code": "COUPON_NOT_APPLICABLE",
+                "message": "Coupon code could not be applied to cart.",
+            },
         )
 
     cart.coupon_code = data.code
@@ -94,7 +100,9 @@ async def apply_coupon_to_cart(
             select(Cart)
             .where(Cart.id == cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )
@@ -124,7 +132,9 @@ async def remove_coupon_from_cart(
             select(Cart)
             .where(Cart.id == cart.id)
             .options(
-                selectinload(Cart.items).selectinload(CartItem.variant).selectinload(ProductVariant.product)
+                selectinload(Cart.items)
+                .selectinload(CartItem.variant)
+                .selectinload(ProductVariant.product)
             )
             .execution_options(populate_existing=True)
         )

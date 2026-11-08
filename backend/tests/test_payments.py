@@ -140,32 +140,36 @@ async def setup_payment_ecosystem(client: AsyncClient, mint_jwt_token):
     customer_2_headers = {"Authorization": f"Bearer {cust2_token}"}
 
     # 6. Create Catalogue Category, Product and Variant
-    cat_a = (await client.post(
-        "/api/v1/merchant/catalog/categories",
-        json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
-        headers=merchant_a_headers,
-    )).json()
+    cat_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/categories",
+            json={"name": "Bidri Handicrafts", "slug": "bidri-handicrafts"},
+            headers=merchant_a_headers,
+        )
+    ).json()
 
-    prod_a = (await client.post(
-        "/api/v1/merchant/catalog/products",
-        json={
-            "category_id": cat_a["id"],
-            "name": "Bidri Inlaid Vase",
-            "slug": "bidri-inlaid-vase",
-            "status": "active",
-            "is_published": True,
-            "variants": [
-                {
-                    "sku": "BIDRI-VASE-S",
-                    "barcode": "8908880001",
-                    "name": "Small Inlaid Vase",
-                    "mrp": "1500.00",
-                    "base_price": "1299.00",
-                }
-            ],
-        },
-        headers=merchant_a_headers,
-    )).json()
+    prod_a = (
+        await client.post(
+            "/api/v1/merchant/catalog/products",
+            json={
+                "category_id": cat_a["id"],
+                "name": "Bidri Inlaid Vase",
+                "slug": "bidri-inlaid-vase",
+                "status": "active",
+                "is_published": True,
+                "variants": [
+                    {
+                        "sku": "BIDRI-VASE-S",
+                        "barcode": "8908880001",
+                        "name": "Small Inlaid Vase",
+                        "mrp": "1500.00",
+                        "base_price": "1299.00",
+                    }
+                ],
+            },
+            headers=merchant_a_headers,
+        )
+    ).json()
     variant_1_id = UUID(prod_a["variants"][0]["id"])
 
     # Inward stock (50 units)
@@ -246,7 +250,9 @@ async def test_payment_initiation_and_idempotency(client: AsyncClient, setup_pay
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # 1. Customer initiates payment
@@ -294,13 +300,17 @@ async def test_payment_initiation_and_idempotency(client: AsyncClient, setup_pay
 
 
 @pytest.mark.asyncio
-async def test_payment_verification_success_and_order_transition(client: AsyncClient, setup_payment_ecosystem):
+async def test_payment_verification_success_and_order_transition(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     init_resp = await client.post(
@@ -371,13 +381,17 @@ async def test_payment_verification_success_and_order_transition(client: AsyncCl
 
 
 @pytest.mark.asyncio
-async def test_payment_verification_invalid_signature_failure(client: AsyncClient, setup_payment_ecosystem):
+async def test_payment_verification_invalid_signature_failure(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     init_resp = await client.post(
@@ -420,13 +434,17 @@ async def test_payment_verification_invalid_signature_failure(client: AsyncClien
 
 
 @pytest.mark.asyncio
-async def test_payment_webhook_processing_and_replay_protection(client: AsyncClient, setup_payment_ecosystem):
+async def test_payment_webhook_processing_and_replay_protection(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     init_resp = await client.post(
@@ -484,14 +502,19 @@ async def test_payment_webhook_processing_and_replay_protection(client: AsyncCli
 
 
 @pytest.mark.asyncio
-async def test_payment_webhook_security_signature_and_timestamp_expiration(client: AsyncClient, setup_payment_ecosystem):
+async def test_payment_webhook_security_signature_and_timestamp_expiration(
+    client: AsyncClient, setup_payment_ecosystem
+):
     raw_body = b'{"event_id": "evt_test", "event": "payment.captured"}'
 
     # 1. Invalid signature
     resp_bad_sig = await client.post(
         "/api/v1/payments/webhooks/mock",
         content=raw_body,
-        headers={"Content-Type": "application/json", "X-Webhook-Signature": "t=1234567,v1=invalidsig"},
+        headers={
+            "Content-Type": "application/json",
+            "X-Webhook-Signature": "t=1234567,v1=invalidsig",
+        },
     )
     assert resp_bad_sig.status_code == 400
     assert resp_bad_sig.json()["code"] == "INVALID_WEBHOOK"
@@ -518,18 +541,24 @@ async def test_full_and_partial_refunds(client: AsyncClient, setup_payment_ecosy
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # Initiate & verify payment
-    init_data = (await client.post(
-        "/api/v1/payments/initiate",
-        json={"order_id": order_id, "payment_method": "online"},
-        headers=cust1_headers,
-    )).json()
+    init_data = (
+        await client.post(
+            "/api/v1/payments/initiate",
+            json={"order_id": order_id, "payment_method": "online"},
+            headers=cust1_headers,
+        )
+    ).json()
 
     provider = MockPaymentGatewayProvider()
-    sig = provider.generate_payment_signature(init_data["gateway_order_id"], "pay_refund_101", Decimal("1299.00"))
+    sig = provider.generate_payment_signature(
+        init_data["gateway_order_id"], "pay_refund_101", Decimal("1299.00")
+    )
     await client.post(
         "/api/v1/payments/verify",
         json={
@@ -544,7 +573,11 @@ async def test_full_and_partial_refunds(client: AsyncClient, setup_payment_ecosy
     # 1. Partial Refund: ₹500.00
     rfd1_resp = await client.post(
         f"/api/v1/merchant/payments/orders/{order_id}/refund",
-        json={"amount": "500.00", "reason": "Customer requested partial return", "idempotency_key": "idemp_rfd_001"},
+        json={
+            "amount": "500.00",
+            "reason": "Customer requested partial return",
+            "idempotency_key": "idemp_rfd_001",
+        },
         headers=merchant_headers,
     )
     assert rfd1_resp.status_code == 201
@@ -553,14 +586,20 @@ async def test_full_and_partial_refunds(client: AsyncClient, setup_payment_ecosy
     assert rfd1["status"] == "succeeded"
 
     # Verify transaction amount_refunded
-    txn1 = (await client.get(f"/api/v1/orders/{order_id}/payments", headers=cust1_headers)).json()[0]
+    txn1 = (await client.get(f"/api/v1/orders/{order_id}/payments", headers=cust1_headers)).json()[
+        0
+    ]
     assert txn1["amount_refunded"] == "500.00"
     assert txn1["status"] == "partially_refunded"
 
     # 2. Idempotent Refund Retry with same key
     rfd1_retry = await client.post(
         f"/api/v1/merchant/payments/orders/{order_id}/refund",
-        json={"amount": "500.00", "reason": "Customer requested partial return", "idempotency_key": "idemp_rfd_001"},
+        json={
+            "amount": "500.00",
+            "reason": "Customer requested partial return",
+            "idempotency_key": "idemp_rfd_001",
+        },
         headers=merchant_headers,
     )
     assert rfd1_retry.status_code == 201
@@ -583,7 +622,9 @@ async def test_full_and_partial_refunds(client: AsyncClient, setup_payment_ecosy
     )
     assert rfd2_resp.status_code == 201
 
-    txn2 = (await client.get(f"/api/v1/orders/{order_id}/payments", headers=cust1_headers)).json()[0]
+    txn2 = (await client.get(f"/api/v1/orders/{order_id}/payments", headers=cust1_headers)).json()[
+        0
+    ]
     assert txn2["amount_refunded"] == "1299.00"
     assert txn2["status"] == "refunded"
 
@@ -598,25 +639,33 @@ async def test_full_and_partial_refunds(client: AsyncClient, setup_payment_ecosy
 
 
 @pytest.mark.asyncio
-async def test_order_cancellation_triggers_automatic_refund(client: AsyncClient, setup_payment_ecosystem):
+async def test_order_cancellation_triggers_automatic_refund(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # Initiate & capture payment
-    init_data = (await client.post(
-        "/api/v1/payments/initiate",
-        json={"order_id": order_id, "payment_method": "online"},
-        headers=cust1_headers,
-    )).json()
+    init_data = (
+        await client.post(
+            "/api/v1/payments/initiate",
+            json={"order_id": order_id, "payment_method": "online"},
+            headers=cust1_headers,
+        )
+    ).json()
 
     provider = MockPaymentGatewayProvider()
-    sig = provider.generate_payment_signature(init_data["gateway_order_id"], "pay_auto_rfd_202", Decimal("1299.00"))
+    sig = provider.generate_payment_signature(
+        init_data["gateway_order_id"], "pay_auto_rfd_202", Decimal("1299.00")
+    )
     await client.post(
         "/api/v1/payments/verify",
         json={
@@ -649,7 +698,9 @@ async def test_order_cancellation_triggers_automatic_refund(client: AsyncClient,
 
 
 @pytest.mark.asyncio
-async def test_cash_on_delivery_collection_and_bank_reconciliation(client: AsyncClient, setup_payment_ecosystem):
+async def test_cash_on_delivery_collection_and_bank_reconciliation(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     merchant_headers = env["merchant_a_headers"]
@@ -657,7 +708,9 @@ async def test_cash_on_delivery_collection_and_bank_reconciliation(client: Async
     variant_id = env["variant_1_id"]
 
     # 1. Checkout with payment_method="cod"
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="cod")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="cod"
+    )
     order_id = order["id"]
     assert order["status"] == "CONFIRMED"
     assert order["payment_status"] == "pending"
@@ -742,17 +795,23 @@ async def test_reconciliation_summary_and_audit_logs(client: AsyncClient, setup_
     variant_id = env["variant_1_id"]
 
     # Create & capture an online order
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
-    init_data = (await client.post(
-        "/api/v1/payments/initiate",
-        json={"order_id": order_id, "payment_method": "online"},
-        headers=cust1_headers,
-    )).json()
+    init_data = (
+        await client.post(
+            "/api/v1/payments/initiate",
+            json={"order_id": order_id, "payment_method": "online"},
+            headers=cust1_headers,
+        )
+    ).json()
 
     provider = MockPaymentGatewayProvider()
-    sig = provider.generate_payment_signature(init_data["gateway_order_id"], "pay_sum_001", Decimal("1299.00"))
+    sig = provider.generate_payment_signature(
+        init_data["gateway_order_id"], "pay_sum_001", Decimal("1299.00")
+    )
     await client.post(
         "/api/v1/payments/verify",
         json={
@@ -799,7 +858,9 @@ async def test_reconciliation_summary_and_audit_logs(client: AsyncClient, setup_
 
 
 @pytest.mark.asyncio
-async def test_cross_tenant_and_cross_customer_isolation(client: AsyncClient, setup_payment_ecosystem):
+async def test_cross_tenant_and_cross_customer_isolation(
+    client: AsyncClient, setup_payment_ecosystem
+):
     env = setup_payment_ecosystem
     cust1_headers = env["customer_1_headers"]
     cust2_headers = env["customer_2_headers"]
@@ -807,7 +868,9 @@ async def test_cross_tenant_and_cross_customer_isolation(client: AsyncClient, se
     store_id = env["store_a_id"]
     variant_id = env["variant_1_id"]
 
-    order = await _create_test_order(client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online")
+    order = await _create_test_order(
+        client, cust1_headers, store_id, variant_id, quantity=1, payment_method="online"
+    )
     order_id = order["id"]
 
     # Customer 2 attempts to get payments for customer 1's order -> 403 Forbidden

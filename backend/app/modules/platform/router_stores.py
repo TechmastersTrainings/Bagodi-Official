@@ -75,4 +75,3 @@ async def update_store_status(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await StoreService.update_store_status(db, tenant.tenant_id, store_id, data.status)
-
