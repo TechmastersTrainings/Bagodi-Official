@@ -13,6 +13,9 @@
     "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "paths": {
+      "@bagodi/api-client": ["../packages/api-client/src/index.ts"]
+    }
   }
 }
