@@ -38,6 +38,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authenticate with Email / Phone and Password (Real User Platform) */
+        post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register external customer user account with password */
+        post: operations["register_customer_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/merchant/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register real merchant boutique/store for platform approval */
+        post: operations["register_merchant_api_v1_auth_merchant_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/otp/send": {
         parameters: {
             query?: never;
@@ -47,7 +98,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Request a secure 6-digit OTP code to mobile number */
+        /** Request a secure 6-digit OTP code to mobile number or email */
         post: operations["send_otp_api_v1_auth_otp_send_post"];
         delete?: never;
         options?: never;
@@ -123,6 +174,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customer/addresses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List saved shipping addresses for current customer */
+        get: operations["list_addresses_api_v1_customer_addresses_get"];
+        put?: never;
+        /** Save a new customer delivery address */
+        post: operations["create_address_api_v1_customer_addresses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer/addresses/{address_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get details of a specific saved address */
+        get: operations["get_address_api_v1_customer_addresses__address_id__get"];
+        /** Update an existing delivery address */
+        put: operations["update_address_api_v1_customer_addresses__address_id__put"];
+        post?: never;
+        /** Delete a saved delivery address */
+        delete: operations["delete_address_api_v1_customer_addresses__address_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer/addresses/{address_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an address as the default delivery address */
+        post: operations["set_default_address_api_v1_customer_addresses__address_id__default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/tenants": {
         parameters: {
             query?: never;
@@ -130,7 +235,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all merchant organizations (Platform Admin) */
+        /** List all merchant organizations with enriched status and metrics */
         get: operations["list_tenants_api_v1_platform_tenants_get"];
         put?: never;
         /** Onboard a new merchant organization (Platform Admin) */
@@ -171,8 +276,250 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update merchant organization status (Platform Admin) */
+        /** Update merchant organization status (activate, suspend, pend) */
         patch: operations["update_tenant_status_api_v1_platform_tenants__tenant_id__status_patch"];
+        trace?: never;
+    };
+    "/api/v1/platform/tenants/{tenant_id}/lifecycle-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get merchant lifecycle status history and audit trail */
+        get: operations["get_tenant_lifecycle_logs_api_v1_platform_tenants__tenant_id__lifecycle_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/tenants/{tenant_id}/kyc-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List submitted KYC documents for a merchant */
+        get: operations["list_kyc_documents_api_v1_platform_tenants__tenant_id__kyc_documents_get"];
+        put?: never;
+        /** Submit or upload a KYC verification document on behalf of a merchant */
+        post: operations["upload_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/tenants/{tenant_id}/kyc-documents/{doc_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify or reject a merchant KYC compliance document */
+        post: operations["review_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents__doc_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active platform subscription tiers and plans */
+        get: operations["list_subscription_plans_api_v1_platform_billing_plans_get"];
+        put?: never;
+        /** Create a new merchant subscription pricing plan */
+        post: operations["create_subscription_plan_api_v1_platform_billing_plans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/billing/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active merchant subscriptions across the platform */
+        get: operations["list_subscriptions_api_v1_platform_billing_subscriptions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/billing/subscriptions/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign or upgrade a merchant's active subscription tier */
+        post: operations["assign_subscription_api_v1_platform_billing_subscriptions_assign_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/billing/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List merchant SaaS subscription billing invoices */
+        get: operations["list_merchant_invoices_api_v1_platform_billing_invoices_get"];
+        put?: never;
+        /** Generate a subscription billing invoice for a merchant organization */
+        post: operations["create_merchant_invoice_api_v1_platform_billing_invoices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/billing/invoices/{invoice_id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Record settlement / payment of a merchant subscription invoice */
+        patch: operations["pay_merchant_invoice_api_v1_platform_billing_invoices__invoice_id__pay_patch"];
+        trace?: never;
+    };
+    "/api/v1/platform/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Super Admin and Platform Governance staff members */
+        get: operations["list_platform_staff_api_v1_platform_staff_get"];
+        put?: never;
+        /** Delegate and create a new Super Admin staff account */
+        post: operations["create_platform_staff_api_v1_platform_staff_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/staff/{user_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update platform staff status or assigned platform role */
+        patch: operations["update_platform_staff_status_api_v1_platform_staff__user_id__status_patch"];
+        trace?: never;
+    };
+    "/api/v1/platform/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Query global administrative audit log and security events */
+        get: operations["list_platform_audit_logs_api_v1_platform_audit_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/system/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detailed platform system diagnostics, connection pools & worker metrics */
+        get: operations["get_system_diagnostics_api_v1_platform_system_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/system/outbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Monitor transactional notification outbox events across all tenants */
+        get: operations["list_system_outbox_api_v1_platform_system_outbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/system/outbox/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually trigger background worker for transactional outbox dispatch */
+        post: operations["process_system_outbox_api_v1_platform_system_outbox_process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/platform/catalog/categories": {
@@ -362,7 +709,8 @@ export interface paths {
         get: operations["get_product_api_v1_merchant_catalog_products__product_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a merchant product */
+        delete: operations["delete_product_api_v1_merchant_catalog_products__product_id__delete"];
         options?: never;
         head?: never;
         /** Update product metadata and publication status */
@@ -396,7 +744,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a variant */
+        delete: operations["delete_variant_api_v1_merchant_catalog_variants__variant_id__delete"];
         options?: never;
         head?: never;
         /** Update a variant's attributes, price, barcode, or status */
@@ -868,6 +1217,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/direct-checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Direct instant purchase deducting size stock atomically via double-entry ledger */
+        post: operations["direct_checkout_order_api_v1_orders_direct_checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/my-orders": {
         parameters: {
             query?: never;
@@ -1015,6 +1381,58 @@ export interface paths {
         put?: never;
         /** Trigger background processor for expired payment reservations (idempotent, releases stock) */
         post: operations["process_reservation_expiry_api_v1_merchant_orders_process_expiry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_number}/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List customer return and exchange requests for an order */
+        get: operations["list_order_returns_api_v1_orders__order_number__returns_get"];
+        put?: never;
+        /** Submit an apparel return or size exchange request for an ordered item */
+        post: operations["submit_return_request_api_v1_orders__order_number__returns_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchant/orders/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Merchant: List all return and exchange requests across store orders */
+        get: operations["merchant_list_returns_api_v1_merchant_orders_returns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchant/orders/returns/{return_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merchant: Review, approve, reject or update status of return/exchange request */
+        post: operations["merchant_review_return_api_v1_merchant_orders_returns__return_id__review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2565,10 +2983,9 @@ export interface components {
         CheckoutRequest: {
             /**
              * Store Id
-             * Format: uuid
-             * @description Fulfilling store location
+             * @description Fulfilling store location (defaults to active store)
              */
-            store_id: string;
+            store_id?: string | null;
             shipping_address: components["schemas"]["ShippingAddressSchema"];
             billing_address?: components["schemas"]["ShippingAddressSchema"] | null;
             /** Customer Name */
@@ -2582,7 +2999,7 @@ export interface components {
              * @default online
              * @enum {string}
              */
-            payment_method: "online" | "cod";
+            payment_method: "online" | "cod" | "upi" | "card" | "netbanking";
             /** Notes */
             notes?: string | null;
             /**
@@ -2920,6 +3337,106 @@ export interface components {
              */
             success_rate: string;
         };
+        /** CustomerAddressCreate */
+        CustomerAddressCreate: {
+            /** Full Name */
+            full_name: string;
+            /** Phone */
+            phone: string;
+            /** Address Line1 */
+            address_line1: string;
+            /** Address Line2 */
+            address_line2?: string | null;
+            /** Landmark */
+            landmark?: string | null;
+            /** City */
+            city: string;
+            /** State */
+            state: string;
+            /** Postal Code */
+            postal_code: string;
+            /**
+             * Address Type
+             * @default home
+             */
+            address_type: string;
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+        };
+        /** CustomerAddressResponse */
+        CustomerAddressResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Phone */
+            phone: string;
+            /** Address Line1 */
+            address_line1: string;
+            /** Address Line2 */
+            address_line2: string | null;
+            /** Landmark */
+            landmark: string | null;
+            /** City */
+            city: string;
+            /** State */
+            state: string;
+            /** Postal Code */
+            postal_code: string;
+            /** Address Type */
+            address_type: string;
+            /** Is Default */
+            is_default: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CustomerAddressUpdate */
+        CustomerAddressUpdate: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Address Line1 */
+            address_line1?: string | null;
+            /** Address Line2 */
+            address_line2?: string | null;
+            /** Landmark */
+            landmark?: string | null;
+            /** City */
+            city?: string | null;
+            /** State */
+            state?: string | null;
+            /** Postal Code */
+            postal_code?: string | null;
+            /** Address Type */
+            address_type?: string | null;
+            /** Is Default */
+            is_default?: boolean | null;
+        };
         /** CustomerAnalyticsResponse */
         CustomerAnalyticsResponse: {
             /**
@@ -3005,6 +3522,17 @@ export interface components {
             whatsapp_opt_in?: boolean | null;
             /** Preferred Channel */
             preferred_channel?: string | null;
+        };
+        /** CustomerRegisterRequest */
+        CustomerRegisterRequest: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Phone E164 */
+            phone_e164?: string | null;
+            /** Password */
+            password: string;
         };
         /** CustomerReturnCreate */
         CustomerReturnCreate: {
@@ -3612,6 +4140,48 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** DirectCheckoutRequest */
+        DirectCheckoutRequest: {
+            /** Items */
+            items: components["schemas"]["DirectOrderItem"][];
+            /**
+             * Store Id
+             * @description Fulfilling store location
+             */
+            store_id?: string | null;
+            shipping_address?: components["schemas"]["ShippingAddressSchema"] | null;
+            /** Customer Name */
+            customer_name?: string | null;
+            /** Customer Email */
+            customer_email?: string | null;
+            /** Customer Phone */
+            customer_phone?: string | null;
+            /**
+             * Payment Method
+             * @default cod
+             * @enum {string}
+             */
+            payment_method: "online" | "cod" | "upi" | "card" | "netbanking";
+            /** Notes */
+            notes?: string | null;
+            /** Coupon Code */
+            coupon_code?: string | null;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+        };
+        /** DirectOrderItem */
+        DirectOrderItem: {
+            /**
+             * Variant Id
+             * Format: uuid
+             */
+            variant_id: string;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity: number;
+        };
         /** DiscountBreakdown */
         DiscountBreakdown: {
             /**
@@ -3780,6 +4350,19 @@ export interface components {
             /** Ledger Movements */
             ledger_movements: components["schemas"]["InventoryLedgerMovementSummary"][];
         };
+        /** LoginRequest */
+        LoginRequest: {
+            /**
+             * Email
+             * @description Email address or username
+             */
+            email: string;
+            /**
+             * Password
+             * @description User password
+             */
+            password: string;
+        };
         /** LogoutRequest */
         LogoutRequest: {
             /** Refresh Token */
@@ -3815,6 +4398,205 @@ export interface components {
             order_status_summary: {
                 [key: string]: number;
             };
+        };
+        /** MerchantInvoiceCreate */
+        MerchantInvoiceCreate: {
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Subscription Id */
+            subscription_id?: string | null;
+            /**
+             * Billing Period Start
+             * Format: date
+             */
+            billing_period_start: string;
+            /**
+             * Billing Period End
+             * Format: date
+             */
+            billing_period_end: string;
+            /** Amount */
+            amount: number | string;
+            /**
+             * Tax Amount
+             * @default 0.00
+             */
+            tax_amount: number | string;
+            /** Total Amount */
+            total_amount: number | string;
+            /**
+             * Currency
+             * @default INR
+             */
+            currency: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Line Items */
+            line_items?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** MerchantInvoicePayRequest */
+        MerchantInvoicePayRequest: {
+            /** Payment Reference */
+            payment_reference: string;
+        };
+        /** MerchantInvoiceResponse */
+        MerchantInvoiceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Subscription Id */
+            subscription_id: string | null;
+            /** Invoice Number */
+            invoice_number: string;
+            /**
+             * Billing Period Start
+             * Format: date
+             */
+            billing_period_start: string;
+            /**
+             * Billing Period End
+             * Format: date
+             */
+            billing_period_end: string;
+            /** Amount */
+            amount: string;
+            /** Tax Amount */
+            tax_amount: string;
+            /** Total Amount */
+            total_amount: string;
+            /** Currency */
+            currency: string;
+            /** Status */
+            status: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Paid At */
+            paid_at: string | null;
+            /** Payment Reference */
+            payment_reference: string | null;
+            /** Line Items */
+            line_items: unknown[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** MerchantRegisterRequest */
+        MerchantRegisterRequest: {
+            /** Business Legal Name */
+            business_legal_name: string;
+            /** Brand Name */
+            brand_name: string;
+            /** Owner Name */
+            owner_name: string;
+            /** Email */
+            email: string;
+            /** Phone E164 */
+            phone_e164: string;
+            /** Password */
+            password: string;
+            /**
+             * Business Type
+             * @default Private Limited
+             */
+            business_type: string;
+            /**
+             * Category Specialization
+             * @default Apparel & Couture
+             */
+            category_specialization: string;
+            /** Address Line */
+            address_line: string;
+            /** City */
+            city: string;
+            /** State */
+            state: string;
+            /** Postal Code */
+            postal_code: string;
+            /** Gstin */
+            gstin?: string | null;
+            /** Pan Number */
+            pan_number?: string | null;
+            /** Bank Account Number */
+            bank_account_number?: string | null;
+            /** Bank Ifsc */
+            bank_ifsc?: string | null;
+            /** Bank Name */
+            bank_name?: string | null;
+        };
+        /** MerchantRegisterResponse */
+        MerchantRegisterResponse: {
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /** MerchantSubscriptionResponse */
+        MerchantSubscriptionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /**
+             * Plan Id
+             * Format: uuid
+             */
+            plan_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Current Period Start
+             * Format: date-time
+             */
+            current_period_start: string;
+            /**
+             * Current Period End
+             * Format: date-time
+             */
+            current_period_end: string;
+            /** Auto Renew */
+            auto_renew: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            plan?: components["schemas"]["SubscriptionPlanResponse"] | null;
         };
         /** MessageResponse */
         MessageResponse: {
@@ -4045,7 +4827,12 @@ export interface components {
              * Phone E164
              * @description Mobile number in E.164 format
              */
-            phone_e164: string;
+            phone_e164?: string | null;
+            /**
+             * Email
+             * @description Email address for OTP dispatch
+             */
+            email?: string | null;
             /**
              * Purpose
              * @default login
@@ -4065,11 +4852,15 @@ export interface components {
             expires_in_seconds: number;
             /** Message */
             message: string;
+            /** Dev Otp */
+            dev_otp?: string | null;
         };
         /** OTPVerifyRequest */
         OTPVerifyRequest: {
             /** Phone E164 */
-            phone_e164: string;
+            phone_e164?: string | null;
+            /** Email */
+            email?: string | null;
             /** Otp */
             otp: string;
             /**
@@ -4258,6 +5049,106 @@ export interface components {
              */
             updated_at: string;
         };
+        /** OrderReturnRequestCreate */
+        OrderReturnRequestCreate: {
+            /**
+             * Order Item Id
+             * Format: uuid
+             */
+            order_item_id: string;
+            /**
+             * Request Type
+             * @default RETURN
+             * @enum {string}
+             */
+            request_type: "RETURN" | "EXCHANGE";
+            /** Reason */
+            reason: string;
+            /** Detailed Reason */
+            detailed_reason?: string | null;
+            /** Requested Variant Id */
+            requested_variant_id?: string | null;
+            /** Requested Size */
+            requested_size?: string | null;
+            /** Images */
+            images?: string[] | null;
+        };
+        /** OrderReturnRequestResponse */
+        OrderReturnRequestResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /**
+             * Order Item Id
+             * Format: uuid
+             */
+            order_item_id: string;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Request Type */
+            request_type: string;
+            /** Reason */
+            reason: string;
+            /** Detailed Reason */
+            detailed_reason: string | null;
+            /** Requested Variant Id */
+            requested_variant_id: string | null;
+            /** Requested Size */
+            requested_size: string | null;
+            /** Status */
+            status: string;
+            /** Refund Amount */
+            refund_amount: string | null;
+            /** Admin Notes */
+            admin_notes: string | null;
+            /** Reviewed By User Id */
+            reviewed_by_user_id: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Pickup Tracking Id */
+            pickup_tracking_id: string | null;
+            /** Images */
+            images: string[] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** OrderReturnReviewRequest */
+        OrderReturnReviewRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "APPROVED" | "REJECTED" | "PICKUP_SCHEDULED" | "PICKED_UP" | "RECEIVED" | "COMPLETED" | "CANCELLED";
+            /** Admin Notes */
+            admin_notes?: string | null;
+            /** Refund Amount */
+            refund_amount?: number | string | null;
+            /** Pickup Tracking Id */
+            pickup_tracking_id?: string | null;
+        };
         /** OrderStatusBreakdown */
         OrderStatusBreakdown: {
             /** Status */
@@ -4308,6 +5199,41 @@ export interface components {
             status: "CONFIRMED" | "PROCESSING" | "DISPATCHED" | "DELIVERED" | "CANCELLED" | "RETURNED";
             /** Notes */
             notes?: string | null;
+        };
+        /** OutboxItemResponse */
+        OutboxItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Tenant Name */
+            tenant_name?: string | null;
+            /** Event Type */
+            event_type: string;
+            /** Aggregate Type */
+            aggregate_type: string;
+            /** Aggregate Id */
+            aggregate_id: string;
+            /** Status */
+            status: string;
+            /** Retry Count */
+            retry_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** OutboxProcessResponse */
         OutboxProcessResponse: {
@@ -4500,6 +5426,35 @@ export interface components {
             /** Gateway Signature */
             gateway_signature: string;
         };
+        /** PlatformAuditLogResponse */
+        PlatformAuditLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Actor Id */
+            actor_id: string | null;
+            /** Actor Email */
+            actor_email: string | null;
+            /** Action */
+            action: string;
+            /** Target Type */
+            target_type: string;
+            /** Target Id */
+            target_id: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /** Ip Address */
+            ip_address: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** PlatformOverviewResponse */
         PlatformOverviewResponse: {
             /**
@@ -4544,6 +5499,55 @@ export interface components {
             total_registered_users: number;
             /** Tenants */
             tenants: components["schemas"]["TenantComparisonRecord"][];
+        };
+        /** PlatformStaffCreate */
+        PlatformStaffCreate: {
+            /** Phone E164 */
+            phone_e164: string;
+            /** Email */
+            email?: string | null;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Role Code
+             * @default SUPER_ADMIN
+             * @enum {string}
+             */
+            role_code: "SUPER_ADMIN" | "COMPLIANCE_OFFICER" | "FINANCE_CONTROLLER" | "SUPPORT_OPERATOR";
+        };
+        /** PlatformStaffResponse */
+        PlatformStaffResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Email */
+            email: string | null;
+            /** Display Name */
+            display_name: string | null;
+            /** Status */
+            status: string;
+            /** Is Platform User */
+            is_platform_user: boolean;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PlatformStaffUpdate */
+        PlatformStaffUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Status */
+            status?: ("active" | "suspended") | null;
+            /** Role Code */
+            role_code?: ("SUPER_ADMIN" | "COMPLIANCE_OFFICER" | "FINANCE_CONTROLLER" | "SUPPORT_OPERATOR") | null;
         };
         /** PriceQuoteItem */
         PriceQuoteItem: {
@@ -4637,7 +5641,7 @@ export interface components {
             /** Name */
             name: string;
             /** Slug */
-            slug: string;
+            slug?: string | null;
             /** Description */
             description?: string | null;
             /**
@@ -4837,7 +5841,7 @@ export interface components {
         /** ProductVariantCreate */
         ProductVariantCreate: {
             /** Sku */
-            sku: string;
+            sku?: string | null;
             /** Barcode */
             barcode?: string | null;
             /** Name */
@@ -4854,6 +5858,12 @@ export interface components {
             mrp: number | string;
             /** Base Price */
             base_price: number | string;
+            /**
+             * Initial Stock
+             * @description Initial stock units for this size
+             * @default 0
+             */
+            initial_stock: number;
             /**
              * Status
              * @default active
@@ -4898,6 +5908,11 @@ export interface components {
             base_price: string;
             /** Status */
             status: string;
+            /**
+             * Available Qty
+             * @default 0
+             */
+            available_qty: number;
             /**
              * Created At
              * Format: date-time
@@ -6345,6 +7360,96 @@ export interface components {
              */
             updated_at: string;
         };
+        /** SubscriptionAssignRequest */
+        SubscriptionAssignRequest: {
+            /**
+             * Plan Id
+             * Format: uuid
+             */
+            plan_id: string;
+            /**
+             * Auto Renew
+             * @default true
+             */
+            auto_renew: boolean;
+        };
+        /** SubscriptionPlanCreate */
+        SubscriptionPlanCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Billing Cycle
+             * @default MONTHLY
+             * @enum {string}
+             */
+            billing_cycle: "MONTHLY" | "ANNUAL";
+            /**
+             * Price
+             * @default 0.00
+             */
+            price: number | string;
+            /**
+             * Currency
+             * @default INR
+             */
+            currency: string;
+            /**
+             * Max Stores
+             * @default 1
+             */
+            max_stores: number;
+            /**
+             * Max Staff Users
+             * @default 5
+             */
+            max_staff_users: number;
+            /**
+             * Commission Rate Percent
+             * @default 0.00
+             */
+            commission_rate_percent: number | string;
+            /** Features */
+            features?: string[];
+        };
+        /** SubscriptionPlanResponse */
+        SubscriptionPlanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Billing Cycle */
+            billing_cycle: string;
+            /** Price */
+            price: string;
+            /** Currency */
+            currency: string;
+            /** Max Stores */
+            max_stores: number;
+            /** Max Staff Users */
+            max_staff_users: number;
+            /** Commission Rate Percent */
+            commission_rate_percent: string;
+            /** Features */
+            features: unknown[];
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** SupplierCreate */
         SupplierCreate: {
             /** Name */
@@ -6423,6 +7528,30 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** SystemHealthResponse */
+        SystemHealthResponse: {
+            /** App Name */
+            app_name: string;
+            /** App Env */
+            app_env: string;
+            /** Status */
+            status: string;
+            /** Database */
+            database: string;
+            /** Pool Size */
+            pool_size: number;
+            /** Active Tenants */
+            active_tenants: number;
+            /** Pending Outbox Events */
+            pending_outbox_events: number;
+            /** Failed Outbox Events */
+            failed_outbox_events: number;
+            /**
+             * System Timestamp
+             * Format: date-time
+             */
+            system_timestamp: string;
+        };
         /** TenantComparisonRecord */
         TenantComparisonRecord: {
             /**
@@ -6474,6 +7603,89 @@ export interface components {
             contact_email?: string | null;
             /** Contact Phone */
             contact_phone?: string | null;
+            /**
+             * Business Type
+             * @default PRIVATE_LIMITED
+             */
+            business_type: string | null;
+            /** Pan Number */
+            pan_number?: string | null;
+            /** Gstin */
+            gstin?: string | null;
+            /** Registered Address */
+            registered_address?: string | null;
+            /** Initial Plan Code */
+            initial_plan_code?: string | null;
+        };
+        /** TenantKYCDocumentCreate */
+        TenantKYCDocumentCreate: {
+            /**
+             * Document Type
+             * @enum {string}
+             */
+            document_type: "GST_CERTIFICATE" | "PAN_CARD" | "TRADE_LICENSE" | "BANK_STATEMENT" | "IDENTITY_PROOF";
+            /** Document Number */
+            document_number: string;
+            /** Document Url */
+            document_url: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * File Size Bytes
+             * @default 0
+             */
+            file_size_bytes: number;
+        };
+        /** TenantKYCDocumentResponse */
+        TenantKYCDocumentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Document Type */
+            document_type: string;
+            /** Document Number */
+            document_number: string;
+            /** Document Url */
+            document_url: string;
+            /** File Name */
+            file_name: string;
+            /** File Size Bytes */
+            file_size_bytes: number;
+            /** Status */
+            status: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Verified At */
+            verified_at?: string | null;
+            /** Verified By */
+            verified_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** TenantKYCDocumentReview */
+        TenantKYCDocumentReview: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "VERIFIED" | "REJECTED";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
         };
         /** TenantResponse */
         TenantResponse: {
@@ -6489,11 +7701,29 @@ export interface components {
             /** Status */
             status: string;
             /** Legal Name */
-            legal_name: string | null;
+            legal_name?: string | null;
             /** Contact Email */
-            contact_email: string | null;
+            contact_email?: string | null;
             /** Contact Phone */
-            contact_phone: string | null;
+            contact_phone?: string | null;
+            /** Business Type */
+            business_type?: string | null;
+            /** Pan Number */
+            pan_number?: string | null;
+            /** Gstin */
+            gstin?: string | null;
+            /** Registered Address */
+            registered_address?: string | null;
+            /** Owner Name */
+            owner_name?: string | null;
+            /** Bank Account Number */
+            bank_account_number?: string | null;
+            /** Bank Ifsc */
+            bank_ifsc?: string | null;
+            /** Bank Name */
+            bank_name?: string | null;
+            /** Category Specialization */
+            category_specialization?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -6504,6 +7734,44 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Store Count
+             * @default 0
+             */
+            store_count: number;
+            /**
+             * Kyc Status
+             * @default PENDING
+             */
+            kyc_status: string;
+            /** Current Plan Name */
+            current_plan_name?: string | null;
+        };
+        /** TenantStatusLogResponse */
+        TenantStatusLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Previous Status */
+            previous_status: string;
+            /** New Status */
+            new_status: string;
+            /** Reason */
+            reason?: string | null;
+            /** Actor Id */
+            actor_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** TenantStatusUpdate */
         TenantStatusUpdate: {
@@ -6512,6 +7780,11 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "active" | "suspended";
+            /**
+             * Reason
+             * @description Mandatory reason for suspension or reactivation
+             */
+            reason?: string | null;
         };
         /** TimeSeriesPoint */
         TimeSeriesPoint: {
@@ -6752,6 +8025,105 @@ export interface operations {
             };
         };
     };
+    login_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_customer_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_merchant_api_v1_auth_merchant_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MerchantRegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantRegisterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     send_otp_api_v1_auth_otp_send_post: {
         parameters: {
             query?: never;
@@ -6904,9 +8276,213 @@ export interface operations {
             };
         };
     };
+    list_addresses_api_v1_customer_addresses_get: {
+        parameters: {
+            query?: {
+                /** @description Merchant organization ID */
+                tenant_id?: string | null;
+            };
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_address_api_v1_customer_addresses_post: {
+        parameters: {
+            query?: {
+                /** @description Merchant organization ID */
+                tenant_id?: string | null;
+            };
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerAddressCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_address_api_v1_customer_addresses__address_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_address_api_v1_customer_addresses__address_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerAddressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_address_api_v1_customer_addresses__address_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_default_address_api_v1_customer_addresses__address_id__default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tenants_api_v1_platform_tenants_get: {
         parameters: {
             query?: {
+                /** @description Filter by status: pending, active, suspended */
+                status?: string | null;
+                /** @description Search by name, slug, legal name, or GSTIN */
+                search?: string | null;
                 skip?: number;
                 limit?: number;
             };
@@ -7031,6 +8607,556 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tenant_lifecycle_logs_api_v1_platform_tenants__tenant_id__lifecycle_logs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantStatusLogResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_kyc_documents_api_v1_platform_tenants__tenant_id__kyc_documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantKYCDocumentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantKYCDocumentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantKYCDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents__doc_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantKYCDocumentReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantKYCDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_subscription_plans_api_v1_platform_billing_plans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPlanResponse"][];
+                };
+            };
+        };
+    };
+    create_subscription_plan_api_v1_platform_billing_plans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionPlanCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPlanResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_subscriptions_api_v1_platform_billing_subscriptions_get: {
+        parameters: {
+            query?: {
+                tenant_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantSubscriptionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_subscription_api_v1_platform_billing_subscriptions_assign_post: {
+        parameters: {
+            query: {
+                /** @description Target tenant ID */
+                tenant_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantSubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_merchant_invoices_api_v1_platform_billing_invoices_get: {
+        parameters: {
+            query?: {
+                tenant_id?: string | null;
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantInvoiceResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_merchant_invoice_api_v1_platform_billing_invoices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MerchantInvoiceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantInvoiceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pay_merchant_invoice_api_v1_platform_billing_invoices__invoice_id__pay_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MerchantInvoicePayRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantInvoiceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_platform_staff_api_v1_platform_staff_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformStaffResponse"][];
+                };
+            };
+        };
+    };
+    create_platform_staff_api_v1_platform_staff_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformStaffCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_platform_staff_status_api_v1_platform_staff__user_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformStaffUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_platform_audit_logs_api_v1_platform_audit_logs_get: {
+        parameters: {
+            query?: {
+                /** @description Filter by action code */
+                action?: string | null;
+                /** @description Filter by target type */
+                target_type?: string | null;
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAuditLogResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_system_diagnostics_api_v1_platform_system_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthResponse"];
+                };
+            };
+        };
+    };
+    list_system_outbox_api_v1_platform_system_outbox_get: {
+        parameters: {
+            query?: {
+                /** @description Filter by status: pending, processed, failed */
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutboxItemResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_system_outbox_api_v1_platform_system_outbox_process_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -7534,6 +9660,35 @@ export interface operations {
             };
         };
     };
+    delete_product_api_v1_merchant_catalog_products__product_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_product_api_v1_merchant_catalog_products__product_id__patch: {
         parameters: {
             query?: never;
@@ -7592,6 +9747,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProductVariantResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_variant_api_v1_merchant_catalog_variants__variant_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -8749,13 +10933,53 @@ export interface operations {
                 /** @description Merchant organization ID */
                 tenant_id?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    direct_checkout_order_api_v1_orders_direct_checkout_post: {
+        parameters: {
+            query?: {
+                /** @description Merchant organization ID */
+                tenant_id?: string | null;
+            };
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectCheckoutRequest"];
             };
         };
         responses: {
@@ -8787,7 +11011,9 @@ export interface operations {
                 skip?: number;
                 limit?: number;
             };
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8819,7 +11045,9 @@ export interface operations {
                 /** @description Merchant context */
                 tenant_id?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path: {
                 order_number: string;
             };
@@ -8853,7 +11081,9 @@ export interface operations {
                 /** @description Merchant context */
                 tenant_id?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path: {
                 order_number: string;
             };
@@ -8891,7 +11121,9 @@ export interface operations {
                 /** @description Merchant context */
                 tenant_id?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path: {
                 order_id: string;
             };
@@ -9075,6 +11307,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_order_returns_api_v1_orders__order_number__returns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequestResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_return_request_api_v1_orders__order_number__returns_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
+            path: {
+                order_number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderReturnRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merchant_list_returns_api_v1_merchant_orders_returns_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                type?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequestResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merchant_review_return_api_v1_merchant_orders_returns__return_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                return_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderReturnReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9556,7 +11925,9 @@ export interface operations {
     initiate_payment_api_v1_payments_initiate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -9589,7 +11960,9 @@ export interface operations {
     verify_payment_api_v1_payments_verify_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Tenant-ID"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };

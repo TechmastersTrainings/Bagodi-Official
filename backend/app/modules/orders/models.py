@@ -151,6 +151,9 @@ class Order(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     payments: Mapped[list["PaymentTransaction"]] = relationship(
         "PaymentTransaction", cascade="all, delete-orphan", back_populates="order"
     )
+    return_requests: Mapped[list["OrderReturnRequest"]] = relationship(
+        "OrderReturnRequest", cascade="all, delete-orphan", back_populates="order"
+    )
 
 
 class OrderItem(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -264,3 +267,69 @@ class PaymentTransaction(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     order: Mapped["Order"] = relationship("Order", back_populates="payments")
+
+
+class OrderReturnRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "order_return_requests"
+
+    tenant_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    order_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    order_item_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("order_items.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    customer_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    request_type: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="RETURN"
+    )  # RETURN, EXCHANGE
+    reason: Mapped[str] = mapped_column(
+        String(100), nullable=False
+    )  # SIZE_FIT_ISSUE, DEFECTIVE, WRONG_ITEM, FABRIC_QUALITY, COLOR_MISMATCH, CHANGED_MIND
+    detailed_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requested_variant_id: Mapped[PG_UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("product_variants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    requested_size: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="REQUESTED", index=True
+    )  # REQUESTED, APPROVED, REJECTED, PICKUP_SCHEDULED, PICKED_UP, RECEIVED, COMPLETED, CANCELLED
+    refund_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_by_user_id: Mapped[PG_UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pickup_tracking_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    images: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+
+    order: Mapped["Order"] = relationship("Order", back_populates="return_requests")
+    order_item: Mapped["OrderItem"] = relationship("OrderItem")
+    customer: Mapped["User"] = relationship("User", foreign_keys=[customer_id])
+    requested_variant: Mapped["ProductVariant | None"] = relationship(
+        "ProductVariant", foreign_keys=[requested_variant_id]
+    )
+    reviewed_by: Mapped["User | None"] = relationship("User", foreign_keys=[reviewed_by_user_id])
+

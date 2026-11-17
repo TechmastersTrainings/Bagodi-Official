@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import SecurityPrincipal, get_security_principal
 from app.db.session import get_db
 from app.modules.identity.schemas import (
+    CustomerRegisterRequest,
+    LoginRequest,
     LogoutRequest,
+    MerchantRegisterRequest,
+    MerchantRegisterResponse,
     MessageResponse,
     OTPSendRequest,
     OTPSendResponse,
@@ -21,10 +25,77 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post(
+    "/login",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Authenticate with Email / Phone and Password (Real User Platform)",
+)
+@router.post(
+    "/customer/login-password",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Customer password login alias",
+)
+async def login(
+    data: LoginRequest,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("User-Agent")
+    return await AuthService.login_with_password(
+        db, data, ip_address=ip_address, user_agent=user_agent
+    )
+
+
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register external customer user account with password",
+)
+@router.post(
+    "/customer/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register customer alias",
+)
+async def register_customer(
+    data: CustomerRegisterRequest,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("User-Agent")
+    return await AuthService.register_customer(
+        db, data, ip_address=ip_address, user_agent=user_agent
+    )
+
+
+@router.post(
+    "/merchant/register",
+    response_model=MerchantRegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register real merchant boutique/store for platform approval",
+)
+async def register_merchant(
+    data: MerchantRegisterRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await AuthService.register_merchant(db, data)
+
+
+@router.post(
     "/otp/send",
     response_model=OTPSendResponse,
     status_code=status.HTTP_200_OK,
-    summary="Request a secure 6-digit OTP code to mobile number",
+    summary="Request a secure 6-digit OTP code to mobile number or email",
+)
+@router.post(
+    "/customer/send-otp",
+    response_model=OTPSendResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Send customer OTP alias",
 )
 async def send_otp(
     data: OTPSendRequest,
@@ -32,7 +103,12 @@ async def send_otp(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     ip_address = request.client.host if request.client else None
-    return await AuthService.request_otp(db, data.phone_e164, ip_address=ip_address)
+    return await AuthService.request_otp(
+        db,
+        phone_e164=data.phone_e164,
+        email=data.email,
+        ip_address=ip_address,
+    )
 
 
 @router.post(
@@ -40,6 +116,12 @@ async def send_otp(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Verify mobile OTP and obtain JWT access and refresh tokens",
+)
+@router.post(
+    "/customer/verify-otp",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify customer OTP alias",
 )
 async def verify_otp(
     data: OTPVerifyRequest,
@@ -56,6 +138,12 @@ async def verify_otp(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Exchange refresh token for new access and rotated refresh token",
+)
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Refresh tokens alias",
 )
 async def refresh_tokens(
     data: TokenRefreshRequest,

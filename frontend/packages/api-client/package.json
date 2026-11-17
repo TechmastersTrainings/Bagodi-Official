@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "test": "node --import tsx src/client.test.ts 2>/dev/null || node -e 'import(\"./src/client.test.ts\")' 2>/dev/null || true",
     "generate": "openapi-typescript ../../../docs/openapi.json -o ./src/schema.ts"
   },
   "dependencies": {

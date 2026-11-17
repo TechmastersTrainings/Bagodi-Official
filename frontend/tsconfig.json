@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/api-client"
+    },
+    {
+      "path": "./apps/customer-web"
+    },
+    {
+      "path": "./apps/merchant-admin"
+    },
+    {
+      "path": "./apps/super-admin"
+    }
+  ]
+}

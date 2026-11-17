@@ -71,7 +71,7 @@ class ProductPerformanceRecord(BaseModel):
 
 
 class MerchantDashboardResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     period: str
     start_date: datetime
     end_date: datetime
@@ -98,7 +98,7 @@ class SalesIntervalRecord(BaseModel):
 
 
 class SalesReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     store_id: UUID | None = None
     start_date: datetime
     end_date: datetime
@@ -111,7 +111,7 @@ class SalesReportResponse(BaseModel):
 # 3. Product & Category Performance
 # -----------------------------------------------------------------------------
 class ProductPerformanceReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     total_products_sold: int = 0
@@ -129,7 +129,7 @@ class CategoryPerformanceRecord(BaseModel):
 
 
 class CategoryPerformanceReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     records: list[CategoryPerformanceRecord]
@@ -173,7 +173,7 @@ class InventoryLedgerMovementSummary(BaseModel):
 
 
 class InventoryReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     store_id: UUID | None = None
     total_on_hand_units: int = 0
     total_reserved_units: int = 0
@@ -198,7 +198,7 @@ class OrderStatusBreakdown(BaseModel):
 
 
 class OrderAnalyticsResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     total_orders: int = 0
@@ -231,7 +231,7 @@ class CodSettlementSummary(BaseModel):
 
 
 class PaymentReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     total_captured_amount: Decimal = Decimal("0.00")
@@ -267,7 +267,7 @@ class CourierPerformanceRecord(BaseModel):
 
 
 class DeliveryAnalyticsResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     total_shipments: int = 0
@@ -296,7 +296,7 @@ class TopCustomerRecord(BaseModel):
 
 
 class CustomerAnalyticsResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     total_unique_customers: int = 0
@@ -325,7 +325,7 @@ class StoreComparisonRecord(BaseModel):
 
 
 class MultiStoreReportResponse(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     start_date: datetime
     end_date: datetime
     stores: list[StoreComparisonRecord]
@@ -335,7 +335,7 @@ class MultiStoreReportResponse(BaseModel):
 # 10. Platform Overview Analytics (TechMasters Super Admin)
 # -----------------------------------------------------------------------------
 class TenantComparisonRecord(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
     tenant_name: str
     tenant_slug: str
     status: str

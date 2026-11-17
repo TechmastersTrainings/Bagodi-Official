@@ -17,8 +17,9 @@ class BaseOTPProvider(ABC):
 class ConsoleOTPProvider(BaseOTPProvider):
     async def send_otp(self, phone_e164: str, otp_code: str, expires_in_seconds: int) -> bool:
         logger.info(
-            "OTP delivery requested for %s: code dispatched (valid for %ds)",
+            "OTP delivery requested for %s: code=%s (valid for %ds)",
             phone_e164,
+            otp_code,
             expires_in_seconds,
         )
         return True

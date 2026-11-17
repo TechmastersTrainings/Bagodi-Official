@@ -1,0 +1,352 @@
+/* ==========================================================================
+   Bagodi Customer Web — Luxury Product Detail Atelier Styling
+   ========================================================================== */
+
+.pdpContainer {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: var(--space-4) clamp(16px, 3.5vw, 40px) var(--space-16);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #8E8D86;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.breadcrumbs a {
+  color: #555555;
+  text-decoration: none;
+  transition: color var(--duration-fast) ease;
+}
+
+.breadcrumbs a:hover {
+  color: #0A0A0A;
+}
+
+.pdpGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+  align-items: flex-start;
+}
+
+.detailsArea {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.brandHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brandBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.brandName {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #E31B23;
+  font-weight: 700;
+}
+
+.authenticityTag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(197, 161, 91, 0.12);
+  border: 1px solid rgba(197, 161, 91, 0.3);
+  color: #8C6A1E;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+.productTitle {
+  font-family: var(--font-serif);
+  font-size: clamp(1.4rem, 2.2vw, 1.95rem);
+  font-weight: 800;
+  color: #0A0A0A;
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.priceBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+
+.sellingPrice {
+  font-size: clamp(1.75rem, 2.5vw, 2.2rem);
+  font-weight: 800;
+  color: #0A0A0A;
+  font-family: var(--font-mono);
+}
+
+.mrp {
+  font-size: 14px;
+  color: #9CA3AF;
+  text-decoration: line-through;
+  font-family: var(--font-mono);
+}
+
+.discountPill {
+  font-size: 11px;
+  font-weight: 800;
+  color: #DC2626;
+  background: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.taxNotice {
+  font-size: 11.5px;
+  color: #71717A;
+  margin-top: -6px;
+}
+
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #374151;
+}
+
+.sizeChartTrigger {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #E31B23;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sizeChartTrigger:hover {
+  text-decoration: underline;
+}
+
+.sizeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sizeButton {
+  min-width: 58px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  border: 1.5px solid #D8D2C7;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sizeButton:hover:not(:disabled) {
+  border-color: #0A0A0A;
+}
+
+.sizeButtonActive {
+  background: #0A0A0A !important;
+  color: #FFFFFF !important;
+  border-color: #0A0A0A !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.sizeButtonDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  background: #F3F4F6;
+  border-color: #E5E7EB;
+}
+
+.colorSwatches {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.colorSwatchBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.colorSwatchBtnActive {
+  border-color: #0A0A0A;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0A0A0A;
+}
+
+.skuDetails {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #71717A;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #F8F7F4;
+  border: 1px solid #ECE7DE;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.actionsContainer {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.addToBagActionBtn {
+  flex: 1;
+  height: 50px;
+  background: #E31B23 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 20px rgba(227, 27, 35, 0.32) !important;
+  transition: all 0.2s ease !important;
+}
+
+.addToBagActionBtn:hover:not(:disabled) {
+  background: #C8141B !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(227, 27, 35, 0.42) !important;
+}
+
+.addToBagActionBtn:disabled {
+  background: #E5E7EB !important;
+  color: #9CA3AF !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.wishlistBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  border: 1.5px solid #D8D2C7;
+  background: #FFFFFF;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.wishlistBtn:hover {
+  border-color: #0A0A0A;
+}
+
+.assuranceList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 16px;
+  background: #FAF9F6;
+  border: 1px solid #ECE7DE;
+  border-radius: 14px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.assuranceItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accordionSection {
+  border: 1px solid #ECE7DE;
+  background: #FFFFFF;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #111827;
+  margin: 0;
+}
+
+.descriptionText {
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .pdpContainer {
+    padding: var(--space-4) var(--space-4) var(--space-12);
+  }
+
+  .pdpGrid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}

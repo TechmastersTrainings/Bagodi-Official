@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,8 +28,17 @@ async def initiate_payment(
     data: PaymentInitiateRequest,
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
 ) -> PaymentInitiateResponse:
-    if not principal.tenant_id:
+    target_tenant_id = principal.tenant_id or x_tenant_id
+    if not target_tenant_id:
+        order_tenant = (
+            await db.execute(select(Order.tenant_id).where(Order.id == data.order_id))
+        ).scalar_one_or_none()
+        if order_tenant:
+            target_tenant_id = order_tenant
+
+    if not target_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "TENANT_REQUIRED", "message": "Tenant context is required."},
@@ -37,7 +46,7 @@ async def initiate_payment(
 
     return await PaymentService.initiate_payment(
         db,
-        tenant_id=principal.tenant_id,
+        tenant_id=target_tenant_id,
         data=data,
         customer_id=principal.user_id,
     )
@@ -50,8 +59,21 @@ async def verify_payment(
     data: PaymentVerifyRequest,
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
 ) -> PaymentTransactionResponse:
-    if not principal.tenant_id:
+    target_tenant_id = principal.tenant_id or x_tenant_id
+    if not target_tenant_id:
+        txn_tenant = (
+            await db.execute(
+                select(PaymentTransaction.tenant_id).where(
+                    PaymentTransaction.id == data.transaction_id
+                )
+            )
+        ).scalar_one_or_none()
+        if txn_tenant:
+            target_tenant_id = txn_tenant
+
+    if not target_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "TENANT_REQUIRED", "message": "Tenant context is required."},
@@ -59,7 +81,7 @@ async def verify_payment(
 
     txn = await PaymentService.verify_payment(
         db,
-        tenant_id=principal.tenant_id,
+        tenant_id=target_tenant_id,
         data=data,
         customer_id=principal.user_id,
     )

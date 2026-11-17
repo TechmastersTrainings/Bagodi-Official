@@ -68,17 +68,35 @@ class ShippingAddressSchema(BaseModel):
 
 
 class CheckoutRequest(BaseModel):
-    store_id: UUID = Field(..., description="Fulfilling store location")
+    store_id: UUID | None = Field(default=None, description="Fulfilling store location (defaults to active store)")
     shipping_address: ShippingAddressSchema
     billing_address: ShippingAddressSchema | None = None
     customer_name: str = Field(..., min_length=2, max_length=200)
     customer_email: str | None = Field(default=None, max_length=150)
     customer_phone: str = Field(..., min_length=10, max_length=50)
-    payment_method: Literal["online", "cod"] = "online"
+    payment_method: Literal["online", "cod", "upi", "card", "netbanking"] = "online"
     notes: str | None = Field(default=None, max_length=1000)
     coupon_code: str | None = Field(
         default=None, max_length=50, description="Optional promotional coupon code"
     )
+    idempotency_key: str | None = Field(default=None, max_length=100)
+
+
+class DirectOrderItem(BaseModel):
+    variant_id: UUID
+    quantity: int = Field(default=1, gt=0)
+
+
+class DirectCheckoutRequest(BaseModel):
+    items: list[DirectOrderItem] = Field(..., min_length=1)
+    store_id: UUID | None = Field(default=None, description="Fulfilling store location")
+    shipping_address: ShippingAddressSchema | None = None
+    customer_name: str | None = Field(default=None, max_length=200)
+    customer_email: str | None = Field(default=None, max_length=150)
+    customer_phone: str | None = Field(default=None, max_length=50)
+    payment_method: Literal["online", "cod", "upi", "card", "netbanking"] = "cod"
+    notes: str | None = Field(default=None, max_length=1000)
+    coupon_code: str | None = Field(default=None, max_length=50)
     idempotency_key: str | None = Field(default=None, max_length=100)
 
 
@@ -175,3 +193,54 @@ class PaymentCallbackRequest(BaseModel):
     gateway_status: Literal["success", "failure"]
     gateway_payload: dict | None = None
     error_message: str | None = None
+
+
+# --- Return & Exchange Schemas ---
+class OrderReturnRequestCreate(BaseModel):
+    order_item_id: UUID
+    request_type: Literal["RETURN", "EXCHANGE"] = "RETURN"
+    reason: str = Field(..., min_length=2, max_length=100)
+    detailed_reason: str | None = Field(default=None, max_length=1000)
+    requested_variant_id: UUID | None = None
+    requested_size: str | None = Field(default=None, max_length=50)
+    images: list[str] | None = None
+
+
+class OrderReturnRequestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    tenant_id: UUID
+    order_id: UUID
+    order_item_id: UUID
+    customer_id: UUID
+    request_type: str
+    reason: str
+    detailed_reason: str | None
+    requested_variant_id: UUID | None
+    requested_size: str | None
+    status: str
+    refund_amount: Decimal | None
+    admin_notes: str | None
+    reviewed_by_user_id: UUID | None
+    reviewed_at: datetime | None
+    pickup_tracking_id: str | None
+    images: list[str] | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class OrderReturnReviewRequest(BaseModel):
+    status: Literal[
+        "APPROVED",
+        "REJECTED",
+        "PICKUP_SCHEDULED",
+        "PICKED_UP",
+        "RECEIVED",
+        "COMPLETED",
+        "CANCELLED",
+    ]
+    admin_notes: str | None = Field(default=None, max_length=1000)
+    refund_amount: Decimal | None = None
+    pickup_tracking_id: str | None = None
+

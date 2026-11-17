@@ -28,6 +28,16 @@ async def get_current_tenant(
     Never trusts client-supplied tenant identifiers in URL query params or request bodies.
     """
     if not principal.tenant_id:
+        if principal.is_platform_user:
+            stmt = select(Tenant).where(Tenant.status == "active").order_by(Tenant.created_at.asc())
+            admin_tenant = (await db.execute(stmt)).scalars().first()
+            if admin_tenant:
+                return TenantContext(
+                    tenant_id=admin_tenant.id,
+                    name=admin_tenant.name,
+                    slug=admin_tenant.slug,
+                    status=admin_tenant.status,
+                )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={

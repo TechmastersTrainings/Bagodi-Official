@@ -26,6 +26,7 @@ router = APIRouter(prefix="/merchant/payments", tags=["Merchant Payments & Recon
 
 
 @router.get("", response_model=list[PaymentTransactionResponse])
+@router.get("/transactions", response_model=list[PaymentTransactionResponse])
 async def list_payments(
     principal: Annotated[SecurityPrincipal, Depends(require_permission("orders.read"))],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -34,13 +35,9 @@ async def list_payments(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[PaymentTransactionResponse]:
-    if not principal.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "TENANT_REQUIRED", "message": "Tenant context is required."},
-        )
-
-    stmt = select(PaymentTransaction).where(PaymentTransaction.tenant_id == principal.tenant_id)
+    stmt = select(PaymentTransaction)
+    if principal.tenant_id and not principal.is_platform_user:
+        stmt = stmt.where(PaymentTransaction.tenant_id == principal.tenant_id)
     if status_filter:
         stmt = stmt.where(PaymentTransaction.status == status_filter)
     if order_id:

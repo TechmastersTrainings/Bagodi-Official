@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.modules.catalog.models import ProductVariant
+from app.modules.identity.models import User
 from app.modules.inventory.schemas import (
     CustomerReturnCreate,
     StockDispatchCreate,
@@ -29,6 +30,7 @@ from app.modules.orders.schemas import (
     CartItemUpdate,
     CartResponse,
     CheckoutRequest,
+    DirectCheckoutRequest,
     OrderStatusUpdateRequest,
     PaymentCallbackRequest,
 )
@@ -387,13 +389,32 @@ class OrderService:
             if existing_order:
                 return existing_order
 
-        # 2. Validate Store belongs to Tenant and is active
-        store = (
-            await db.execute(
-                select(Store).where(Store.id == data.store_id, Store.tenant_id == tenant_id)
-            )
-        ).scalar_one_or_none()
-        if not store or store.status != "active":
+        # 2. Validate Store belongs to Tenant and is active (or resolve default active store)
+        store = None
+        if data.store_id:
+            store = (
+                await db.execute(
+                    select(Store).where(
+                        Store.id == data.store_id,
+                        Store.tenant_id == tenant_id,
+                        Store.status == "active",
+                    )
+                )
+            ).scalar_one_or_none()
+        if not store:
+            store = (
+                await db.execute(
+                    select(Store)
+                    .where(Store.tenant_id == tenant_id, Store.status == "active")
+                    .order_by(Store.code.asc())
+                )
+            ).scalars().first()
+        if not store:
+            store = (
+                await db.execute(select(Store).where(Store.tenant_id == tenant_id))
+            ).scalars().first()
+
+        if not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
@@ -466,7 +487,7 @@ class OrderService:
                 db=db,
                 tenant_id=tenant_id,
                 data=StockReservationCreate(
-                    store_id=data.store_id,
+                    store_id=store.id,
                     variant_id=item.variant_id,
                     quantity=item.quantity,
                     reference_id=order_number,
@@ -511,7 +532,8 @@ class OrderService:
             )
 
         # 7. Initial Status based on Payment Method
-        initial_status = "CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT"
+        is_paid = data.payment_method in ("upi", "card", "netbanking")
+        initial_status = "CONFIRMED" if (data.payment_method == "cod" or is_paid) else "PENDING_PAYMENT"
         expires_at = (
             datetime.now(UTC) + timedelta(minutes=15) if data.payment_method == "online" else None
         )
@@ -525,7 +547,7 @@ class OrderService:
 
         order = Order(
             tenant_id=tenant_id,
-            store_id=data.store_id,
+            store_id=store.id,
             customer_id=valid_customer_id,
             order_number=order_number,
             status=initial_status,
@@ -560,7 +582,20 @@ class OrderService:
             ],
         )
 
-        if data.payment_method == "online":
+        if is_paid:
+            order.payment_status = "paid"
+            order.payments.append(
+                PaymentTransaction(
+                    tenant_id=tenant_id,
+                    transaction_reference=f"TXN-{order_number}-01",
+                    payment_method=data.payment_method,
+                    amount=total_amount,
+                    currency="INR",
+                    status="captured",
+                    gateway_provider="razorpay",
+                )
+            )
+        elif data.payment_method == "online":
             order.payments.append(
                 PaymentTransaction(
                     tenant_id=tenant_id,
@@ -630,6 +665,182 @@ class OrderService:
         return await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order.id)
 
     @staticmethod
+    async def direct_checkout(
+        db: AsyncSession,
+        tenant_id: UUID,
+        customer_id: UUID | None,
+        data: DirectCheckoutRequest,
+    ) -> Order:
+        """Executes immediate direct checkout for selected size items,
+
+        pessimistically locking inventory and deducting stock atomically from the immutable ledger.
+        """
+        # 1. Resolve fulfilling store location
+        store = None
+        if data.store_id:
+            store = (
+                await db.execute(
+                    select(Store).where(
+                        Store.id == data.store_id,
+                        Store.tenant_id == tenant_id,
+                        Store.status == "active",
+                    )
+                )
+            ).scalar_one_or_none()
+        if not store:
+            store = (
+                await db.execute(
+                    select(Store)
+                    .where(Store.tenant_id == tenant_id, Store.status == "active")
+                    .order_by(Store.code.asc())
+                )
+            ).scalars().first()
+        if not store:
+            store = (
+                await db.execute(select(Store).where(Store.tenant_id == tenant_id))
+            ).scalars().first()
+        if not store:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "STORE_NOT_AVAILABLE", "message": "Fulfilling store location is unavailable."},
+            )
+
+        # 2. Resolve valid customer user
+        valid_customer_id = None
+        if customer_id:
+            valid_customer_id = await _resolve_user_id(db, customer_id)
+        if not valid_customer_id:
+            cust_stmt = select(User).where(User.tenant_id == tenant_id, User.is_active.is_(True))
+            fallback_cust = (await db.execute(cust_stmt)).scalars().first()
+            if fallback_cust:
+                valid_customer_id = fallback_cust.id
+
+        # 3. Generate Order Number
+        order_number = f"ORD-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:6].upper()}"
+
+        # 4. Pessimistically lock stock balances and validate quantities
+        order_items: list[OrderItem] = []
+        subtotal = Decimal("0.00")
+
+        for item in data.items:
+            v_stmt = (
+                select(ProductVariant)
+                .where(ProductVariant.id == item.variant_id, ProductVariant.tenant_id == tenant_id)
+                .options(selectinload(ProductVariant.product))
+            )
+            variant = (await db.execute(v_stmt)).scalar_one_or_none()
+            if not variant or variant.status != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={"code": "ITEM_UNAVAILABLE", "message": "Item variant is unavailable."},
+                )
+
+            # Pessimistic row-level lock on StockBalance
+            balance = await InventoryService.get_or_create_balance_for_update(
+                db, tenant_id=tenant_id, store_id=store.id, variant_id=item.variant_id
+            )
+
+            if balance.available_qty < item.quantity:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "INSUFFICIENT_STOCK",
+                        "message": f"Size '{variant.size or 'Standard'}' of '{variant.product.name}' is out of stock. (Available: {balance.available_qty}, Requested: {item.quantity})",
+                    },
+                )
+
+            # Deduct stock directly using double-entry ledger SALE_DISPATCH
+            await InventoryService.post_movement(
+                db=db,
+                tenant_id=tenant_id,
+                store_id=store.id,
+                variant_id=item.variant_id,
+                movement_type="SALE_DISPATCH",
+                from_account="STORE_ON_HAND",
+                to_account="CUSTOMER_DISPATCHED",
+                quantity=item.quantity,
+                on_hand_delta=-item.quantity,
+                reference_type="DIRECT_CHECKOUT",
+                reference_id=order_number,
+                notes=f"Order {order_number} size {variant.size}",
+                user_id=valid_customer_id,
+            )
+
+            line_total = variant.base_price * Decimal(item.quantity)
+            subtotal += line_total
+
+            order_items.append(
+                OrderItem(
+                    tenant_id=tenant_id,
+                    variant_id=item.variant_id,
+                    sku=variant.sku,
+                    product_name=variant.product.name,
+                    variant_name=variant.name,
+                    quantity=item.quantity,
+                    original_unit_price=variant.base_price,
+                    unit_price=variant.base_price,
+                    discount_amount=Decimal("0.00"),
+                    total_price=line_total,
+                    attributes=variant.attributes,
+                )
+            )
+
+        shipping_fee = Decimal("0.00") if subtotal >= Decimal("999.00") else Decimal("49.00")
+        total_amount = subtotal + shipping_fee
+
+        is_paid = data.payment_method in ("upi", "card", "netbanking")
+        order = Order(
+            tenant_id=tenant_id,
+            store_id=store.id,
+            customer_id=valid_customer_id,
+            order_number=order_number,
+            status="CONFIRMED",
+            payment_status="paid" if is_paid else "confirmed" if data.payment_method == "cod" else "pending",
+            payment_method=data.payment_method,
+            fulfillment_status="unfulfilled",
+            currency="INR",
+            subtotal=subtotal,
+            discount_amount=Decimal("0.00"),
+            shipping_fee=shipping_fee,
+            total_amount=total_amount,
+            shipping_address=data.shipping_address.model_dump() if data.shipping_address else {
+                "full_name": data.customer_name or "Valued Customer",
+                "phone": data.customer_phone or "9876500001",
+                "address_line1": "Customer Address, Bidar",
+                "city": "Bidar",
+                "state": "Karnataka",
+                "postal_code": "585401",
+            },
+            customer_name=data.customer_name or "Valued Customer",
+            customer_email=data.customer_email,
+            customer_phone=data.customer_phone or "9876500001",
+            notes=data.notes,
+            items=order_items,
+            status_history=[
+                OrderStatusHistory(
+                    from_status=None,
+                    to_status="CONFIRMED",
+                    notes=f"Direct checkout confirmed via {data.payment_method.upper()}",
+                    changed_by_user_id=valid_customer_id,
+                )
+            ],
+            payments=[
+                PaymentTransaction(
+                    tenant_id=tenant_id,
+                    transaction_reference=f"TXN-{order_number}-01",
+                    payment_method=data.payment_method,
+                    amount=total_amount,
+                    currency="INR",
+                    status="captured" if is_paid else "confirmed" if data.payment_method == "cod" else "initiated",
+                    gateway_provider="razorpay" if is_paid else "cash" if data.payment_method == "cod" else data.payment_method,
+                )
+            ],
+        )
+        db.add(order)
+        await db.commit()
+        return await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order.id)
+
+    @staticmethod
     async def get_order_by_id(db: AsyncSession, tenant_id: UUID, order_id: UUID) -> Order:
         stmt = (
             select(Order)
@@ -652,9 +863,23 @@ class OrderService:
     async def get_order_by_number(
         db: AsyncSession, tenant_id: UUID, order_number: str, customer_id: UUID | None = None
     ) -> Order:
+        is_uuid = False
+        parsed_uuid = None
+        try:
+            parsed_uuid = UUID(order_number)
+            is_uuid = True
+        except (ValueError, TypeError):
+            pass
+
+        match_cond = (
+            or_(Order.id == parsed_uuid, Order.order_number == order_number)
+            if is_uuid
+            else (Order.order_number == order_number)
+        )
+
         stmt = (
             select(Order)
-            .where(Order.order_number == order_number, Order.tenant_id == tenant_id)
+            .where(match_cond, Order.tenant_id == tenant_id)
             .options(
                 selectinload(Order.items),
                 selectinload(Order.status_history),
@@ -708,20 +933,21 @@ class OrderService:
         valid_user_id = await _resolve_user_id(db, user_id)
 
         if target_status == "DISPATCHED":
-            # Physically dispatch inventory out of store reserved stock
-            for item in order.items:
-                await InventoryService.dispatch_stock(
-                    db=db,
-                    tenant_id=tenant_id,
-                    data=StockDispatchCreate(
-                        store_id=order.store_id,
-                        variant_id=item.variant_id,
-                        quantity=item.quantity,
-                        reference_id=order.order_number,
-                        notes=f"Order {order.order_number} dispatched",
-                    ),
-                    user_id=valid_user_id,
-                )
+            # Physically dispatch inventory out of store reserved stock if it was reserved
+            if order.reservation_expires_at is not None and not order.reservation_released:
+                for item in order.items:
+                    await InventoryService.dispatch_stock(
+                        db=db,
+                        tenant_id=tenant_id,
+                        data=StockDispatchCreate(
+                            store_id=order.store_id,
+                            variant_id=item.variant_id,
+                            quantity=item.quantity,
+                            reference_id=order.order_number,
+                            notes=f"Order {order.order_number} dispatched",
+                        ),
+                        user_id=valid_user_id,
+                    )
             order.fulfillment_status = "fulfilled"
 
         elif target_status == "CANCELLED":

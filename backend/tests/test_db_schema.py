@@ -67,6 +67,14 @@ async def test_database_tables_exist():
         "proof_of_deliveries",
         "delivery_audit_logs",
         "report_export_logs",
+        "customer_addresses",
+        "order_return_requests",
+        "tenant_kyc_documents",
+        "tenant_status_logs",
+        "merchant_subscription_plans",
+        "merchant_subscriptions",
+        "merchant_invoices",
+        "platform_audit_logs",
     }
     async with engine.connect() as conn:
         result = await conn.execute(
@@ -131,6 +139,8 @@ async def test_database_contains_zero_dummy_records():
         "proof_of_deliveries",
         "delivery_audit_logs",
         "report_export_logs",
+        "customer_addresses",
+        "order_return_requests",
     ]
     async with engine.connect() as conn:
         for table in tables_to_check:

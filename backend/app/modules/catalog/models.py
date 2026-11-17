@@ -85,6 +85,12 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     images: Mapped[list["ProductImage"]] = relationship(
         "ProductImage", back_populates="product", cascade="all, delete-orphan"
     )
+    category: Mapped["Category"] = relationship(
+        "Category", foreign_keys=[category_id], lazy="selectin"
+    )
+    brand: Mapped["Brand | None"] = relationship(
+        "Brand", foreign_keys=[brand_id], lazy="selectin"
+    )
 
 
 class ProductVariant(UUIDPrimaryKeyMixin, TimestampMixin, Base):

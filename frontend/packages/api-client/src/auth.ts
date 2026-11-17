@@ -5,10 +5,13 @@
 
 export interface AuthUser {
   id: string;
-  phone: string;
+  phone?: string | null;
+  phone_e164?: string | null;
   email?: string | null;
+  display_name?: string | null;
   full_name?: string | null;
   role?: string;
+  roles?: string[];
   tenant_id?: string | null;
 }
 
@@ -16,6 +19,7 @@ const ACCESS_TOKEN_KEY = "bagodi_access_token";
 const REFRESH_TOKEN_KEY = "bagodi_refresh_token";
 const USER_KEY = "bagodi_user";
 const TENANT_KEY = "bagodi_tenant_id";
+const SESSION_ID_KEY = "bagodi_session_id";
 
 type AuthListener = (isAuthenticated: boolean, user: AuthUser | null) => void;
 const listeners = new Set<AuthListener>();
@@ -32,28 +36,42 @@ function notifyListeners(): void {
   });
 }
 
+function getStorage(): Storage | null {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  if (typeof localStorage !== "undefined") {
+    return localStorage;
+  }
+  return null;
+}
+
 export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  const storage = getStorage();
+  if (!storage) return null;
+  return storage.getItem(ACCESS_TOKEN_KEY);
 }
 
 export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  const storage = getStorage();
+  if (!storage) return null;
+  return storage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function setTokens(accessToken: string, refreshToken?: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  const storage = getStorage();
+  if (!storage) return;
+  storage.setItem(ACCESS_TOKEN_KEY, accessToken);
   if (refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
   notifyListeners();
 }
 
 export function getUser(): AuthUser | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(USER_KEY);
+  const storage = getStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(USER_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as AuthUser;
@@ -63,34 +81,56 @@ export function getUser(): AuthUser | null {
 }
 
 export function setUser(user: AuthUser | null): void {
-  if (typeof window === "undefined") return;
+  const storage = getStorage();
+  if (!storage) return;
   if (user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    storage.setItem(USER_KEY, JSON.stringify(user));
   } else {
-    localStorage.removeItem(USER_KEY);
+    storage.removeItem(USER_KEY);
   }
   notifyListeners();
 }
 
 export function getTenantId(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TENANT_KEY);
+  const storage = getStorage();
+  if (!storage) return null;
+  return storage.getItem(TENANT_KEY);
 }
 
 export function setTenantId(tenantId: string | null): void {
-  if (typeof window === "undefined") return;
+  const storage = getStorage();
+  if (!storage) return;
   if (tenantId) {
-    localStorage.setItem(TENANT_KEY, tenantId);
+    storage.setItem(TENANT_KEY, tenantId);
   } else {
-    localStorage.removeItem(TENANT_KEY);
+    storage.removeItem(TENANT_KEY);
+  }
+}
+
+export function getSessionId(): string {
+  const storage = getStorage();
+  if (!storage) return "guest-session";
+  let sid = storage.getItem(SESSION_ID_KEY);
+  if (!sid) {
+    sid = "sess_" + Math.random().toString(36).substring(2, 12) + "_" + Date.now().toString(36);
+    storage.setItem(SESSION_ID_KEY, sid);
+  }
+  return sid;
+}
+
+export function clearSessionId(): void {
+  const storage = getStorage();
+  if (storage) {
+    storage.removeItem(SESSION_ID_KEY);
   }
 }
 
 export function clearAuth(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  const storage = getStorage();
+  if (!storage) return;
+  storage.removeItem(ACCESS_TOKEN_KEY);
+  storage.removeItem(REFRESH_TOKEN_KEY);
+  storage.removeItem(USER_KEY);
   notifyListeners();
 }
 

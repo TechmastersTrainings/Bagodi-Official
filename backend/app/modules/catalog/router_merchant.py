@@ -169,6 +169,20 @@ async def update_product(
     return await ProductService.update_merchant_product(db, tenant.tenant_id, product_id, data)
 
 
+@router.delete(
+    "/products/{product_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a merchant product",
+    dependencies=[Depends(require_permission("catalog.products.delete"))],
+)
+async def delete_product(
+    product_id: UUID,
+    tenant: Annotated[TenantContext, Depends(get_current_tenant)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    await ProductService.delete_merchant_product(db, tenant.tenant_id, product_id)
+
+
 # --- Variants ---
 @router.post(
     "/products/{product_id}/variants",
@@ -199,6 +213,20 @@ async def update_variant(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await ProductService.update_variant(db, tenant.tenant_id, variant_id, data)
+
+
+@router.delete(
+    "/variants/{variant_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a variant",
+    dependencies=[Depends(require_permission("catalog.variants.delete"))],
+)
+async def delete_variant(
+    variant_id: UUID,
+    tenant: Annotated[TenantContext, Depends(get_current_tenant)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    await ProductService.delete_variant(db, tenant.tenant_id, variant_id)
 
 
 # --- Images ---

@@ -1,23 +1,37 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@bagodi/design-system/css": path.resolve(__dirname, "../../packages/design-system/src/index.css"),
+      "@bagodi/design-system": path.resolve(__dirname, "../../packages/design-system/src"),
+      "@bagodi/shared-types": path.resolve(__dirname, "../../packages/shared-types/src"),
+      "@bagodi/api-client": path.resolve(__dirname, "../../packages/api-client/src"),
+      "@bagodi/validation": path.resolve(__dirname, "../../packages/validation/src"),
+      "@bagodi/authentication": path.resolve(__dirname, "../../packages/authentication/src"),
+      "@bagodi/utilities": path.resolve(__dirname, "../../packages/utilities/src"),
+      "@bagodi/shared-components": path.resolve(__dirname, "../../packages/shared-components/src"),
+      "react-hook-form": path.resolve(__dirname, "../../packages/form-hooks/index.ts"),
+      "@hookform/resolvers/zod": path.resolve(__dirname, "../../packages/form-hooks/index.ts"),
+      "zod": path.resolve(__dirname, "../../node_modules/.pnpm/zod@4.6.7/node_modules/zod"),
+    },
+  },
   server: {
-    port: 5180,
-    strictPort: true,
+    port: 5174,
     proxy: {
-      "/api": {
+      "/api/v1": {
         target: "http://127.0.0.1:8001",
         changeOrigin: true,
       },
     },
   },
   preview: {
-    port: 5180,
-    strictPort: true,
+    port: 5174,
     proxy: {
-      "/api": {
+      "/api/v1": {
         target: "http://127.0.0.1:8001",
         changeOrigin: true,
       },

@@ -44,12 +44,135 @@
         }
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Authenticate with Email / Phone and Password (Real User Platform)",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register external customer user account with password",
+        "operationId": "register_customer_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/merchant/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register real merchant boutique/store for platform approval",
+        "operationId": "register_merchant_api_v1_auth_merchant_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MerchantRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantRegisterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/otp/send": {
       "post": {
         "tags": [
           "Authentication"
         ],
-        "summary": "Request a secure 6-digit OTP code to mobile number",
+        "summary": "Request a secure 6-digit OTP code to mobile number or email",
         "operationId": "send_otp_api_v1_auth_otp_send_post",
         "requestBody": {
           "content": {
@@ -239,10 +362,368 @@
         ]
       }
     },
+    "/api/v1/customer/addresses": {
+      "get": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "List saved shipping addresses for current customer",
+        "operationId": "list_addresses_api_v1_customer_addresses_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerAddressResponse"
+                  },
+                  "title": "Response List Addresses Api V1 Customer Addresses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "Save a new customer delivery address",
+        "operationId": "create_address_api_v1_customer_addresses_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerAddressCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/addresses/{address_id}": {
+      "get": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "Get details of a specific saved address",
+        "operationId": "get_address_api_v1_customer_addresses__address_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Address Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "Update an existing delivery address",
+        "operationId": "update_address_api_v1_customer_addresses__address_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Address Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerAddressUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "Delete a saved delivery address",
+        "operationId": "delete_address_api_v1_customer_addresses__address_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Address Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/addresses/{address_id}/default": {
+      "post": {
+        "tags": [
+          "Customer Addresses"
+        ],
+        "summary": "Set an address as the default delivery address",
+        "operationId": "set_default_address_api_v1_customer_addresses__address_id__default_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Address Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants": {
       "post": {
         "tags": [
-          "Platform Governance"
+          "Platform Governance & Super Admin"
         ],
         "summary": "Onboard a new merchant organization (Platform Admin)",
         "operationId": "create_tenant_api_v1_platform_tenants_post",
@@ -286,9 +767,9 @@
       },
       "get": {
         "tags": [
-          "Platform Governance"
+          "Platform Governance & Super Admin"
         ],
-        "summary": "List all merchant organizations (Platform Admin)",
+        "summary": "List all merchant organizations with enriched status and metrics",
         "operationId": "list_tenants_api_v1_platform_tenants_get",
         "security": [
           {
@@ -296,6 +777,42 @@
           }
         ],
         "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status: pending, active, suspended",
+              "title": "Status"
+            },
+            "description": "Filter by status: pending, active, suspended"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search by name, slug, legal name, or GSTIN",
+              "title": "Search"
+            },
+            "description": "Search by name, slug, legal name, or GSTIN"
+          },
           {
             "name": "skip",
             "in": "query",
@@ -351,7 +868,7 @@
     "/api/v1/platform/tenants/{tenant_id}": {
       "get": {
         "tags": [
-          "Platform Governance"
+          "Platform Governance & Super Admin"
         ],
         "summary": "Get merchant organization details (Platform Admin)",
         "operationId": "get_tenant_api_v1_platform_tenants__tenant_id__get",
@@ -399,9 +916,9 @@
     "/api/v1/platform/tenants/{tenant_id}/status": {
       "patch": {
         "tags": [
-          "Platform Governance"
+          "Platform Governance & Super Admin"
         ],
-        "summary": "Update merchant organization status (Platform Admin)",
+        "summary": "Update merchant organization status (activate, suspend, pend)",
         "operationId": "update_tenant_status_api_v1_platform_tenants__tenant_id__status_patch",
         "security": [
           {
@@ -452,6 +969,959 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/platform/tenants/{tenant_id}/lifecycle-logs": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Get merchant lifecycle status history and audit trail",
+        "operationId": "get_tenant_lifecycle_logs_api_v1_platform_tenants__tenant_id__lifecycle_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantStatusLogResponse"
+                  },
+                  "title": "Response Get Tenant Lifecycle Logs Api V1 Platform Tenants  Tenant Id  Lifecycle Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/tenants/{tenant_id}/kyc-documents": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "List submitted KYC documents for a merchant",
+        "operationId": "list_kyc_documents_api_v1_platform_tenants__tenant_id__kyc_documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantKYCDocumentResponse"
+                  },
+                  "title": "Response List Kyc Documents Api V1 Platform Tenants  Tenant Id  Kyc Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Submit or upload a KYC verification document on behalf of a merchant",
+        "operationId": "upload_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantKYCDocumentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantKYCDocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/tenants/{tenant_id}/kyc-documents/{doc_id}/review": {
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Verify or reject a merchant KYC compliance document",
+        "operationId": "review_kyc_document_api_v1_platform_tenants__tenant_id__kyc_documents__doc_id__review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantKYCDocumentReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantKYCDocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/billing/plans": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "List active platform subscription tiers and plans",
+        "operationId": "list_subscription_plans_api_v1_platform_billing_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionPlanResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Subscription Plans Api V1 Platform Billing Plans Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Create a new merchant subscription pricing plan",
+        "operationId": "create_subscription_plan_api_v1_platform_billing_plans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionPlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionPlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/platform/billing/subscriptions": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "List active merchant subscriptions across the platform",
+        "operationId": "list_subscriptions_api_v1_platform_billing_subscriptions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MerchantSubscriptionResponse"
+                  },
+                  "title": "Response List Subscriptions Api V1 Platform Billing Subscriptions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/billing/subscriptions/assign": {
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Assign or upgrade a merchant's active subscription tier",
+        "operationId": "assign_subscription_api_v1_platform_billing_subscriptions_assign_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Target tenant ID",
+              "title": "Tenant Id"
+            },
+            "description": "Target tenant ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantSubscriptionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/billing/invoices": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "List merchant SaaS subscription billing invoices",
+        "operationId": "list_merchant_invoices_api_v1_platform_billing_invoices_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MerchantInvoiceResponse"
+                  },
+                  "title": "Response List Merchant Invoices Api V1 Platform Billing Invoices Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Generate a subscription billing invoice for a merchant organization",
+        "operationId": "create_merchant_invoice_api_v1_platform_billing_invoices_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MerchantInvoiceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantInvoiceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/billing/invoices/{invoice_id}/pay": {
+      "patch": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Record settlement / payment of a merchant subscription invoice",
+        "operationId": "pay_merchant_invoice_api_v1_platform_billing_invoices__invoice_id__pay_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MerchantInvoicePayRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantInvoiceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/staff": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "List Super Admin and Platform Governance staff members",
+        "operationId": "list_platform_staff_api_v1_platform_staff_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlatformStaffResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Platform Staff Api V1 Platform Staff Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Delegate and create a new Super Admin staff account",
+        "operationId": "create_platform_staff_api_v1_platform_staff_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformStaffCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformStaffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/platform/staff/{user_id}/status": {
+      "patch": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Update platform staff status or assigned platform role",
+        "operationId": "update_platform_staff_status_api_v1_platform_staff__user_id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformStaffUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformStaffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/audit-logs": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Query global administrative audit log and security events",
+        "operationId": "list_platform_audit_logs_api_v1_platform_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by action code",
+              "title": "Action"
+            },
+            "description": "Filter by action code"
+          },
+          {
+            "name": "target_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by target type",
+              "title": "Target Type"
+            },
+            "description": "Filter by target type"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlatformAuditLogResponse"
+                  },
+                  "title": "Response List Platform Audit Logs Api V1 Platform Audit Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/system/health": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Detailed platform system diagnostics, connection pools & worker metrics",
+        "operationId": "get_system_diagnostics_api_v1_platform_system_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/platform/system/outbox": {
+      "get": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Monitor transactional notification outbox events across all tenants",
+        "operationId": "list_system_outbox_api_v1_platform_system_outbox_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status: pending, processed, failed",
+              "title": "Status"
+            },
+            "description": "Filter by status: pending, processed, failed"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutboxItemResponse"
+                  },
+                  "title": "Response List System Outbox Api V1 Platform System Outbox Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platform/system/outbox/process": {
+      "post": {
+        "tags": [
+          "Platform Governance & Super Admin"
+        ],
+        "summary": "Manually trigger background worker for transactional outbox dispatch",
+        "operationId": "process_system_outbox_api_v1_platform_system_outbox_process_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/platform/catalog/categories": {
@@ -1290,6 +2760,45 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Merchant Catalogue"
+        ],
+        "summary": "Delete a merchant product",
+        "operationId": "delete_product_api_v1_merchant_catalog_products__product_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/merchant/catalog/products/{product_id}/variants": {
@@ -1394,6 +2903,45 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Merchant Catalogue"
+        ],
+        "summary": "Delete a variant",
+        "operationId": "delete_variant_api_v1_merchant_catalog_variants__variant_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "variant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Variant Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -3675,6 +5223,23 @@
               "title": "Tenant Id"
             },
             "description": "Merchant organization ID"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3683,6 +5248,90 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/direct-checkout": {
+      "post": {
+        "tags": [
+          "Customer Orders"
+        ],
+        "summary": "Direct instant purchase deducting size stock atomically via double-entry ledger",
+        "operationId": "direct_checkout_order_api_v1_orders_direct_checkout_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Merchant organization ID",
+              "title": "Tenant Id"
+            },
+            "description": "Merchant organization ID"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectCheckoutRequest"
               }
             }
           }
@@ -3765,6 +5414,23 @@
               "default": 50,
               "title": "Limit"
             }
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
           }
         ],
         "responses": {
@@ -3835,6 +5501,23 @@
               "title": "Tenant Id"
             },
             "description": "Merchant context"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
           }
         ],
         "responses": {
@@ -3901,6 +5584,23 @@
               "title": "Tenant Id"
             },
             "description": "Merchant context"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3978,6 +5678,23 @@
               "title": "Tenant Id"
             },
             "description": "Merchant context"
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
           }
         ],
         "requestBody": {
@@ -4300,6 +6017,284 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/orders/{order_number}/returns": {
+      "post": {
+        "tags": [
+          "Order Returns & Exchanges"
+        ],
+        "summary": "Submit an apparel return or size exchange request for an ordered item",
+        "operationId": "submit_return_request_api_v1_orders__order_number__returns_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Number"
+            }
+          },
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderReturnRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReturnRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Order Returns & Exchanges"
+        ],
+        "summary": "List customer return and exchange requests for an order",
+        "operationId": "list_order_returns_api_v1_orders__order_number__returns_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderReturnRequestResponse"
+                  },
+                  "title": "Response List Order Returns Api V1 Orders  Order Number  Returns Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/orders/returns": {
+      "get": {
+        "tags": [
+          "Order Returns & Exchanges"
+        ],
+        "summary": "Merchant: List all return and exchange requests across store orders",
+        "operationId": "merchant_list_returns_api_v1_merchant_orders_returns_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderReturnRequestResponse"
+                  },
+                  "title": "Response Merchant List Returns Api V1 Merchant Orders Returns Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant/orders/returns/{return_id}/review": {
+      "post": {
+        "tags": [
+          "Order Returns & Exchanges"
+        ],
+        "summary": "Merchant: Review, approve, reject or update status of return/exchange request",
+        "operationId": "merchant_review_return_api_v1_merchant_orders_returns__return_id__review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "return_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Return Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderReturnReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReturnRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/merchant/pricing/promotions": {
@@ -5252,15 +7247,39 @@
         ],
         "summary": "Initiate Payment",
         "operationId": "initiate_payment_api_v1_payments_initiate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PaymentInitiateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5283,12 +7302,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/payments/verify": {
@@ -5298,15 +7312,39 @@
         ],
         "summary": "Verify Payment",
         "operationId": "verify_payment_api_v1_payments_verify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Tenant-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tenant-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PaymentVerifyRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5329,12 +7367,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/orders/{order_id}/payments": {
@@ -10714,10 +12747,17 @@
       "CheckoutRequest": {
         "properties": {
           "store_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Store Id",
-            "description": "Fulfilling store location"
+            "description": "Fulfilling store location (defaults to active store)"
           },
           "shipping_address": {
             "$ref": "#/components/schemas/ShippingAddressSchema"
@@ -10805,7 +12845,6 @@
         },
         "type": "object",
         "required": [
-          "store_id",
           "shipping_address",
           "customer_name",
           "customer_phone"
@@ -11506,6 +13545,324 @@
         ],
         "title": "CourierPerformanceRecord"
       },
+      "CustomerAddressCreate": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Full Name"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 10,
+            "title": "Phone"
+          },
+          "address_line1": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Address Line1"
+          },
+          "address_line2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line2"
+          },
+          "landmark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landmark"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "State"
+          },
+          "postal_code": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 6,
+            "title": "Postal Code"
+          },
+          "address_type": {
+            "type": "string",
+            "pattern": "^(home|work|other)$",
+            "title": "Address Type",
+            "default": "home"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "phone",
+          "address_line1",
+          "city",
+          "state",
+          "postal_code"
+        ],
+        "title": "CustomerAddressCreate"
+      },
+      "CustomerAddressResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "address_line1": {
+            "type": "string",
+            "title": "Address Line1"
+          },
+          "address_line2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line2"
+          },
+          "landmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landmark"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "postal_code": {
+            "type": "string",
+            "title": "Postal Code"
+          },
+          "address_type": {
+            "type": "string",
+            "title": "Address Type"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "customer_id",
+          "full_name",
+          "phone",
+          "address_line1",
+          "address_line2",
+          "landmark",
+          "city",
+          "state",
+          "postal_code",
+          "address_type",
+          "is_default",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CustomerAddressResponse"
+      },
+      "CustomerAddressUpdate": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20,
+                "minLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address_line1": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line1"
+          },
+          "address_line2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line2"
+          },
+          "landmark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landmark"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "address_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(home|work|other)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Type"
+          },
+          "is_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Default"
+          }
+        },
+        "type": "object",
+        "title": "CustomerAddressUpdate"
+      },
       "CustomerAnalyticsResponse": {
         "properties": {
           "tenant_id": {
@@ -11670,6 +14027,47 @@
         },
         "type": "object",
         "title": "CustomerCommunicationPreferenceUpdateRequest"
+      },
+      "CustomerRegisterRequest": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Display Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 5,
+            "title": "Email"
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 6,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "display_name",
+          "email",
+          "password"
+        ],
+        "title": "CustomerRegisterRequest"
       },
       "CustomerReturnCreate": {
         "properties": {
@@ -13195,6 +15593,147 @@
         "type": "object",
         "title": "DeliveryZoneUpdate"
       },
+      "DirectCheckoutRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DirectOrderItem"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "store_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Id",
+            "description": "Fulfilling store location"
+          },
+          "shipping_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShippingAddressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "customer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Name"
+          },
+          "customer_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Email"
+          },
+          "customer_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Phone"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "online",
+              "cod"
+            ],
+            "title": "Payment Method",
+            "default": "cod"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "coupon_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Code"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DirectCheckoutRequest"
+      },
+      "DirectOrderItem": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id"
+        ],
+        "title": "DirectOrderItem"
+      },
       "DiscountBreakdown": {
         "properties": {
           "item_discounts_total": {
@@ -13583,6 +16122,27 @@
         ],
         "title": "InventoryReportResponse"
       },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Email address or username"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 4,
+            "title": "Password",
+            "description": "User password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
       "LogoutRequest": {
         "properties": {
           "refresh_token": {
@@ -13670,6 +16230,479 @@
           "order_status_summary"
         ],
         "title": "MerchantDashboardResponse"
+      },
+      "MerchantInvoiceCreate": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "subscription_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Id"
+          },
+          "billing_period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Billing Period Start"
+          },
+          "billing_period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Billing Period End"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "tax_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Tax Amount",
+            "default": "0.00"
+          },
+          "total_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Total Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "default": "INR"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "line_items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Line Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "billing_period_start",
+          "billing_period_end",
+          "amount",
+          "total_amount",
+          "due_date"
+        ],
+        "title": "MerchantInvoiceCreate"
+      },
+      "MerchantInvoicePayRequest": {
+        "properties": {
+          "payment_reference": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 3,
+            "title": "Payment Reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_reference"
+        ],
+        "title": "MerchantInvoicePayRequest"
+      },
+      "MerchantInvoiceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "subscription_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Id"
+          },
+          "invoice_number": {
+            "type": "string",
+            "title": "Invoice Number"
+          },
+          "billing_period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Billing Period Start"
+          },
+          "billing_period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Billing Period End"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "tax_amount": {
+            "type": "string",
+            "title": "Tax Amount"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "payment_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Reference"
+          },
+          "line_items": {
+            "items": {},
+            "type": "array",
+            "title": "Line Items"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "subscription_id",
+          "invoice_number",
+          "billing_period_start",
+          "billing_period_end",
+          "amount",
+          "tax_amount",
+          "total_amount",
+          "currency",
+          "status",
+          "due_date",
+          "paid_at",
+          "payment_reference",
+          "line_items",
+          "created_at"
+        ],
+        "title": "MerchantInvoiceResponse"
+      },
+      "MerchantRegisterRequest": {
+        "properties": {
+          "business_legal_name": {
+            "type": "string",
+            "maxLength": 250,
+            "minLength": 3,
+            "title": "Business Legal Name"
+          },
+          "brand_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Brand Name"
+          },
+          "owner_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Owner Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 5,
+            "title": "Email"
+          },
+          "phone_e164": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 10,
+            "title": "Phone E164"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 6,
+            "title": "Password"
+          },
+          "business_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Business Type",
+            "default": "Private Limited"
+          },
+          "category_specialization": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Category Specialization",
+            "default": "Apparel & Couture"
+          },
+          "address_line": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Address Line"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "State"
+          },
+          "postal_code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 6,
+            "title": "Postal Code"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "pan_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pan Number"
+          },
+          "bank_account_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Number"
+          },
+          "bank_ifsc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Ifsc"
+          },
+          "bank_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_legal_name",
+          "brand_name",
+          "owner_name",
+          "email",
+          "phone_e164",
+          "password",
+          "address_line",
+          "city",
+          "state",
+          "postal_code"
+        ],
+        "title": "MerchantRegisterRequest"
+      },
+      "MerchantRegisterResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "user_id",
+          "status",
+          "message"
+        ],
+        "title": "MerchantRegisterResponse"
+      },
+      "MerchantSubscriptionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "current_period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Current Period Start"
+          },
+          "current_period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Current Period End"
+          },
+          "auto_renew": {
+            "type": "boolean",
+            "title": "Auto Renew"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "plan_id",
+          "status",
+          "current_period_start",
+          "current_period_end",
+          "auto_renew",
+          "created_at"
+        ],
+        "title": "MerchantSubscriptionResponse"
       },
       "MessageResponse": {
         "properties": {
@@ -14230,10 +17263,29 @@
       "OTPSendRequest": {
         "properties": {
           "phone_e164": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{1,14}$",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\+[1-9]\\d{1,14}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Phone E164",
             "description": "Mobile number in E.164 format"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Email address for OTP dispatch"
           },
           "purpose": {
             "type": "string",
@@ -14243,9 +17295,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "phone_e164"
-        ],
         "title": "OTPSendRequest"
       },
       "OTPSendResponse": {
@@ -14266,6 +17315,17 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "dev_otp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dev Otp"
           }
         },
         "type": "object",
@@ -14279,9 +17339,27 @@
       "OTPVerifyRequest": {
         "properties": {
           "phone_e164": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{1,14}$",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\+[1-9]\\d{1,14}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Phone E164"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "otp": {
             "type": "string",
@@ -14306,7 +17384,6 @@
         },
         "type": "object",
         "required": [
-          "phone_e164",
           "otp"
         ],
         "title": "OTPVerifyRequest"
@@ -14714,6 +17791,324 @@
         ],
         "title": "OrderResponse"
       },
+      "OrderReturnRequestCreate": {
+        "properties": {
+          "order_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Item Id"
+          },
+          "request_type": {
+            "type": "string",
+            "enum": [
+              "RETURN",
+              "EXCHANGE"
+            ],
+            "title": "Request Type",
+            "default": "RETURN"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Reason"
+          },
+          "detailed_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detailed Reason"
+          },
+          "requested_variant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Variant Id"
+          },
+          "requested_size": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Size"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_item_id",
+          "reason"
+        ],
+        "title": "OrderReturnRequestCreate"
+      },
+      "OrderReturnRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "order_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Item Id"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "request_type": {
+            "type": "string",
+            "title": "Request Type"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "detailed_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detailed Reason"
+          },
+          "requested_variant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Variant Id"
+          },
+          "requested_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Size"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "refund_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Amount"
+          },
+          "admin_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Notes"
+          },
+          "reviewed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By User Id"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "pickup_tracking_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Tracking Id"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "order_id",
+          "order_item_id",
+          "customer_id",
+          "request_type",
+          "reason",
+          "detailed_reason",
+          "requested_variant_id",
+          "requested_size",
+          "status",
+          "refund_amount",
+          "admin_notes",
+          "reviewed_by_user_id",
+          "reviewed_at",
+          "pickup_tracking_id",
+          "images",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OrderReturnRequestResponse"
+      },
+      "OrderReturnReviewRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "REJECTED",
+              "PICKUP_SCHEDULED",
+              "PICKED_UP",
+              "RECEIVED",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "title": "Status"
+          },
+          "admin_notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Notes"
+          },
+          "refund_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Amount"
+          },
+          "pickup_tracking_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Tracking Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OrderReturnReviewRequest"
+      },
       "OrderStatusBreakdown": {
         "properties": {
           "status": {
@@ -14836,6 +18231,74 @@
           "status"
         ],
         "title": "OrderStatusUpdateRequest"
+      },
+      "OutboxItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "tenant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Name"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "aggregate_type": {
+            "type": "string",
+            "title": "Aggregate Type"
+          },
+          "aggregate_id": {
+            "type": "string",
+            "title": "Aggregate Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "retry_count": {
+            "type": "integer",
+            "title": "Retry Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "event_type",
+          "aggregate_type",
+          "aggregate_id",
+          "status",
+          "retry_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OutboxItemResponse"
       },
       "OutboxProcessResponse": {
         "properties": {
@@ -15259,6 +18722,91 @@
         ],
         "title": "PaymentVerifyRequest"
       },
+      "PlatformAuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Email"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "target_type": {
+            "type": "string",
+            "title": "Target Type"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actor_id",
+          "actor_email",
+          "action",
+          "target_type",
+          "target_id",
+          "details",
+          "ip_address",
+          "created_at"
+        ],
+        "title": "PlatformAuditLogResponse"
+      },
       "PlatformOverviewResponse": {
         "properties": {
           "start_date": {
@@ -15316,6 +18864,175 @@
           "tenants"
         ],
         "title": "PlatformOverviewResponse"
+      },
+      "PlatformStaffCreate": {
+        "properties": {
+          "phone_e164": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 10,
+            "title": "Phone E164"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Display Name"
+          },
+          "role_code": {
+            "type": "string",
+            "enum": [
+              "SUPER_ADMIN",
+              "COMPLIANCE_OFFICER",
+              "FINANCE_CONTROLLER",
+              "SUPPORT_OPERATOR"
+            ],
+            "title": "Role Code",
+            "default": "SUPER_ADMIN"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_e164",
+          "display_name"
+        ],
+        "title": "PlatformStaffCreate"
+      },
+      "PlatformStaffResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "is_platform_user": {
+            "type": "boolean",
+            "title": "Is Platform User"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "phone_e164",
+          "email",
+          "display_name",
+          "status",
+          "is_platform_user",
+          "created_at"
+        ],
+        "title": "PlatformStaffResponse"
+      },
+      "PlatformStaffUpdate": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "suspended"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "role_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SUPER_ADMIN",
+                  "COMPLIANCE_OFFICER",
+                  "FINANCE_CONTROLLER",
+                  "SUPPORT_OPERATOR"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Code"
+          }
+        },
+        "type": "object",
+        "title": "PlatformStaffUpdate"
       },
       "PriceQuoteItem": {
         "properties": {
@@ -15534,10 +19251,15 @@
             "title": "Name"
           },
           "slug": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 2,
-            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Slug"
           },
           "description": {
@@ -15585,8 +19307,7 @@
         "type": "object",
         "required": [
           "category_id",
-          "name",
-          "slug"
+          "name"
         ],
         "title": "ProductCreate"
       },
@@ -15990,10 +19711,16 @@
       "ProductVariantCreate": {
         "properties": {
           "sku": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 2,
-            "pattern": "^[a-zA-Z0-9_\\-]+$",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "pattern": "^[a-zA-Z0-9_\\-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Sku"
           },
           "barcode": {
@@ -16074,6 +19801,13 @@
             ],
             "title": "Base Price"
           },
+          "initial_stock": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Initial Stock",
+            "description": "Initial stock units for this size",
+            "default": 0
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -16086,7 +19820,6 @@
         },
         "type": "object",
         "required": [
-          "sku",
           "name",
           "mrp",
           "base_price"
@@ -16174,6 +19907,11 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "available_qty": {
+            "type": "integer",
+            "title": "Available Qty",
+            "default": 0
           },
           "created_at": {
             "type": "string",
@@ -19567,6 +23305,203 @@
         ],
         "title": "StoreTransferResponse"
       },
+      "SubscriptionAssignRequest": {
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "auto_renew": {
+            "type": "boolean",
+            "title": "Auto Renew",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_id"
+        ],
+        "title": "SubscriptionAssignRequest"
+      },
+      "SubscriptionPlanCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "enum": [
+              "MONTHLY",
+              "ANNUAL"
+            ],
+            "title": "Billing Cycle",
+            "default": "MONTHLY"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Price",
+            "default": "0.00"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Currency",
+            "default": "INR"
+          },
+          "max_stores": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Max Stores",
+            "default": 1
+          },
+          "max_staff_users": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Max Staff Users",
+            "default": 5
+          },
+          "commission_rate_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Commission Rate Percent",
+            "default": "0.00"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "SubscriptionPlanCreate"
+      },
+      "SubscriptionPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "title": "Billing Cycle"
+          },
+          "price": {
+            "type": "string",
+            "title": "Price"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "max_stores": {
+            "type": "integer",
+            "title": "Max Stores"
+          },
+          "max_staff_users": {
+            "type": "integer",
+            "title": "Max Staff Users"
+          },
+          "commission_rate_percent": {
+            "type": "string",
+            "title": "Commission Rate Percent"
+          },
+          "features": {
+            "items": {},
+            "type": "array",
+            "title": "Features"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "billing_cycle",
+          "price",
+          "currency",
+          "max_stores",
+          "max_staff_users",
+          "commission_rate_percent",
+          "features",
+          "is_active",
+          "created_at"
+        ],
+        "title": "SubscriptionPlanResponse"
+      },
       "SupplierCreate": {
         "properties": {
           "name": {
@@ -19852,6 +23787,60 @@
         "type": "object",
         "title": "SupplierUpdate"
       },
+      "SystemHealthResponse": {
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "title": "App Name"
+          },
+          "app_env": {
+            "type": "string",
+            "title": "App Env"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
+          },
+          "pool_size": {
+            "type": "integer",
+            "title": "Pool Size"
+          },
+          "active_tenants": {
+            "type": "integer",
+            "title": "Active Tenants"
+          },
+          "pending_outbox_events": {
+            "type": "integer",
+            "title": "Pending Outbox Events"
+          },
+          "failed_outbox_events": {
+            "type": "integer",
+            "title": "Failed Outbox Events"
+          },
+          "system_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "System Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_name",
+          "app_env",
+          "status",
+          "database",
+          "pool_size",
+          "active_tenants",
+          "pending_outbox_events",
+          "failed_outbox_events",
+          "system_timestamp"
+        ],
+        "title": "SystemHealthResponse"
+      },
       "TenantComparisonRecord": {
         "properties": {
           "tenant_id": {
@@ -19957,6 +23946,67 @@
               }
             ],
             "title": "Contact Phone"
+          },
+          "business_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Type",
+            "default": "PRIVATE_LIMITED"
+          },
+          "pan_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pan Number"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "registered_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Address"
+          },
+          "initial_plan_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Plan Code"
           }
         },
         "type": "object",
@@ -19965,6 +24015,179 @@
           "slug"
         ],
         "title": "TenantCreate"
+      },
+      "TenantKYCDocumentCreate": {
+        "properties": {
+          "document_type": {
+            "type": "string",
+            "enum": [
+              "GST_CERTIFICATE",
+              "PAN_CARD",
+              "TRADE_LICENSE",
+              "BANK_STATEMENT",
+              "IDENTITY_PROOF"
+            ],
+            "title": "Document Type"
+          },
+          "document_number": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Document Number"
+          },
+          "document_url": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 5,
+            "title": "Document Url"
+          },
+          "file_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "File Name"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "File Size Bytes",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_type",
+          "document_number",
+          "document_url",
+          "file_name"
+        ],
+        "title": "TenantKYCDocumentCreate"
+      },
+      "TenantKYCDocumentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "document_type": {
+            "type": "string",
+            "title": "Document Type"
+          },
+          "document_number": {
+            "type": "string",
+            "title": "Document Number"
+          },
+          "document_url": {
+            "type": "string",
+            "title": "Document Url"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "title": "File Size Bytes"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "verified_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "document_type",
+          "document_number",
+          "document_url",
+          "file_name",
+          "file_size_bytes",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TenantKYCDocumentResponse"
+      },
+      "TenantKYCDocumentReview": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "REJECTED"
+            ],
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TenantKYCDocumentReview"
       },
       "TenantResponse": {
         "properties": {
@@ -20018,6 +24241,105 @@
             ],
             "title": "Contact Phone"
           },
+          "business_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Type"
+          },
+          "pan_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pan Number"
+          },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
+          "registered_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Address"
+          },
+          "owner_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Name"
+          },
+          "bank_account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Number"
+          },
+          "bank_ifsc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Ifsc"
+          },
+          "bank_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Name"
+          },
+          "category_specialization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Specialization"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -20027,6 +24349,27 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "store_count": {
+            "type": "integer",
+            "title": "Store Count",
+            "default": 0
+          },
+          "kyc_status": {
+            "type": "string",
+            "title": "Kyc Status",
+            "default": "PENDING"
+          },
+          "current_plan_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Plan Name"
           }
         },
         "type": "object",
@@ -20035,13 +24378,69 @@
           "name",
           "slug",
           "status",
-          "legal_name",
-          "contact_email",
-          "contact_phone",
           "created_at",
           "updated_at"
         ],
         "title": "TenantResponse"
+      },
+      "TenantStatusLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "previous_status": {
+            "type": "string",
+            "title": "Previous Status"
+          },
+          "new_status": {
+            "type": "string",
+            "title": "New Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "previous_status",
+          "new_status",
+          "created_at"
+        ],
+        "title": "TenantStatusLogResponse"
       },
       "TenantStatusUpdate": {
         "properties": {
@@ -20053,6 +24452,19 @@
               "suspended"
             ],
             "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "Mandatory reason for suspension or reactivation"
           }
         },
         "type": "object",

@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class CategoryCreate(BaseModel):
@@ -65,7 +65,7 @@ class BrandResponse(BaseModel):
 
 
 class ProductVariantCreate(BaseModel):
-    sku: str = Field(..., min_length=2, max_length=80, pattern=r"^[a-zA-Z0-9_\-]+$")
+    sku: str | None = Field(default=None, max_length=80, pattern=r"^[a-zA-Z0-9_\-]+$")
     barcode: str | None = Field(default=None, max_length=100)
     name: str = Field(..., min_length=2, max_length=200)
     size: str | None = Field(default=None, max_length=50)
@@ -73,6 +73,7 @@ class ProductVariantCreate(BaseModel):
     attributes: dict | None = Field(default=None)
     mrp: Decimal = Field(..., ge=0)
     base_price: Decimal = Field(..., ge=0)
+    initial_stock: int = Field(default=0, ge=0, description="Initial stock units for this size")
     status: Literal["active", "inactive"] = Field(default="active")
 
 
@@ -102,8 +103,24 @@ class ProductVariantResponse(BaseModel):
     mrp: Decimal
     base_price: Decimal
     status: str
+    available_qty: int = 0
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def sellingPrice(self) -> Decimal:
+        return self.base_price
+
+    @computed_field
+    @property
+    def availableStock(self) -> int:
+        return self.available_qty
+
+    @computed_field
+    @property
+    def colorName(self) -> str:
+        return self.color or "Standard"
 
 
 class ProductImageCreate(BaseModel):
@@ -131,7 +148,7 @@ class ProductCreate(BaseModel):
     category_id: UUID
     brand_id: UUID | None = Field(default=None)
     name: str = Field(..., min_length=2, max_length=250)
-    slug: str = Field(..., min_length=2, max_length=100, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    slug: str | None = Field(default=None, max_length=150)
     description: str | None = Field(default=None, max_length=2000)
     status: Literal["draft", "active", "archived"] = Field(default="draft")
     is_published: bool = Field(default=False)
@@ -155,6 +172,8 @@ class ProductDetailResponse(BaseModel):
     tenant_id: UUID
     category_id: UUID
     brand_id: UUID | None
+    category: CategoryResponse | None = None
+    brand: BrandResponse | None = None
     name: str
     slug: str
     description: str | None
@@ -164,6 +183,18 @@ class ProductDetailResponse(BaseModel):
     images: list[ProductImageResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def basePrice(self) -> Decimal:
+        if self.variants:
+            return self.variants[0].base_price
+        return Decimal(0)
+
+    @computed_field
+    @property
+    def isActive(self) -> bool:
+        return self.status == "active"
 
 
 class BarcodeLookupResponse(BaseModel):

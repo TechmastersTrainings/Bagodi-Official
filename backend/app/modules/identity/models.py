@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -12,6 +12,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     phone_e164: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
     email: Mapped[str | None] = mapped_column(String(320), unique=True, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="active")
     is_platform_user: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -88,7 +89,8 @@ class RolePermission(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 class OTPRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "otp_requests"
 
-    phone_e164: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    phone_e164: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
     otp_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     salt: Mapped[str] = mapped_column(String(64), nullable=False)
     purpose: Mapped[str] = mapped_column(String(50), nullable=False, default="login")
@@ -123,3 +125,35 @@ class UserSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+
+
+class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "customer_addresses"
+
+    tenant_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    customer_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    full_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    address_line1: Mapped[str] = mapped_column(String(255), nullable=False)
+    address_line2: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    landmark: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
+    state: Mapped[str] = mapped_column(String(100), nullable=False)
+    postal_code: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    address_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="home"
+    )  # home, work, other
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    user: Mapped["User"] = relationship("User")
+

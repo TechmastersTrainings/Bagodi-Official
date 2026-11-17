@@ -1,7 +1,10 @@
-from uuid import UUID
+import random
+import re
+import time
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,6 +19,9 @@ from app.modules.catalog.schemas import (
     ProductVariantCreate,
     ProductVariantUpdate,
 )
+from app.modules.inventory.models import StockBalance
+from app.modules.inventory.services import InventoryService
+from app.modules.platform.models import Store
 
 
 class CategoryService:
@@ -73,8 +79,6 @@ class CategoryService:
         query = select(Category)
         if tenant_id:
             query = query.where(or_(Category.tenant_id.is_(None), Category.tenant_id == tenant_id))
-        else:
-            query = query.where(Category.tenant_id.is_(None))
 
         if active_only:
             query = query.where(Category.is_active.is_(True))
@@ -204,18 +208,42 @@ class BrandService:
 
 class ProductService:
     @staticmethod
+    async def _attach_stock_balances(db: AsyncSession, products: list[Product]) -> None:
+        """Attaches real-time available stock quantities to all product variants from stock balances."""
+        variant_ids = [v.id for p in products for v in (p.variants or [])]
+        if not variant_ids:
+            return
+        stmt = (
+            select(StockBalance.variant_id, func.coalesce(func.sum(StockBalance.available_qty), 0))
+            .where(StockBalance.variant_id.in_(variant_ids))
+            .group_by(StockBalance.variant_id)
+        )
+        result = await db.execute(stmt)
+        stock_map = {row[0]: int(row[1]) for row in result.all()}
+        for p in products:
+            for v in (p.variants or []):
+                setattr(v, "available_qty", stock_map.get(v.id, 0))
+
+    @staticmethod
     async def create_product(db: AsyncSession, tenant_id: UUID, data: ProductCreate) -> Product:
-        # 1. Enforce product slug uniqueness per tenant
-        slug_stmt = select(Product).where(Product.tenant_id == tenant_id, Product.slug == data.slug)
-        existing_product = (await db.execute(slug_stmt)).scalar_one_or_none()
-        if existing_product:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "code": "PRODUCT_SLUG_EXISTS",
-                    "message": f"Product slug '{data.slug}' already exists for this merchant.",
-                },
-            )
+        # 1. Resolve product slug (auto-generate if omitted or empty)
+        product_slug = data.slug.strip() if data.slug and data.slug.strip() else None
+        if not product_slug:
+            base_slug = re.sub(r"[^a-z0-9]+", "-", data.name.lower()).strip("-")
+            product_slug = base_slug if base_slug else "apparel"
+            slug_stmt = select(Product).where(Product.tenant_id == tenant_id, Product.slug == product_slug)
+            if (await db.execute(slug_stmt)).scalar_one_or_none():
+                product_slug = f"{product_slug[:120]}-{uuid4().hex[:6]}"
+        else:
+            slug_stmt = select(Product).where(Product.tenant_id == tenant_id, Product.slug == product_slug)
+            if (await db.execute(slug_stmt)).scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "PRODUCT_SLUG_EXISTS",
+                        "message": f"Product slug '{product_slug}' already exists for this merchant.",
+                    },
+                )
 
         # 2. Verify category exists and is accessible
         await CategoryService.get_category_by_id(db, data.category_id, tenant_id)
@@ -224,20 +252,22 @@ class ProductService:
         if data.brand_id:
             await BrandService.get_brand_by_id(db, data.brand_id, tenant_id)
 
-        # 4. Pre-validate variant SKU & barcode uniqueness across tenant
+        # 4. Resolve SKU & barcode for variants (auto-generate if omitted)
         for variant_data in data.variants:
+            if not variant_data.sku or not variant_data.sku.strip():
+                clean_size = re.sub(r"[^A-Za-z0-9]", "", variant_data.size or "FREE").upper()
+                clean_slug = re.sub(r"[^A-Za-z0-9]", "", product_slug)[:8].upper()
+                variant_data.sku = f"BGD-{clean_slug}-{clean_size}-{uuid4().hex[:4].upper()}"
+
+            if not variant_data.barcode or not variant_data.barcode.strip():
+                variant_data.barcode = f"890{int(time.time()) % 1000000:06d}{random.randint(100, 999):03d}"
+
             sku_stmt = select(ProductVariant).where(
                 ProductVariant.tenant_id == tenant_id, ProductVariant.sku == variant_data.sku
             )
             existing_sku = (await db.execute(sku_stmt)).scalar_one_or_none()
             if existing_sku:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail={
-                        "code": "VARIANT_SKU_EXISTS",
-                        "message": f"Variant SKU '{variant_data.sku}' already exists for this merchant.",
-                    },
-                )
+                variant_data.sku = f"{variant_data.sku}-{uuid4().hex[:3].upper()}"
 
             if variant_data.barcode:
                 barcode_stmt = select(ProductVariant).where(
@@ -246,13 +276,7 @@ class ProductService:
                 )
                 existing_barcode = (await db.execute(barcode_stmt)).scalar_one_or_none()
                 if existing_barcode:
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail={
-                            "code": "VARIANT_BARCODE_EXISTS",
-                            "message": f"Barcode '{variant_data.barcode}' is already assigned.",
-                        },
-                    )
+                    variant_data.barcode = f"890{int(time.time() * 1000) % 1000000000:09d}"
 
         # 5. Create base product
         product = Product(
@@ -260,7 +284,7 @@ class ProductService:
             category_id=data.category_id,
             brand_id=data.brand_id,
             name=data.name,
-            slug=data.slug,
+            slug=product_slug,
             description=data.description,
             status=data.status,
             is_published=data.is_published,
@@ -268,7 +292,22 @@ class ProductService:
         db.add(product)
         await db.flush()
 
-        # 6. Add variants
+        # 6. Resolve active store for initial stock deposit if any variant has initial_stock > 0
+        has_initial_stock = any(getattr(v, "initial_stock", 0) > 0 for v in data.variants)
+        default_store = None
+        if has_initial_stock:
+            store_stmt = (
+                select(Store)
+                .where(Store.tenant_id == tenant_id, Store.status == "active")
+                .order_by(Store.code.asc())
+            )
+            default_store = (await db.execute(store_stmt)).scalars().first()
+            if not default_store:
+                default_store = (
+                    await db.execute(select(Store).where(Store.tenant_id == tenant_id))
+                ).scalars().first()
+
+        # 7. Add variants and post initial stock movements to double-entry ledger
         for v in data.variants:
             variant = ProductVariant(
                 tenant_id=tenant_id,
@@ -284,8 +323,26 @@ class ProductService:
                 status=v.status,
             )
             db.add(variant)
+            await db.flush()
 
-        # 7. Add images
+            init_stock = getattr(v, "initial_stock", 0)
+            if init_stock > 0 and default_store:
+                await InventoryService.post_movement(
+                    db=db,
+                    tenant_id=tenant_id,
+                    store_id=default_store.id,
+                    variant_id=variant.id,
+                    movement_type="PURCHASE_RECEIPT",
+                    from_account="EXTERNAL_VENDOR",
+                    to_account="STORE_ON_HAND",
+                    quantity=init_stock,
+                    on_hand_delta=init_stock,
+                    reference_type="INITIAL_STOCK",
+                    reference_id=f"INIT-{variant.sku}",
+                    notes=f"Initial stock for size {variant.size or 'Standard'}",
+                )
+
+        # 8. Add images
         for img in data.images:
             image = ProductImage(
                 tenant_id=tenant_id,
@@ -320,6 +377,7 @@ class ProductService:
                     "message": "Product not found for this merchant.",
                 },
             )
+        await ProductService._attach_stock_balances(db, [product])
         return product
 
     @staticmethod
@@ -346,7 +404,9 @@ class ProductService:
 
         stmt = stmt.order_by(Product.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(stmt)
-        return list(result.scalars().all())
+        products = list(result.scalars().all())
+        await ProductService._attach_stock_balances(db, products)
+        return products
 
     @staticmethod
     async def update_merchant_product(
@@ -373,41 +433,63 @@ class ProductService:
         return await ProductService.get_merchant_product(db, tenant_id, product.id)
 
     @staticmethod
+    async def delete_merchant_product(
+        db: AsyncSession, tenant_id: UUID, product_id: UUID
+    ) -> None:
+        product = await ProductService.get_merchant_product(db, tenant_id, product_id)
+        await db.delete(product)
+        await db.commit()
+
+    @staticmethod
+    async def delete_variant(
+        db: AsyncSession, tenant_id: UUID, variant_id: UUID
+    ) -> None:
+        stmt = select(ProductVariant).where(
+            ProductVariant.id == variant_id, ProductVariant.tenant_id == tenant_id
+        )
+        variant = (await db.execute(stmt)).scalar_one_or_none()
+        if not variant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "VARIANT_NOT_FOUND", "message": "Variant not found."},
+            )
+        await db.delete(variant)
+        await db.commit()
+
+    @staticmethod
     async def add_variant(
         db: AsyncSession, tenant_id: UUID, product_id: UUID, data: ProductVariantCreate
     ) -> ProductVariant:
-        await ProductService.get_merchant_product(db, tenant_id, product_id)
+        product = await ProductService.get_merchant_product(db, tenant_id, product_id)
+
+        sku = data.sku.strip() if data.sku and data.sku.strip() else None
+        if not sku:
+            clean_size = re.sub(r"[^A-Za-z0-9]", "", data.size or "FREE").upper()
+            clean_slug = re.sub(r"[^A-Za-z0-9]", "", product.slug)[:8].upper()
+            sku = f"BGD-{clean_slug}-{clean_size}-{uuid4().hex[:4].upper()}"
+
+        barcode = data.barcode.strip() if data.barcode and data.barcode.strip() else None
+        if not barcode:
+            barcode = f"890{int(time.time()) % 1000000:06d}{random.randint(100, 999):03d}"
 
         sku_stmt = select(ProductVariant).where(
-            ProductVariant.tenant_id == tenant_id, ProductVariant.sku == data.sku
+            ProductVariant.tenant_id == tenant_id, ProductVariant.sku == sku
         )
         if (await db.execute(sku_stmt)).scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "code": "VARIANT_SKU_EXISTS",
-                    "message": f"Variant SKU '{data.sku}' already exists for this merchant.",
-                },
-            )
+            sku = f"{sku}-{uuid4().hex[:3].upper()}"
 
-        if data.barcode:
+        if barcode:
             barcode_stmt = select(ProductVariant).where(
-                ProductVariant.tenant_id == tenant_id, ProductVariant.barcode == data.barcode
+                ProductVariant.tenant_id == tenant_id, ProductVariant.barcode == barcode
             )
             if (await db.execute(barcode_stmt)).scalar_one_or_none():
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail={
-                        "code": "VARIANT_BARCODE_EXISTS",
-                        "message": f"Barcode '{data.barcode}' already exists for this merchant.",
-                    },
-                )
+                barcode = f"890{int(time.time() * 1000) % 1000000000:09d}"
 
         variant = ProductVariant(
             tenant_id=tenant_id,
             product_id=product_id,
-            sku=data.sku,
-            barcode=data.barcode,
+            sku=sku,
+            barcode=barcode,
             name=data.name,
             size=data.size,
             color=data.color,
@@ -417,8 +499,40 @@ class ProductService:
             status=data.status,
         )
         db.add(variant)
+        await db.flush()
+
+        init_stock = getattr(data, "initial_stock", 0)
+        if init_stock > 0:
+            store = (
+                await db.execute(
+                    select(Store)
+                    .where(Store.tenant_id == tenant_id, Store.status == "active")
+                    .order_by(Store.code.asc())
+                )
+            ).scalars().first()
+            if not store:
+                store = (
+                    await db.execute(select(Store).where(Store.tenant_id == tenant_id))
+                ).scalars().first()
+            if store:
+                await InventoryService.post_movement(
+                    db=db,
+                    tenant_id=tenant_id,
+                    store_id=store.id,
+                    variant_id=variant.id,
+                    movement_type="PURCHASE_RECEIPT",
+                    from_account="EXTERNAL_VENDOR",
+                    to_account="STORE_ON_HAND",
+                    quantity=init_stock,
+                    on_hand_delta=init_stock,
+                    reference_type="INITIAL_STOCK",
+                    reference_id=f"INIT-{variant.sku}",
+                    notes=f"Initial stock for size {variant.size or 'Standard'}",
+                )
+
         await db.commit()
         await db.refresh(variant)
+        setattr(variant, "available_qty", init_stock)
         return variant
 
     @staticmethod
@@ -469,6 +583,11 @@ class ProductService:
 
         await db.commit()
         await db.refresh(variant)
+        stock_stmt = select(func.coalesce(func.sum(StockBalance.available_qty), 0)).where(
+            StockBalance.variant_id == variant.id
+        )
+        stock_qty = (await db.execute(stock_stmt)).scalar() or 0
+        setattr(variant, "available_qty", int(stock_qty))
         return variant
 
     @staticmethod
@@ -495,6 +614,7 @@ class ProductService:
         db: AsyncSession,
         tenant_id: UUID | None = None,
         category_id: UUID | None = None,
+        brand_id: UUID | None = None,
         search: str | None = None,
         skip: int = 0,
         limit: int = 50,
@@ -505,33 +625,51 @@ class ProductService:
             .options(
                 selectinload(Product.variants),
                 selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.brand),
             )
         )
         if tenant_id:
             stmt = stmt.where(Product.tenant_id == tenant_id)
         if category_id:
             stmt = stmt.where(Product.category_id == category_id)
+        if brand_id:
+            stmt = stmt.where(Product.brand_id == brand_id)
         if search:
             stmt = stmt.where(Product.name.ilike(f"%{search.strip()}%"))
 
-        stmt = stmt.order_by(Product.name.asc()).offset(skip).limit(limit)
+        stmt = stmt.order_by(Product.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(stmt)
-        return list(result.scalars().all())
+        products = list(result.scalars().all())
+        await ProductService._attach_stock_balances(db, products)
+        return products
 
     @staticmethod
     async def get_public_product_by_slug(
         db: AsyncSession, slug: str, tenant_id: UUID | None = None
     ) -> Product:
+        is_uuid = False
+        parsed_uuid = None
+        try:
+            parsed_uuid = UUID(slug)
+            is_uuid = True
+        except (ValueError, TypeError):
+            pass
+
+        match_cond = or_(Product.id == parsed_uuid, Product.slug == slug) if is_uuid else (Product.slug == slug)
+
         stmt = (
             select(Product)
             .where(
-                Product.slug == slug,
+                match_cond,
                 Product.status == "active",
                 Product.is_published.is_(True),
             )
             .options(
                 selectinload(Product.variants),
                 selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.brand),
             )
         )
         if tenant_id:
@@ -543,6 +681,7 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"code": "PRODUCT_NOT_FOUND", "message": "Product is not available."},
             )
+        await ProductService._attach_stock_balances(db, [product])
         return product
 
     @staticmethod
