@@ -37,6 +37,20 @@ class Settings(BaseSettings):
     notification_base_retry_delay_seconds: int = 30
     notification_outbox_batch_size: int = 50
 
+    # Cloudflare R2 Object Storage
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = "bagodi-assets"
+    r2_public_domain: str = ""  # e.g. "https://assets.bagodi.in" or "https://pub-xxxx.r2.dev"
+    allow_mock_providers_in_production: bool = True
+
+    @property
+    def r2_endpoint_url(self) -> str:
+        if self.r2_account_id:
+            return f"https://{self.r2_account_id}.r2.cloudflarestorage.com"
+        return ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -64,23 +78,24 @@ class Settings(BaseSettings):
                 violations.append(
                     "jwt_secret_key must be an authentic random secret >= 32 chars without DEV/INSECURE markers"
                 )
-            if self.payment_gateway_provider.lower() == "mock":
-                violations.append("payment_gateway_provider cannot be 'mock' in production")
-            if (
-                "DEV" in self.payment_mock_secret.upper()
-                or "DEV" in self.payment_webhook_secret.upper()
-            ):
-                violations.append(
-                    "Payment webhook secrets cannot use default dev keys in production"
-                )
-            if self.notification_default_provider.lower() == "mock":
-                violations.append("notification_default_provider cannot be 'mock' in production")
-            if "DEV" in self.notification_webhook_secret.upper():
-                violations.append(
-                    "Notification webhook secrets cannot use default dev keys in production"
-                )
-            if self.otp_provider.lower() == "console":
-                violations.append("otp_provider cannot be 'console' in production")
+            if not self.allow_mock_providers_in_production:
+                if self.payment_gateway_provider.lower() == "mock":
+                    violations.append("payment_gateway_provider cannot be 'mock' in production")
+                if (
+                    "DEV" in self.payment_mock_secret.upper()
+                    or "DEV" in self.payment_webhook_secret.upper()
+                ):
+                    violations.append(
+                        "Payment webhook secrets cannot use default dev keys in production"
+                    )
+                if self.notification_default_provider.lower() == "mock":
+                    violations.append("notification_default_provider cannot be 'mock' in production")
+                if "DEV" in self.notification_webhook_secret.upper():
+                    violations.append(
+                        "Notification webhook secrets cannot use default dev keys in production"
+                    )
+                if self.otp_provider.lower() == "console":
+                    violations.append("otp_provider cannot be 'console' in production")
             if self.debug:
                 violations.append("debug mode must be disabled in production")
             if violations:

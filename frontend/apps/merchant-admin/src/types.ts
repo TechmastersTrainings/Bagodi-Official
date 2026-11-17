@@ -10,12 +10,14 @@ export type RoleType =
 
 export interface StaffUser {
   id: string;
-  phone_e164: string;
+  phone_e164?: string;
   email?: string | null;
   display_name?: string | null;
   role: RoleType;
-  tenant_id: string;
-  permissions: string[];
+  tenant_id?: string;
+  merchant_id?: string;
+  status?: string;
+  permissions?: string[];
 }
 
 export interface MerchantStaffMember {

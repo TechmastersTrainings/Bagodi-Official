@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: bagodi-api
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: starter
+    region: singapore # or oregon / frankfurt based on user location
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        sync: false # Set in Render dashboard: postgresql+asyncpg://<user>:<password>@<aiven-host>:<port>/defaultdb?ssl=require
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "https://bagodi.vercel.app,https://bagodi-merchant.vercel.app,https://bagodi-admin.vercel.app,http://localhost:5174,http://localhost:5175,http://localhost:5176"
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: "bagodi-assets"
+      - key: R2_PUBLIC_DOMAIN
+        sync: false
