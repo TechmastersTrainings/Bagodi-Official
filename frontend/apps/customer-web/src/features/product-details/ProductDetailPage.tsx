@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import styles from "./ProductDetailPage.module.css";
 import { defaultApiClient } from "@bagodi/api-client";
@@ -21,20 +21,15 @@ import {
   Ruler,
   Check,
   AlertTriangle,
-  Zap,
-  Plus,
-  Minus,
 } from "lucide-react";
 import { formatINR } from "@bagodi/utilities";
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
-  const [quantity, setQuantity] = useState<number>(1);
   const [isSizeChartOpen, setIsSizeChartOpen] = useState<boolean>(false);
   const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
   const [cartSuccessNotice, setCartSuccessNotice] = useState<boolean>(false);
@@ -52,7 +47,7 @@ export const ProductDetailPage: React.FC = () => {
     retry: 1,
   });
 
-  // Resolve authoritative product directly from database API
+  // Resolve authoritative product from backend
   const product = productData;
 
   // Extract unique sizes and colors from product variants
@@ -124,16 +119,11 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const sellingPrice = activeVariant
-    ? ((activeVariant as any).sellingPrice || Number((activeVariant as any).base_price) || 0)
-    : (product.basePrice || 0);
-  const mrp = (activeVariant as any)?.mrp ? Number((activeVariant as any).mrp) : undefined;
+  const sellingPrice = activeVariant ? activeVariant.sellingPrice : product.basePrice;
+  const mrp = activeVariant?.mrp;
   const discountPercent = mrp && mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
-  const currentStock = (activeVariant as any)?.availableStock !== undefined
-    ? Number((activeVariant as any)?.availableStock)
-    : Number((activeVariant as any)?.available_qty ?? 0);
-  const isOutOfStock = !activeVariant || currentStock <= 0;
-  const isLowStock = activeVariant && currentStock > 0 && currentStock <= 3;
+  const isOutOfStock = !activeVariant || activeVariant.availableStock <= 0;
+  const isLowStock = activeVariant && activeVariant.availableStock > 0 && activeVariant.availableStock <= 3;
 
   return (
     <div className={styles.pdpContainer}>
@@ -208,13 +198,8 @@ export const ProductDetailPage: React.FC = () => {
               {uniqueSizes.map((sz) => {
                 const variantForSize = variants.find(
                   (v) => v.size === sz && (v.colorName === selectedColor || uniqueColors.length <= 1)
-                ) as any;
-                const stockForSize = variantForSize
-                  ? (variantForSize.availableStock !== undefined
-                      ? Number(variantForSize.availableStock)
-                      : Number(variantForSize.available_qty ?? 0))
-                  : 0;
-                const hasStock = stockForSize > 0;
+                );
+                const hasStock = variantForSize && variantForSize.availableStock > 0;
                 const isSelected = selectedSize === sz;
 
                 return (
@@ -242,40 +227,14 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             ) : isLowStock ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--text-xs)", color: "var(--status-warning)" }}>
-                <AlertTriangle size={14} /> Hurry! Only {currentStock} piece(s) left in stock.
+                <AlertTriangle size={14} /> Hurry! Only {activeVariant.availableStock} piece(s) left in stock.
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--text-xs)", color: "var(--status-success)" }}>
-                <Check size={14} /> In Stock ({currentStock} available) — Ready for immediate dispatch.
+                <Check size={14} /> Ready for immediate dispatch from Bidar Flagship Store.
               </div>
             )}
           </div>
-
-          {/* Quantity Selector */}
-          {!isOutOfStock && (
-            <div className={styles.sectionBlock}>
-              <span className={styles.sectionLabel} style={{ marginBottom: "8px", display: "block" }}>Quantity</span>
-              <div style={{ display: "inline-flex", alignItems: "center", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
-                <button
-                  type="button"
-                  disabled={quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  style={{ padding: "8px 14px", background: "transparent", border: "none", color: "inherit", cursor: quantity <= 1 ? "not-allowed" : "pointer" }}
-                >
-                  <Minus size={14} />
-                </button>
-                <span style={{ minWidth: "32px", textAlign: "center", fontWeight: "600", fontSize: "14px" }}>{quantity}</span>
-                <button
-                  type="button"
-                  disabled={quantity >= currentStock}
-                  onClick={() => setQuantity((q) => Math.min(currentStock, q + 1))}
-                  style={{ padding: "8px 14px", background: "transparent", border: "none", color: "inherit", cursor: quantity >= currentStock ? "not-allowed" : "pointer" }}
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* SKU & Barcode Metadata */}
           {activeVariant && (
@@ -286,56 +245,20 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Add to Bag, Buy Now & Wishlist Actions */}
-          <div className={styles.actionsContainer} style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          {/* Add to Bag & Wishlist Actions */}
+          <div className={styles.actionsContainer}>
             <button
               type="button"
               className={styles.addToBagActionBtn}
               disabled={isOutOfStock || !activeVariant}
               onClick={() => {
                 if (activeVariant) {
-                  addToCartMutation.mutate({ variantId: activeVariant.id, quantity });
+                  addToCartMutation.mutate({ variantId: activeVariant.id, quantity: 1 });
                 }
               }}
-              style={{ flex: "1 1 180px" }}
             >
               <ShoppingBag size={18} />
-              <span>{isOutOfStock ? "Sold Out in This Size" : "Add to Cart"}</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={isOutOfStock || !activeVariant}
-              onClick={async () => {
-                if (activeVariant && !isOutOfStock) {
-                  try {
-                    await addToCartMutation.mutateAsync({ variantId: activeVariant.id, quantity });
-                  } catch {}
-                  navigate("/checkout");
-                }
-              }}
-              style={{
-                flex: "1 1 180px",
-                height: "52px",
-                background: isOutOfStock ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #C5A15B 0%, #A37F3E 100%)",
-                color: isOutOfStock ? "rgba(255,255,255,0.4)" : "#111",
-                fontWeight: "700",
-                fontSize: "14px",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                border: "none",
-                borderRadius: "var(--radius-md, 8px)",
-                cursor: isOutOfStock ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                boxShadow: isOutOfStock ? "none" : "0 4px 14px rgba(197, 161, 91, 0.35)",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <Zap size={18} fill="#111" />
-              <span>Buy Now</span>
+              <span>{isOutOfStock ? "Sold Out in This Size" : "Add to Boutique Bag"}</span>
             </button>
 
             <button
@@ -347,7 +270,7 @@ export const ProductDetailPage: React.FC = () => {
               <Heart
                 size={20}
                 fill={isWishlisted ? "#E31B23" : "none"}
-                color={isWishlisted ? "#E31B23" : "#C5A15B"}
+                color={isWishlisted ? "#E31B23" : "#111111"}
               />
             </button>
           </div>

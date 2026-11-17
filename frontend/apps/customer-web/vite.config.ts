@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "node:path";
+import path from "path";
 
 export default defineConfig({
+  cacheDir: "/tmp/vite_cache/customer-web",
   plugins: [react()],
   resolve: {
     alias: {
@@ -14,27 +15,31 @@ export default defineConfig({
       "@bagodi/authentication": path.resolve(__dirname, "../../packages/authentication/src"),
       "@bagodi/utilities": path.resolve(__dirname, "../../packages/utilities/src"),
       "@bagodi/shared-components": path.resolve(__dirname, "../../packages/shared-components/src"),
-      "react-hook-form": path.resolve(__dirname, "../../packages/form-hooks/index.ts"),
-      "@hookform/resolvers/zod": path.resolve(__dirname, "../../packages/form-hooks/index.ts"),
-      "zod": path.resolve(__dirname, "../../node_modules/.pnpm/zod@4.6.7/node_modules/zod"),
     },
   },
   server: {
-    port: 5174,
+    port: 3000,
     proxy: {
       "/api/v1": {
-        target: "http://127.0.0.1:8001",
+        target: process.env.VITE_API_BASE_URL || "http://localhost:8000",
         changeOrigin: true,
       },
     },
   },
-  preview: {
-    port: 5174,
-    proxy: {
-      "/api/v1": {
-        target: "http://127.0.0.1:8001",
-        changeOrigin: true,
+  build: {
+    target: "es2020",
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-icons": ["lucide-react"],
+          "vendor-forms": ["react-hook-form", "@hookform/resolvers", "zod"],
+        },
       },
     },
   },
 });
+

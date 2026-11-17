@@ -76,7 +76,7 @@ export const CustomerAuthPage: React.FC = () => {
 
   // Resend OTP Countdown Timer
   useEffect(() => {
-    let timer: any;
+    let timer: NodeJS.Timeout;
     if (otpStep === "VERIFY" && resendCountdown > 0) {
       timer = setTimeout(() => setResendCountdown((prev) => prev - 1), 1000);
     }
@@ -128,7 +128,7 @@ export const CustomerAuthPage: React.FC = () => {
     setApiError(null);
     try {
       const response = await defaultApiClient.post<AuthSessionResponse>(
-        "/auth/customer/login-password",
+        "/auth/login",
         data,
         { skipAuth: true }
       );

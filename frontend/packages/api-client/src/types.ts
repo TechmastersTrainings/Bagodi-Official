@@ -19,10 +19,3 @@ export interface ApiResponse<T = unknown> {
   headers: Headers;
 }
 
-export interface ApiClientAuthConfig {
-  getAccessToken?: () => string | null | Promise<string | null>;
-  getRefreshToken?: () => string | null | Promise<string | null>;
-  onTokenRefreshed?: (newToken: string) => void | Promise<void>;
-  onUnauthorized?: () => void | Promise<void>;
-}
-

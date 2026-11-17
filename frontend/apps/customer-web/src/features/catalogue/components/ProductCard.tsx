@@ -19,14 +19,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onQuickView,
 }) => {
   const images = product.images || [];
-  const primaryImage = images.find((img) => img.isPrimary || (img as any).is_primary) || images[0];
-  const secondaryImage = images.find((img) => !img.isPrimary && !(img as any).is_primary) || images[1] || primaryImage;
+  const primaryImage = images.find((img) => img.isPrimary) || images[0];
+  const secondaryImage = images.find((img) => !img.isPrimary) || images[1] || primaryImage;
 
-  const firstVariant = product.variants?.[0] as any;
-  const sellingPrice = firstVariant
-    ? (parseFloat(String(firstVariant.sellingPrice || firstVariant.base_price || 0)) || 0)
-    : (parseFloat(String(product.basePrice || 0)) || 0);
-  const mrp = firstVariant?.mrp ? parseFloat(String(firstVariant.mrp)) : undefined;
+  const firstVariant = product.variants?.[0];
+  const sellingPrice = firstVariant ? firstVariant.sellingPrice : product.basePrice;
+  const mrp = firstVariant?.mrp;
   const discountPercent =
     mrp && mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
 
@@ -84,30 +82,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image Canvas */}
       <Link to={`/product/${product.slug || product.id}`} className={styles.cardLink}>
         <div className={styles.imageCanvas}>
-          {primaryImage?.url ? (
-            <>
-              <img
-                src={primaryImage.url}
-                alt={primaryImage.altText || product.name}
-                className={`${styles.productImage} ${styles.primaryImg}`}
-                loading="lazy"
-              />
-              {secondaryImage?.url && secondaryImage.url !== primaryImage?.url && (
-                <img
-                  src={secondaryImage.url}
-                  alt={secondaryImage.altText || product.name}
-                  className={`${styles.productImage} ${styles.secondaryImg}`}
-                  loading="lazy"
-                />
-              )}
-            </>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", minHeight: "260px", background: "linear-gradient(145deg, #181A18, #232724)", color: "#C5A15B", padding: "20px" }}>
-              <div style={{ width: "52px", height: "52px", borderRadius: "50%", border: "1px solid rgba(197, 161, 91, 0.4)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px", background: "rgba(197, 161, 91, 0.08)" }}>
-                <span style={{ fontFamily: "Cinzel, serif", fontSize: "20px", fontWeight: 700, color: "#C5A15B" }}>B</span>
-              </div>
-              <span style={{ fontFamily: "Cinzel, serif", fontSize: "11px", letterSpacing: "0.15em", color: "#C5A15B", textTransform: "uppercase" }}>Bagodi Atelier</span>
-            </div>
+          {primaryImage?.url && (
+            <img
+              src={primaryImage.url}
+              alt={primaryImage.altText || product.name}
+              className={`${styles.productImage} ${styles.primaryImg}`}
+              loading="lazy"
+            />
+          )}
+
+          {secondaryImage?.url && secondaryImage.url !== primaryImage?.url && (
+            <img
+              src={secondaryImage.url}
+              alt={secondaryImage.altText || product.name}
+              className={`${styles.productImage} ${styles.secondaryImg}`}
+              loading="lazy"
+            />
           )}
 
           {/* Size Chips Preview on Canvas */}

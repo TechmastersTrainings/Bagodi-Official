@@ -13,11 +13,6 @@ import { FilterSidebar } from "./components/FilterSidebar";
 import { ProductCard } from "./components/ProductCard";
 import { QuickViewModal } from "./components/QuickViewModal";
 import {
-  CURATED_CATEGORIES,
-  CURATED_BRANDS,
-  getCategoryBySlug,
-} from "./data/curatedCatalogueData";
-import {
   Search,
   X,
   ChevronLeft,
@@ -67,36 +62,32 @@ export const CataloguePage: React.FC = () => {
     }
   }, [debouncedSearch]);
 
-  // Query Categories from API with fallback
-  const { data: serverCategories = [] } = useQuery<Category[]>({
+  // Query Categories from API
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["catalogue-categories"],
     queryFn: () => defaultApiClient.get<Category[]>("/categories"),
     staleTime: 1000 * 60 * 10,
     retry: false,
   });
 
-  const categories = serverCategories.length > 0 ? serverCategories : CURATED_CATEGORIES;
-
-  // Query Brands from API with fallback
-  const { data: serverBrands = [] } = useQuery<Brand[]>({
+  // Query Brands from API
+  const { data: brands = [] } = useQuery<Brand[]>({
     queryKey: ["catalogue-brands"],
     queryFn: () => defaultApiClient.get<Brand[]>("/brands"),
     staleTime: 1000 * 60 * 10,
     retry: false,
   });
 
-  const brands = serverBrands.length > 0 ? serverBrands : CURATED_BRANDS;
-
   // Active Category resolution
   const activeCategory = useMemo(() => {
     if (!categoryParam) return undefined;
-    return getCategoryBySlug(categoryParam) || categories.find((c) => c.id === categoryParam || c.slug === categoryParam);
+    return categories.find((c) => c.id === categoryParam || c.slug === categoryParam);
   }, [categoryParam, categories]);
 
-  // Query Server Products
+  // Query Server Products strictly from Backend
   const {
     data: serverProductData,
-    isError: isServerError,
+    isLoading: isProductsLoading,
   } = useQuery<PaginatedResponse<Product>>({
     queryKey: [
       "catalogue-products",
@@ -128,16 +119,14 @@ export const CataloguePage: React.FC = () => {
     retry: false,
   });
 
-  // Real Database Products from Backend API
-  const serverItems = Array.isArray(serverProductData)
-    ? serverProductData
-    : Array.isArray((serverProductData as any)?.items)
-    ? (serverProductData as any).items
+  const products: Product[] = Array.isArray(serverProductData?.items)
+    ? (serverProductData.items as Product[])
+    : Array.isArray(serverProductData)
+    ? (serverProductData as unknown as Product[])
     : [];
 
-  const products: Product[] = serverItems as unknown as Product[];
-  const totalCount = (serverProductData as any)?.total ?? serverItems.length;
-  const totalPages = (serverProductData as any)?.totalPages ?? Math.max(1, Math.ceil(totalCount / 16));
+  const totalCount = serverProductData?.total ?? products.length;
+  const totalPages = serverProductData?.totalPages ?? Math.max(1, Math.ceil(totalCount / 16));
 
   // Helper to update searchParams
   const updateParam = (key: string, value: string | undefined) => {
@@ -447,7 +436,13 @@ export const CataloguePage: React.FC = () => {
 
           {/* Product Grid Area */}
           <div className={styles.productGridArea}>
-            {products.length === 0 ? (
+            {isProductsLoading ? (
+              <div className={gridCols === "four" ? styles.gridFourCol : styles.gridThreeCol}>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} style={{ height: 380, background: "#f5f5f5", borderRadius: 18 }} />
+                ))}
+              </div>
+            ) : products.length === 0 ? (
               <div className={styles.emptyAtelierCard}>
                 <div className={styles.emptyIconWrapper}>
                   <Sparkles size={28} />

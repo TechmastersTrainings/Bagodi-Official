@@ -1,19 +1,14 @@
 {
   "name": "@bagodi/api-client",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
+  "version": "1.0.0",
+  "description": "Bagodi Centralized /api/v1/ HTTP API Client with JWT Refresh and Interceptors",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {
-    "test": "node --import tsx src/client.test.ts 2>/dev/null || node -e 'import(\"./src/client.test.ts\")' 2>/dev/null || true",
-    "generate": "openapi-typescript ../../../docs/openapi.json -o ./src/schema.ts"
-  },
   "dependencies": {
-    "openapi-fetch": "^0.17.0"
+    "@bagodi/shared-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

@@ -1,19 +1,9 @@
 /**
- * Centralized Type-Safe API Client for Bagodi Platform.
- * Supports both OpenAPI fetch client (Merchant & Super Admin) and Class-based REST client (Customer Web).
- * Connects directly to authoritative FastAPI /api/v1 backend without mock fallback.
+ * Centralized API Client
+ * FastAPI /api/v1/ integration with JWT refresh mutex, error handling, and cancellation
  */
 
-import createClient from "openapi-fetch";
-import type { paths } from "./schema.js";
-import {
-  getAccessToken,
-  getRefreshToken,
-  getTenantId,
-  getSessionId,
-  setTokens,
-  clearAuth,
-} from "./auth.js";
+import { RequestConfig, ApiClientConfig } from "./types";
 import {
   ApiError,
   AuthenticationError,
@@ -22,135 +12,34 @@ import {
   ValidationError,
   ServerError,
   NetworkError,
-} from "./errors.js";
-import type { RequestConfig, ApiClientConfig, ApiClientAuthConfig } from "./types.js";
+} from "./errors";
 
-// Determine base API URL
-function resolveBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    const win = window as unknown as { __BAGODI_API_URL__?: string; __API_BASE_URL__?: string };
-    if (win.__BAGODI_API_URL__) return win.__BAGODI_API_URL__.replace(/\/api\/v1\/?$/, "");
-    if (win.__API_BASE_URL__) return win.__API_BASE_URL__.replace(/\/api\/v1\/?$/, "");
-    const metaEnv = (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env;
-    if (metaEnv?.VITE_API_BASE_URL) return metaEnv.VITE_API_BASE_URL.replace(/\/api\/v1\/?$/, "");
-  }
-  return "";
+export interface ApiClientAuthConfig {
+  getAccessToken?: () => string | null | Promise<string | null>;
+  getRefreshToken?: () => string | null | Promise<string | null>;
+  onTokenRefreshed?: (newToken: string) => void | Promise<void>;
+  onUnauthorized?: () => void | Promise<void>;
 }
 
-export const API_BASE_URL = resolveBaseUrl();
-
-// Refresh coordination queue
-let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
-
-function flushRefreshQueue(newToken: string): void {
-  refreshQueue.forEach((cb) => cb(newToken));
-  refreshQueue = [];
-}
-
-async function authenticatedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const token = getAccessToken();
-  const tenantId = getTenantId();
-  const sessionId = getSessionId();
-
-  const headers = new Headers(input instanceof Request ? input.headers : init?.headers);
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (tenantId && !headers.has("X-Tenant-ID")) {
-    headers.set("X-Tenant-ID", tenantId);
-  }
-  if (sessionId && !headers.has("X-Session-ID")) {
-    headers.set("X-Session-ID", sessionId);
-  }
-
-  const method = (input instanceof Request ? input.method : init?.method || "GET").toUpperCase();
-  if (!headers.has("Content-Type") && method !== "GET" && method !== "HEAD") {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const targetInput = input instanceof Request ? new Request(input, { headers }) : input;
-  const targetInit = input instanceof Request ? undefined : { ...init, headers };
-
-  const response = await fetch(targetInput, targetInit);
-
-  // Determine if URL is an auth lifecycle endpoint (skip refresh loops)
-  const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-  const isAuthLifecycle =
-    urlStr.includes("/auth/login") ||
-    urlStr.includes("register") ||
-    urlStr.includes("/auth/token/refresh") ||
-    urlStr.includes("/auth/otp/") ||
-    urlStr.includes("/auth/logout");
-
-  // On 401 Unauthorized, initiate token rotation and replay
-  if (response.status === 401 && !isAuthLifecycle) {
-    const currentRefreshToken = getRefreshToken();
-    if (!currentRefreshToken) {
-      clearAuth();
-      return response;
+function getEnvVar(key: string): string | undefined {
+  try {
+    const metaEnv = (import.meta as any)?.env;
+    if (metaEnv && typeof metaEnv[key] === "string" && metaEnv[key].trim() !== "") {
+      return metaEnv[key].trim();
     }
-
-    if (!isRefreshing) {
-      isRefreshing = true;
-      try {
-        const refreshUrl = `${API_BASE_URL.replace(/\/$/, "")}/api/v1/auth/token/refresh`;
-        const refreshResp = await fetch(refreshUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: currentRefreshToken }),
-        });
-
-        if (refreshResp.ok) {
-          const data = (await refreshResp.json()) as { access_token: string; refresh_token: string };
-          setTokens(data.access_token, data.refresh_token);
-          isRefreshing = false;
-          flushRefreshQueue(data.access_token);
-        } else {
-          isRefreshing = false;
-          refreshQueue = [];
-          clearAuth();
-          return response;
-        }
-      } catch (err) {
-        isRefreshing = false;
-        refreshQueue = [];
-        clearAuth();
-        return response;
-      }
-    }
-
-    // Await active refresh and replay original request
-    return new Promise<Response>((resolve) => {
-      refreshQueue.push((refreshedToken: string) => {
-        if (input instanceof Request) {
-          input.headers.set("Authorization", `Bearer ${refreshedToken}`);
-          if (tenantId) input.headers.set("X-Tenant-ID", tenantId);
-          resolve(fetch(input));
-        } else {
-          const replayHeaders = new Headers(init?.headers);
-          replayHeaders.set("Authorization", `Bearer ${refreshedToken}`);
-          if (tenantId) replayHeaders.set("X-Tenant-ID", tenantId);
-          resolve(fetch(input, { ...init, headers: replayHeaders }));
-        }
-      });
-    });
+  } catch {
+    // Ignore in environments where import.meta is unavailable
   }
-
-  return response;
+  try {
+    if (typeof process !== "undefined" && process?.env && process.env[key]) {
+      return String(process.env[key]).trim();
+    }
+  } catch {
+    // Ignore
+  }
+  return undefined;
 }
 
-/**
- * OpenAPI-fetch client used by Merchant Admin and Super Admin
- */
-export const client = createClient<paths>({
-  baseUrl: API_BASE_URL,
-  fetch: authenticatedFetch,
-});
-
-/**
- * Class-based REST client used by Customer Web and Authentication package
- */
 export class ApiClient {
   private baseUrl: string;
   private defaultTimeoutMs: number;
@@ -161,15 +50,37 @@ export class ApiClient {
   private refreshPromise: Promise<string | null> | null = null;
 
   constructor(config: ApiClientConfig = {}) {
-    this.baseUrl = config.baseUrl || (typeof window !== "undefined" && (window as any).__API_BASE_URL__) || "/api/v1";
+    const envBase = getEnvVar("VITE_API_BASE_URL");
+    const windowBase = typeof window !== "undefined" && (window as any).__API_BASE_URL__;
+
+    let resolvedBase = config.baseUrl || envBase || windowBase || "/api/v1";
+
+    if (resolvedBase.startsWith("http://") || resolvedBase.startsWith("https://")) {
+      const clean = resolvedBase.replace(/\/+$/, "");
+      if (!clean.endsWith("/api/v1")) {
+        resolvedBase = `${clean}/api/v1`;
+      } else {
+        resolvedBase = clean;
+      }
+    }
+
+    this.baseUrl = resolvedBase;
     this.defaultTimeoutMs = config.defaultTimeoutMs || 30000;
   }
 
   public updateConfig(authConfig: ApiClientAuthConfig): void {
-    if (authConfig.getAccessToken) this.tokenGetter = authConfig.getAccessToken;
-    if (authConfig.getRefreshToken) this.tokenRefresher = authConfig.getRefreshToken;
-    if (authConfig.onTokenRefreshed) this.onTokenRefreshedCb = authConfig.onTokenRefreshed;
-    if (authConfig.onUnauthorized) this.onUnauthorizedCb = authConfig.onUnauthorized;
+    if (authConfig.getAccessToken) {
+      this.tokenGetter = authConfig.getAccessToken;
+    }
+    if (authConfig.getRefreshToken) {
+      this.tokenRefresher = authConfig.getRefreshToken;
+    }
+    if (authConfig.onTokenRefreshed) {
+      this.onTokenRefreshedCb = authConfig.onTokenRefreshed;
+    }
+    if (authConfig.onUnauthorized) {
+      this.onUnauthorizedCb = authConfig.onUnauthorized;
+    }
   }
 
   public setTokenGetter(getter: () => Promise<string | null> | string | null): void {
@@ -182,9 +93,13 @@ export class ApiClient {
 
   private buildUrl(path: string, params?: Record<string, string | number | boolean | undefined | null>): string {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    const base = this.baseUrl.replace(/\/$/, "");
-    const fullPath = cleanPath.startsWith(base) ? cleanPath : `${base}${cleanPath}`;
-    const url = new URL(fullPath, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    const isAbsolute = this.baseUrl.startsWith("http://") || this.baseUrl.startsWith("https://");
+    const fullTarget = `${this.baseUrl.replace(/\/+$/, "")}${cleanPath}`;
+
+    const url = new URL(
+      fullTarget,
+      typeof window !== "undefined" ? window.location.origin : "http://localhost"
+    );
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -194,7 +109,7 @@ export class ApiClient {
       });
     }
 
-    return url.pathname + url.search;
+    return isAbsolute ? url.toString() : url.pathname + url.search;
   }
 
   public async request<T = unknown>(path: string, config: RequestConfig = {}): Promise<T> {
@@ -203,138 +118,131 @@ export class ApiClient {
     const url = this.buildUrl(path, params);
     const headers = new Headers(customHeaders);
 
-    if (!headers.has("Content-Type") && !(fetchInit.body instanceof FormData) && fetchInit.method !== "GET" && fetchInit.method !== "HEAD") {
+    if (!headers.has("Content-Type") && !(fetchInit.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
     headers.set("Accept", "application/json");
 
-    if (!skipAuth) {
-      let token: string | null = null;
-      if (this.tokenGetter) {
-        try {
-          token = await this.tokenGetter();
-        } catch {}
+    if (!skipAuth && this.tokenGetter) {
+      try {
+        const token = await this.tokenGetter();
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      } catch (err) {
+        console.warn("Failed retrieving access token", err);
       }
-      if (!token) {
-        token = getAccessToken();
-      }
-      if (token && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-    }
-
-    const tenantId = getTenantId();
-    if (tenantId && !headers.has("X-Tenant-ID")) {
-      headers.set("X-Tenant-ID", tenantId);
-    }
-    const sessionId = getSessionId();
-    if (sessionId && !headers.has("X-Session-ID")) {
-      headers.set("X-Session-ID", sessionId);
     }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(url, {
-        ...fetchInit,
-        headers,
-        signal: fetchInit.signal || controller.signal,
-      });
-      clearTimeout(timer);
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          ...fetchInit,
+          headers,
+          signal: fetchInit.signal || controller.signal,
+        });
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          throw new NetworkError("Request timed out");
+        }
+        throw new NetworkError(err?.message || "Network request failed. Ensure backend service is reachable.");
+      }
 
       // Handle 401 Unauthorized with token refresh mutex
-      if (response.status === 401 && !skipAuth) {
-        let refreshToken: string | null = null;
-        if (this.tokenRefresher) {
-          try {
-            refreshToken = await this.tokenRefresher();
-          } catch {}
-        }
-        if (!refreshToken) {
-          refreshToken = getRefreshToken();
-        }
+      if (response.status === 401 && !skipAuth && this.tokenRefresher) {
+        if (!this.refreshPromise) {
+          this.refreshPromise = (async () => {
+            try {
+              const refreshToken = await this.tokenRefresher!();
+              if (!refreshToken) return null;
 
-        if (refreshToken) {
-          if (!this.refreshPromise) {
-            this.refreshPromise = (async () => {
-              try {
-                const refreshRes = await fetch(this.buildUrl("/auth/token/refresh"), {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ refresh_token: refreshToken }),
-                });
-                if (refreshRes.ok) {
-                  const data = await refreshRes.json();
-                  const newAccess = data.access_token || data.accessToken;
-                  const newRefresh = data.refresh_token || data.refreshToken;
-                  if (newAccess && newRefresh) {
-                    setTokens(newAccess, newRefresh);
-                  }
-                  if (newAccess && this.onTokenRefreshedCb) {
-                    this.onTokenRefreshedCb(newAccess);
-                  }
-                  return newAccess;
+              const refreshRes = await fetch(this.buildUrl("/auth/refresh"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ refreshToken }),
+              });
+
+              if (refreshRes.ok) {
+                const data = await refreshRes.json();
+                const newAccessToken = data.accessToken || data.access_token;
+                if (newAccessToken && this.onTokenRefreshedCb) {
+                  this.onTokenRefreshedCb(newAccessToken);
                 }
-                return null;
-              } catch {
-                return null;
-              } finally {
-                this.refreshPromise = null;
+                return newAccessToken;
               }
-            })();
-          }
-
-          const newTok = await this.refreshPromise;
-          if (newTok) {
-            headers.set("Authorization", `Bearer ${newTok}`);
-            const retryRes = await fetch(url, { ...fetchInit, headers });
-            if (retryRes.ok) {
-              const ct = retryRes.headers.get("content-type");
-              return ct && ct.includes("application/json") ? ((await retryRes.json()) as T) : ((await retryRes.text()) as unknown as T);
+            } catch (refreshErr) {
+              console.warn("Silent token refresh failed", refreshErr);
             }
-          }
+            if (this.onUnauthorizedCb) {
+              this.onUnauthorizedCb();
+            }
+            return null;
+          })().finally(() => {
+            this.refreshPromise = null;
+          });
         }
 
-        if (this.onUnauthorizedCb) {
-          this.onUnauthorizedCb();
+        const newToken = await this.refreshPromise;
+        if (newToken) {
+          headers.set("Authorization", `Bearer ${newToken}`);
+          response = await fetch(url, {
+            ...fetchInit,
+            headers,
+            signal: fetchInit.signal || controller.signal,
+          });
         }
-        throw new AuthenticationError("Authentication session expired or invalid");
       }
 
       if (!response.ok) {
-        let errData: any = null;
-        try {
-          errData = await response.json();
-        } catch {
-          errData = await response.text();
-        }
-        const errorMsg = typeof errData === "object" && errData !== null
-          ? (errData.message || (Array.isArray(errData.detail) ? errData.detail.map((d: any) => d.msg).join(", ") : errData.detail) || `HTTP error ${response.status}`)
-          : String(errData || `HTTP error ${response.status}`);
-
-        if (response.status === 401) throw new AuthenticationError(errorMsg, errData);
-        if (response.status === 403) throw new ForbiddenError(errorMsg, errData);
-        if (response.status === 404) throw new NotFoundError(errorMsg, errData);
-        if (response.status === 422) throw new ValidationError(errorMsg, undefined, errData);
-        if (response.status >= 500) throw new ServerError(errorMsg, errData);
-        throw new ApiError(errorMsg, response.status, errData);
+        await this.handleErrorResponse(response);
       }
 
+      // Handle empty response bodies (204 No Content, etc.)
       if (response.status === 204) {
-        return undefined as unknown as T;
+        return null as unknown as T;
       }
 
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return (await response.json()) as T;
       }
+
       return (await response.text()) as unknown as T;
-    } catch (err: any) {
+    } finally {
       clearTimeout(timer);
-      if (err instanceof ApiError) throw err;
-      if (err.name === "AbortError") throw new NetworkError("Request timed out");
-      throw new NetworkError(err.message || "Network request failed");
+    }
+  }
+
+  private async handleErrorResponse(response: Response): Promise<never> {
+    let errorData: any = null;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: response.statusText };
+    }
+
+    const message = errorData?.detail || errorData?.message || `HTTP ${response.status} Error`;
+
+    switch (response.status) {
+      case 401:
+        throw new AuthenticationError(message, errorData);
+      case 403:
+        throw new ForbiddenError(message, errorData);
+      case 404:
+        throw new NotFoundError(message, errorData);
+      case 422:
+        throw new ValidationError(message, errorData?.errors || errorData?.detail, errorData);
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        throw new ServerError(message, errorData);
+      default:
+        throw new ApiError(message, response.status, errorData);
     }
   }
 

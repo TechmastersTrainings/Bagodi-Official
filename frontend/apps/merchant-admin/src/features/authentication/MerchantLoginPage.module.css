@@ -1,0 +1,207 @@
+/* Bagodi Merchant Admin - Customer Storefront-Aligned Luxury Login */
+
+.loginWrapper {
+  --bg-primary: #F8F7F5;
+  --bg-surface: #FFFFFF;
+  --text-primary: #111412;
+  --text-secondary: #4A4E4B;
+  --text-muted: #7A807C;
+  --border-default: #E5E1D8;
+  --border-subtle: #F0EDE6;
+  --brand-crimson: #E31B23;
+  --brand-crimson-hover: #C8141B;
+  --color-gold: #C5A15B;
+
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, #FFFFFF 0%, #F8F7F5 65%, #F0EDE6 100%);
+  padding: var(--space-6) var(--space-4);
+  box-sizing: border-box;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.loginWrapper::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 450px;
+  background: radial-gradient(ellipse, rgba(197, 161, 91, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 480px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: clamp(24px, 5vw, 38px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8C6A18;
+  background: #FFF8E7;
+  border: 1px solid rgba(197, 161, 91, 0.4);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  margin-bottom: var(--space-3);
+  font-weight: 700;
+}
+
+.brandWordmarkCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.brandWordmarkAnimated {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1.1;
+  background: linear-gradient(
+    110deg,
+    #D0161E 0%,
+    #E31B23 35%,
+    #FFA8AC 50%,
+    #E31B23 65%,
+    #D0161E 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: bagodiSheen 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 1px 2px rgba(227, 27, 35, 0.15));
+}
+
+@keyframes bagodiSheen {
+  0%, 15% {
+    background-position: 150% 0;
+  }
+  55%, 100% {
+    background-position: -50% 0;
+  }
+}
+
+.brandSubtitle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6E726F;
+  margin-top: 3px;
+}
+
+.subtitle {
+  font-size: 12.5px;
+  color: #555855;
+  margin: 6px 0 0 0;
+  line-height: 1.5;
+}
+
+.storeNotice {
+  padding: 9px 14px;
+  background: #F8F7F5;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  font-size: 12px;
+  color: #2D312E;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-4);
+}
+
+.storeNotice strong {
+  color: var(--brand-crimson);
+}
+
+.storeIcon {
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.submitBtnWrap {
+  margin-top: var(--space-2);
+}
+
+.submitBtnWrap button {
+  background: var(--brand-crimson) !important;
+  border-color: var(--brand-crimson) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(227, 27, 35, 0.28) !important;
+  transition: all 0.2s ease !important;
+}
+
+.submitBtnWrap button:hover {
+  background: var(--brand-crimson-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(227, 27, 35, 0.35) !important;
+}
+
+.footerNote {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+  font-size: 10.5px;
+  color: #8C93A0;
+}
+
+@media (max-width: 640px), (max-height: 720px) {
+  .loginWrapper {
+    align-items: flex-start;
+    padding: 16px 12px;
+  }
+  .loginCard {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+  .brandWordmarkAnimated {
+    font-size: 1.75rem;
+    letter-spacing: 0.14em;
+  }
+  .subtitle {
+    font-size: 11.5px;
+  }
+}

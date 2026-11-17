@@ -30,7 +30,7 @@ export const HomePage: React.FC = () => {
     queryKey: ["home-featured-products"],
     queryFn: () =>
       defaultApiClient.get<PaginatedResponse<Product> | Product[]>("/products", {
-        params: { limit: 12 },
+        params: { isFeatured: true, pageSize: 8 },
       }),
     retry: 1,
   });
@@ -44,50 +44,56 @@ export const HomePage: React.FC = () => {
   // Authentic Categories
   const storeCategories = [
     {
-      id: "mens-wear",
-      name: "Men's Wear",
-      meta: "Bespoke Suiting, Shirts, Kurtas & Formalwear",
-      path: "/catalogue?category=mens-wear",
-      tag: "Executive & Royal",
-    },
-    {
-      id: "womens-wear",
-      name: "Women's Wear",
-      meta: "Designer Kurtis, Festive Coordinates & Gowns",
-      path: "/catalogue?category=womens-wear",
-      tag: "Haute Couture",
-    },
-    {
-      id: "kids-wear",
-      name: "Kid's Wear",
-      meta: "Celebration Wear, Kurtas & Lehengas",
-      path: "/catalogue?category=kids-wear",
-      tag: "Celebration",
-    },
-    {
       id: "sarees",
-      name: "Sarees",
-      meta: "Pure Banarasi, Kanjivaram & Handloom Silks",
+      name: "Pure Silk Sarees",
+      meta: "Kanjivaram, Banarasi & Tussar",
       path: "/catalogue?category=sarees",
       tag: "Heritage Craft",
     },
     {
-      id: "blazers",
-      name: "Blazers",
-      meta: "Royal Bespoke Blazers, Bandhgalas & Tuxedos",
-      path: "/catalogue?category=blazers",
-      tag: "Bespoke Tailoring",
+      id: "men-suiting",
+      name: "Raymond Suiting & Menswear",
+      meta: "Bespoke Fabrics, Blazers & Formalwear",
+      path: "/catalogue?category=men-suiting",
+      tag: "Authorised Partner",
+    },
+    {
+      id: "wedding",
+      name: "Bridal & Festive Couture",
+      meta: "Lehengas, Sherwanis & Indo-Western",
+      path: "/catalogue?category=wedding",
+      tag: "Wedding Atelier",
+    },
+    {
+      id: "fabrics",
+      name: "Unstitched Premium Fabrics",
+      meta: "Pure Wool, Linen & Royal Brocades",
+      path: "/catalogue?category=fabrics",
+      tag: "By the Metre",
+    },
+    {
+      id: "western",
+      name: "Western Ready-To-Wear",
+      meta: "Shirts, Trousers & Modern Coordinates",
+      path: "/catalogue?category=western",
+      tag: "Contemporary",
+    },
+    {
+      id: "kids",
+      name: "Kids' Festive Collection",
+      meta: "Traditional Kurtas & Ethnic Gowns",
+      path: "/catalogue?category=kids",
+      tag: "Celebration",
     },
   ];
 
   // Brand Directory
   const featuredBrands = [
-    { name: "Bagodi Atelier", specialty: "Heritage Silks & Luxury Couture", path: "/catalogue?brand=bagodi-atelier" },
-    { name: "Raymond", specialty: "Authorised Suiting & Formalwear", path: "/catalogue?brand=raymond" },
-    { name: "Park Avenue", specialty: "Executive Tailored Blazers & Apparel", path: "/catalogue?brand=park-avenue" },
+    { name: "Raymond", specialty: "Authorised Suiting & Shirting", path: "/catalogue?brand=raymond" },
+    { name: "Park Avenue", specialty: "Executive Tailored Apparel", path: "/catalogue?brand=park-avenue" },
     { name: "Parx", specialty: "Urban Casuals & Weekend Wear", path: "/catalogue?brand=parx" },
     { name: "ColorPlus", specialty: "Smart Casual Cotton & Chinos", path: "/catalogue?brand=colorplus" },
-    { name: "Manyavar", specialty: "Royal Celebratory Kurtas & Sherwanis", path: "/catalogue?brand=manyavar" },
+    { name: "Bagodi Heritage", specialty: "Handpicked Indian Silks", path: "/catalogue?brand=bagodi-couture" },
   ];
 
   return (
@@ -274,7 +280,7 @@ export const HomePage: React.FC = () => {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "1px solid var(--border-subtle)", paddingTop: "var(--space-3)", marginTop: "var(--space-3)" }}>
                     <span style={{ fontSize: "var(--text-base)", fontWeight: 700, color: "var(--color-obsidian)" }}>
-                      {formatINR((prod.variants?.[0] as any)?.sellingPrice || (prod.variants?.[0] as any)?.base_price || prod.basePrice || 0)}
+                      {formatINR(prod.basePrice)}
                     </span>
                     <Link to={`/product/${prod.slug || prod.id}`}>
                       <span style={{ fontSize: "var(--text-xs)", color: "var(--color-champagne-gold)", fontWeight: 600 }}>
