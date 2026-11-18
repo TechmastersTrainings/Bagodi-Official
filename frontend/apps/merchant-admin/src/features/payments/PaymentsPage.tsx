@@ -70,12 +70,12 @@ export const PaymentsPage: React.FC = () => {
 
   const [periodFilter, setPeriodFilter] = useState<"ALL" | "TODAY" | "WEEK" | "MONTH">("ALL");
 
-  // Metrics summary calculated from real transactional records
+  // Metrics summary dynamically derived from ledger transactions
   const metrics = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const sevenDaysMs = 7 * oneDayMs;
+    const thirtyDaysMs = 30 * oneDayMs;
 
     let todayRevenue = 0;
     let weekRevenue = 0;
@@ -84,36 +84,41 @@ export const PaymentsPage: React.FC = () => {
     let totalSettled = 0;
     let totalRefunded = 0;
 
-    transactions.forEach((t) => {
-      const amt = Number(t.amount) || 0;
-      const txTime = new Date(t.createdAt).getTime();
-      const statusUpper = (t.status || "").toUpperCase();
+    for (const t of transactions) {
+      const amt = t.amount || 0;
+      totalGross += amt;
 
-      if (statusUpper === "SETTLED" || statusUpper === "CAPTURED" || statusUpper === "SUCCESS") {
-        totalGross += amt;
-        if (statusUpper === "SETTLED") {
-          totalSettled += amt;
-        }
-        if (txTime >= todayStart) {
+      const txTime = t.createdAt ? new Date(t.createdAt).getTime() : 0;
+      const ageMs = now - txTime;
+
+      const isPositiveSettlement = t.status === "SETTLED" || t.status === "CAPTURED";
+
+      if (isPositiveSettlement) {
+        if (ageMs <= oneDayMs) {
           todayRevenue += amt;
         }
-        if (txTime >= weekStart) {
+        if (ageMs <= sevenDaysMs) {
           weekRevenue += amt;
         }
-        if (txTime >= monthStart) {
+        if (ageMs <= thirtyDaysMs) {
           monthRevenue += amt;
         }
       }
-      if (statusUpper === "REFUNDED" || t.refundedAmount) {
-        totalRefunded += Number(t.refundedAmount || amt) || 0;
+
+      if (t.status === "SETTLED") {
+        totalSettled += amt;
+      } else if (t.status === "REFUNDED") {
+        totalRefunded += amt;
       }
-    });
+    }
+
+    const totalTransactions = data?.total ?? transactions.length;
 
     return {
       todayRevenue,
       weekRevenue,
       monthRevenue,
-      totalTransactions: data?.total || transactions.length,
+      totalTransactions,
       totalGross,
       totalSettled,
       totalRefunded,

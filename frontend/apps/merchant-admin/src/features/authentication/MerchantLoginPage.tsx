@@ -33,18 +33,11 @@ export const MerchantLoginPage: React.FC = () => {
   const onSubmit = async (data: MerchantLoginFormData) => {
     setApiError(null);
     try {
-      const response = await defaultApiClient.post<any>(
+      const response = await defaultApiClient.post<AuthSessionResponse>(
         "/auth/login",
         data,
         { skipAuth: true }
       );
-
-      const rawUser = response?.user || {};
-      const userRoles: string[] = Array.isArray(rawUser.roles)
-        ? rawUser.roles
-        : typeof rawUser.role === "string"
-        ? [rawUser.role]
-        : [];
 
       // Verify authorized store personnel roles
       const allowedRoles = [
@@ -55,31 +48,11 @@ export const MerchantLoginPage: React.FC = () => {
         "DELIVERY_STAFF",
         "SUPER_ADMIN",
       ];
-      const hasAllowedRole = userRoles.some((r) => allowedRoles.includes(r)) || allowedRoles.includes(rawUser.role);
-      if (!hasAllowedRole) {
+      if (!allowedRoles.includes(response.user.role)) {
         throw new Error("Access restricted to authorized Bagodi retail staff.");
       }
 
-      const tokens: any = response?.tokens || {
-        accessToken: response?.access_token || response?.accessToken,
-        refreshToken: response?.refresh_token || response?.refreshToken,
-        tokenType: "Bearer",
-        expiresIn: response?.expires_in || response?.expiresIn || 900,
-      };
-
-      const normalizedUser: any = {
-        id: String(rawUser.id || ""),
-        email: rawUser.email || "",
-        phone: rawUser.phone_e164 || rawUser.phone,
-        fullName: rawUser.fullName || rawUser.display_name || rawUser.email || "Store Staff",
-        role: rawUser.role || userRoles.find((r) => allowedRoles.includes(r)) || "STORE_MANAGER",
-        merchantId: rawUser.tenant_id || rawUser.merchantId,
-        permissions: Array.isArray(rawUser.permissions) ? rawUser.permissions : [],
-        isActive: rawUser.status === "active" || rawUser.isActive === true,
-        createdAt: rawUser.created_at || new Date().toISOString(),
-      };
-
-      login(tokens, normalizedUser);
+      login(response.tokens, response.user);
       navigate(from, { replace: true });
     } catch (err: unknown) {
       setApiError(
