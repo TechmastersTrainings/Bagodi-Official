@@ -6,8 +6,10 @@ import { ProductListPage } from "../features/products/ProductListPage";
 import { InventoryPage } from "../features/inventory/InventoryPage";
 import { AdminOrdersPage } from "../features/orders/AdminOrdersPage";
 import { ReturnsPage } from "../features/returns/ReturnsPage";
+import { DeliveryPage } from "../features/delivery/DeliveryPage";
 import { PaymentsPage } from "../features/payments/PaymentsPage";
 import { CouponsPage } from "../features/coupons/CouponsPage";
+import { MerchantUsersPage } from "../features/users/MerchantUsersPage";
 import { MerchantLoginPage } from "../features/authentication/MerchantLoginPage";
 import { useAuth } from "@bagodi/authentication";
 import { LoadingSpinner, PermissionDeniedState } from "@bagodi/shared-components";
@@ -39,6 +41,14 @@ export const AdminRoutes: React.FC = () => {
         element={
           <ProtectedAdminRoute>
             <DashboardPage />
+          </ProtectedAdminRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedAdminRoute>
+            <MerchantUsersPage />
           </ProtectedAdminRoute>
         }
       />
@@ -75,6 +85,14 @@ export const AdminRoutes: React.FC = () => {
         }
       />
       <Route
+        path="/delivery"
+        element={
+          <ProtectedAdminRoute>
+            <DeliveryPage />
+          </ProtectedAdminRoute>
+        }
+      />
+      <Route
         path="/payments"
         element={
           <ProtectedAdminRoute>
@@ -90,7 +108,6 @@ export const AdminRoutes: React.FC = () => {
           </ProtectedAdminRoute>
         }
       />
-      <Route path="/delivery" element={<Navigate to="/orders" replace />} />
       <Route path="/reports" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
