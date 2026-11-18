@@ -187,28 +187,6 @@ class TenantService:
                 )
                 db.add(sub)
 
-        # Update associated merchant users and stores status
-        from app.modules.identity.models import User, UserRole
-        from app.modules.platform.models import Store
-        user_roles_stmt = select(UserRole.user_id).where(UserRole.tenant_id == tenant_id)
-        user_ids = (await db.execute(user_roles_stmt)).scalars().all()
-        if user_ids:
-            users_stmt = select(User).where(User.id.in_(user_ids))
-            users = (await db.execute(users_stmt)).scalars().all()
-            for u in users:
-                if new_status == "active":
-                    u.status = "active"
-                elif new_status in ("suspended", "rejected"):
-                    u.status = "suspended"
-
-        store_stmt = select(Store).where(Store.tenant_id == tenant_id)
-        stores = (await db.execute(store_stmt)).scalars().all()
-        for s in stores:
-            if new_status == "active":
-                s.status = "active"
-            elif new_status in ("suspended", "rejected"):
-                s.status = "inactive"
-
         await db.commit()
         await db.refresh(tenant)
         return tenant

@@ -128,13 +128,21 @@ async def ensure_foundational_data():
                 await db.flush()
                 role_objs[code] = r
 
-            # 5. Core Platform Users
-            users_config = [
-                ("techmastersinnovations@gmail.com", "+919999900001", "TechMasters Admin", "Fri10Feb@2023", True, None, ["SUPER_ADMIN"]),
-                ("admin@techmasters.in", "+919999900002", "Platform Administrator", "Fri10Feb@2023", True, None, ["SUPER_ADMIN"]),
-                ("merchant@bagodi.in", "+919876500002", "Bagodi Merchant Owner", "Fri10Feb@2023", False, tenant.id, ["MERCHANT_OWNER", "STORE_MANAGER"]),
-                ("customer@bagodi.in", "+919876500003", "Customer Account", "Fri10Feb@2023", False, None, ["CUSTOMER"]),
-            ]
+            # 5. Core Platform Users (Security-Hardened: Never seed default passwords in production)
+            import os
+            initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
+            if settings.app_env == "production" and not initial_admin_pwd:
+                logger.info("Production mode: Skipping automated demo credential seeding.")
+                users_config = []
+            else:
+                default_pwd = initial_admin_pwd or "Fri10Feb@2023"
+                users_config = [
+                    ("techmastersinnovations@gmail.com", "+919999900001", "TechMasters Admin", default_pwd, True, None, ["SUPER_ADMIN"]),
+                    ("admin@techmasters.in", "+919999900002", "Platform Administrator", default_pwd, True, None, ["SUPER_ADMIN"]),
+                    ("merchant@bagodi.in", "+919876500002", "Bagodi Merchant Owner", default_pwd, False, tenant.id, ["MERCHANT_OWNER", "STORE_MANAGER"]),
+                    ("customer@bagodi.in", "+919876500003", "Customer Account", default_pwd, False, None, ["CUSTOMER"]),
+                ]
+
             for email, phone, display, pwd, is_platform, t_id, assigned_roles in users_config:
                 stmt = select(User).where((User.email == email) | (User.phone_e164 == phone))
                 u = (await db.execute(stmt)).scalar_one_or_none()
@@ -151,9 +159,9 @@ async def ensure_foundational_data():
                     await db.flush()
                 else:
                     u.display_name = display
-                    u.password_hash = hash_password(pwd)
                     u.is_platform_user = is_platform
                     u.status = "active"
+                    # Security rule: Never overwrite existing user password hashes on startup
 
                 for r_code in assigned_roles:
                     r = role_objs.get(r_code)

@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "bagodi-assets"
     r2_public_domain: str = ""  # e.g. "https://assets.bagodi.in" or "https://pub-xxxx.r2.dev"
-    allow_mock_providers_in_production: bool = True
+    allow_mock_providers_in_production: bool = False
 
     @property
     def r2_endpoint_url(self) -> str:

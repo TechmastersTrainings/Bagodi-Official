@@ -191,9 +191,9 @@ class AuthService:
                 },
             )
 
-        # Development bypass: accept 123456 or 000000 in development environment
+        # Development bypass: strictly limited to local development with debug enabled
         is_dev_bypass = (
-            settings.app_env == "development" and data.otp in ("123456", "000000")
+            settings.app_env == "development" and settings.debug and data.otp == "123456"
         )
 
         # 1. Fetch latest unconsumed OTP request
