@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import SecurityPrincipal, get_security_principal
 from app.db.session import get_db
 from app.modules.catalog.models import Category, Product, ProductVariant
-from app.modules.delivery.models import CourierPartner, Shipment
+from app.modules.delivery.models import Shipment
 from app.modules.inventory.models import StockBalance
 from app.modules.orders.models import Order, OrderItem, OrderReturnRequest
 from app.modules.platform.models import Tenant
@@ -415,14 +415,13 @@ async def get_fulfillment_sla(
     # Query courier partners breakdown
     courier_stmt = (
         select(
-            CourierPartner.name,
+            func.coalesce(Shipment.courier_provider, "Internal Fleet").label("name"),
             func.count(Shipment.id).label("handed_over"),
             func.count(case((Shipment.status == "DELIVERED", Shipment.id))).label("partner_delivered"),
             func.count(case((Shipment.status == "RTO", Shipment.id))).label("partner_rto"),
         )
-        .join(Shipment, Shipment.courier_partner_id == CourierPartner.id)
         .where(Shipment.tenant_id == target_tenant_id)
-        .group_by(CourierPartner.id, CourierPartner.name)
+        .group_by(func.coalesce(Shipment.courier_provider, "Internal Fleet"))
     )
     courier_rows = (await db.execute(courier_stmt)).all()
 
