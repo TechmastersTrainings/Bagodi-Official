@@ -34,6 +34,7 @@ from app.modules.payments.router_merchant import router as payments_merchant_rou
 from app.modules.payments.router_webhooks import router as payments_webhooks_router
 from app.modules.platform.router_platform import router as platform_router
 from app.modules.platform.router_stores import router as stores_router
+from app.modules.platform.router_super import router as super_router
 from app.modules.pricing.router_customer import router as pricing_customer_router
 from app.modules.pricing.router_merchant import router as pricing_merchant_router
 from app.modules.reports.router_merchant import router as reports_merchant_router
@@ -167,6 +168,7 @@ app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(merchant_users_router, prefix=settings.api_v1_prefix)
 app.include_router(customer_addresses_router, prefix=settings.api_v1_prefix)
 app.include_router(platform_router, prefix=settings.api_v1_prefix)
+app.include_router(super_router, prefix=settings.api_v1_prefix)
 app.include_router(platform_catalog_router, prefix=settings.api_v1_prefix)
 app.include_router(stores_router, prefix=settings.api_v1_prefix)
 app.include_router(merchant_catalog_router, prefix=settings.api_v1_prefix)
