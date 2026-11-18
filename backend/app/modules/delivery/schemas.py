@@ -377,3 +377,93 @@ class DeliveryAuditLogResponse(BaseModel):
     to_status: str | None
     payload: dict[str, Any]
     created_at: datetime
+
+
+# -----------------------------------------------------------------------------
+# Doorstep Payment Collection & UPI QR Schemas
+# -----------------------------------------------------------------------------
+class DoorstepPaymentSummaryResponse(BaseModel):
+    shipment_id: UUID
+    order_id: UUID
+    order_number: str
+    recipient_name: str
+    recipient_phone: str
+    delivery_status: str
+    payment_method: str
+    payment_status: str
+    amount_payable: Decimal
+    is_cod: bool
+    is_paid: bool
+    techmasters_commission_amount: Decimal  # 2% on product value
+    merchant_payable_amount: Decimal  # 98% on product value
+
+
+class UpiQrGenerationResponse(BaseModel):
+    shipment_id: UUID
+    order_id: UUID
+    order_number: str
+    amount_payable: Decimal
+    payee_vpa: str
+    payee_name: str
+    transaction_reference: str
+    upi_intent_uri: str
+    qr_code_svg: str
+    payment_status: str
+    techmasters_commission_amount: Decimal
+    merchant_payable_amount: Decimal
+
+
+class UpiPaymentVerificationRequest(BaseModel):
+    transaction_reference: str | None = None
+    notes: str | None = None
+
+
+class UpiPaymentVerificationResponse(BaseModel):
+    verified: bool
+    status: str
+    transaction_reference: str
+    amount: Decimal
+    captured_at: datetime
+    payment_method: str
+    techmasters_commission_amount: Decimal
+    merchant_payable_amount: Decimal
+
+
+class DoorstepCashCollectionRequest(BaseModel):
+    amount_collected: Decimal = Field(..., gt=Decimal("0.00"))
+    notes: str | None = None
+
+
+class DoorstepCashCollectionResponse(BaseModel):
+    collected: bool
+    amount: Decimal
+    recorded_at: datetime
+    settlement_id: UUID
+    payment_status: str
+    techmasters_commission_amount: Decimal
+    merchant_payable_amount: Decimal
+
+
+class CustomerTrackingDetailResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    shipment_id: UUID
+    shipment_number: str
+    order_id: UUID
+    order_number: str
+    status: str
+    delivery_type: str
+    is_cod: bool
+    amount_payable: Decimal
+    payment_status: str
+    delivery_otp: str | None = None
+    rider_name: str | None = None
+    rider_phone: str | None = None
+    vehicle_type: str | None = None
+    vehicle_registration: str | None = None
+    estimated_delivery_time: str | None = None
+    store_name: str | None = None
+    store_address: str | None = None
+    shipping_address: dict[str, Any]
+    delivered_at: datetime | None = None
+    tracking_events: list[DeliveryTrackingEventResponse] = Field(default_factory=list)

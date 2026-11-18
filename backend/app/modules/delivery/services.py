@@ -1725,6 +1725,10 @@ class DeliveryService:
             .options(
                 selectinload(Shipment.tracking_events),
                 selectinload(Shipment.items),
+                selectinload(Shipment.assigned_personnel),
+                selectinload(Shipment.assigned_vehicle),
+                selectinload(Shipment.store),
+                selectinload(Shipment.order),
             )
         )
         shipment = (await db.execute(stmt)).scalar_one_or_none()
@@ -1757,6 +1761,10 @@ class DeliveryService:
             .options(
                 selectinload(Shipment.tracking_events),
                 selectinload(Shipment.items),
+                selectinload(Shipment.assigned_personnel),
+                selectinload(Shipment.assigned_vehicle),
+                selectinload(Shipment.store),
+                selectinload(Shipment.order),
             )
         )
         shipment = (await db.execute(stmt)).scalar_one_or_none()

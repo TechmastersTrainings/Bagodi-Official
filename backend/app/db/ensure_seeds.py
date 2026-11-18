@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from uuid import UUID
 from sqlalchemy import select, or_, text
 from app.db.session import AsyncSessionLocal
@@ -6,6 +7,12 @@ from app.core.passwords import hash_password
 from app.modules.platform.models import Tenant, Store
 from app.modules.identity.models import User, Role, Permission, UserRole, RolePermission
 from app.modules.catalog.models import Category, Brand, Product
+from app.modules.delivery.models import (
+    DeliveryZone,
+    DeliveryZonePincode,
+    DeliveryVehicle,
+    DeliveryPersonnel,
+)
 
 logger = logging.getLogger("bagodi.platform")
 
@@ -106,6 +113,9 @@ async def ensure_foundational_data():
                 ("STORE_MANAGER", "Bagodi Store Manager", "STORE", tenant.id, [
                     "catalog.*", "inventory.*", "orders.*", "delivery.*", "stores.read", "reports:read", "pricing.read", "pricing.write"
                 ]),
+                ("DELIVERY_AGENT", "Bagodi Delivery Agent", "TENANT", tenant.id, [
+                    "delivery.read", "delivery.write", "delivery.staff", "delivery.*", "orders.read"
+                ]),
                 ("CUSTOMER", "Retail Customer", "GLOBAL", None, ["customer.*", "orders.create", "orders.read"]),
             ]
             role_objs = {}
@@ -140,6 +150,8 @@ async def ensure_foundational_data():
                     ("techmastersinnovations@gmail.com", "+919999900001", "TechMasters Admin", default_pwd, True, None, ["SUPER_ADMIN"]),
                     ("admin@techmasters.in", "+919999900002", "Platform Administrator", default_pwd, True, None, ["SUPER_ADMIN"]),
                     ("merchant@bagodi.in", "+919876500002", "Bagodi Merchant Owner", default_pwd, False, tenant.id, ["MERCHANT_OWNER", "STORE_MANAGER"]),
+                    ("delivery1@bagodi.in", "+919845011221", "Vikram Jadhav", default_pwd, False, tenant.id, ["DELIVERY_AGENT"]),
+                    ("delivery2@bagodi.in", "+919845011222", "Mohammed Zeeshan", default_pwd, False, tenant.id, ["DELIVERY_AGENT"]),
                     ("customer@bagodi.in", "+919876500003", "Customer Account", default_pwd, False, None, ["CUSTOMER"]),
                 ]
 
@@ -210,6 +222,112 @@ async def ensure_foundational_data():
                     b.name = name
                     b.description = desc
                     b.is_active = True
+
+            # 8. Delivery Logistics Infrastructure (Vehicles, Zones, Personnel)
+            # 8.1 Delivery Vehicles
+            vehicles_config = [
+                ("KA-38-EA-1024", "MOTORCYCLE", "Hero Splendor Plus", Decimal("25.00")),
+                ("KA-38-EA-2048", "SCOOTER", "Honda Activa 6G", Decimal("20.00")),
+            ]
+            vehicle_objs = {}
+            for reg, v_type, model, cap in vehicles_config:
+                v_stmt = select(DeliveryVehicle).where(
+                    DeliveryVehicle.tenant_id == tenant.id,
+                    DeliveryVehicle.registration_number == reg,
+                )
+                vehicle = (await db.execute(v_stmt)).scalar_one_or_none()
+                if not vehicle:
+                    vehicle = DeliveryVehicle(
+                        tenant_id=tenant.id,
+                        store_id=store.id,
+                        registration_number=reg,
+                        vehicle_type=v_type,
+                        brand_model=model,
+                        max_weight_capacity_kg=cap,
+                        status="AVAILABLE",
+                        is_active=True,
+                    )
+                    db.add(vehicle)
+                    await db.flush()
+                vehicle_objs[reg] = vehicle
+
+            # 8.2 Central Delivery Zone for Bidar
+            z_stmt = select(DeliveryZone).where(
+                DeliveryZone.tenant_id == tenant.id,
+                DeliveryZone.code == "BIDAR-CENTRAL",
+            )
+            zone = (await db.execute(z_stmt)).scalar_one_or_none()
+            if not zone:
+                zone = DeliveryZone(
+                    tenant_id=tenant.id,
+                    store_id=store.id,
+                    code="BIDAR-CENTRAL",
+                    name="Bidar City Central Zone",
+                    description="Immediate hyper-local fulfillment zone for Bidar city and surrounding areas",
+                    base_delivery_fee=Decimal("0.00"),
+                    free_delivery_threshold=Decimal("0.00"),
+                    estimated_delivery_hours=2,
+                    supports_internal_delivery=True,
+                    supports_courier=True,
+                    supports_cod=True,
+                    is_active=True,
+                )
+                db.add(zone)
+                await db.flush()
+
+                # Add serviceable PIN codes
+                for pin in ["585401", "585402", "585403", "585404"]:
+                    p_stmt = select(DeliveryZonePincode).where(
+                        DeliveryZonePincode.tenant_id == tenant.id,
+                        DeliveryZonePincode.pincode == pin,
+                    )
+                    if not (await db.execute(p_stmt)).scalar_one_or_none():
+                        db.add(
+                            DeliveryZonePincode(
+                                tenant_id=tenant.id,
+                                zone_id=zone.id,
+                                pincode=pin,
+                                is_serviceable=True,
+                            )
+                        )
+                await db.flush()
+
+            # 8.3 Delivery Personnel Linking
+            agents_config = [
+                ("delivery1@bagodi.in", "DEL-BID-001", "Vikram Jadhav", "+919845011221", "KA-38-EA-1024"),
+                ("delivery2@bagodi.in", "DEL-BID-002", "Mohammed Zeeshan", "+919845011222", "KA-38-EA-2048"),
+            ]
+            for email, code, name, phone, reg in agents_config:
+                u_stmt = select(User).where(User.email == email)
+                agent_user = (await db.execute(u_stmt)).scalar_one_or_none()
+                if agent_user:
+                    dp_stmt = select(DeliveryPersonnel).where(
+                        DeliveryPersonnel.tenant_id == tenant.id,
+                        DeliveryPersonnel.employee_code == code,
+                    )
+                    personnel = (await db.execute(dp_stmt)).scalar_one_or_none()
+                    veh = vehicle_objs.get(reg)
+                    if not personnel:
+                        personnel = DeliveryPersonnel(
+                            tenant_id=tenant.id,
+                            store_id=store.id,
+                            user_id=agent_user.id,
+                            employee_code=code,
+                            full_name=name,
+                            phone_number=phone,
+                            driving_license_number=f"KA38-{code}",
+                            assigned_vehicle_id=veh.id if veh else None,
+                            verification_status="VERIFIED",
+                            duty_status="AVAILABLE",
+                            is_active=True,
+                        )
+                        db.add(personnel)
+                        await db.flush()
+                    else:
+                        personnel.verification_status = "VERIFIED"
+                        personnel.is_active = True
+                        if veh and not personnel.assigned_vehicle_id:
+                            personnel.assigned_vehicle_id = veh.id
 
             await db.commit()
             logger.info("✓ Foundational data successfully verified in PostgreSQL.")
