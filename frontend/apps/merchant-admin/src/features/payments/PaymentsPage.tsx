@@ -70,21 +70,50 @@ export const PaymentsPage: React.FC = () => {
 
   const [periodFilter, setPeriodFilter] = useState<"ALL" | "TODAY" | "WEEK" | "MONTH">("ALL");
 
-  // Metrics summary
+  // Metrics summary calculated from real transactional records
   const metrics = useMemo(() => {
-    const todayRevenue = 28925;
-    const weekRevenue = 111474;
-    const monthRevenue = 2845600;
-    const totalTransactions = data?.total || 2;
-    const totalGross = transactions.reduce((sum, t) => sum + (t.amount || 0), 0) || todayRevenue;
-    const totalSettled = 2712300;
-    const totalRefunded = 1000;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    let todayRevenue = 0;
+    let weekRevenue = 0;
+    let monthRevenue = 0;
+    let totalGross = 0;
+    let totalSettled = 0;
+    let totalRefunded = 0;
+
+    transactions.forEach((t) => {
+      const amt = Number(t.amount) || 0;
+      const txTime = new Date(t.createdAt).getTime();
+      const statusUpper = (t.status || "").toUpperCase();
+
+      if (statusUpper === "SETTLED" || statusUpper === "CAPTURED" || statusUpper === "SUCCESS") {
+        totalGross += amt;
+        if (statusUpper === "SETTLED") {
+          totalSettled += amt;
+        }
+        if (txTime >= todayStart) {
+          todayRevenue += amt;
+        }
+        if (txTime >= weekStart) {
+          weekRevenue += amt;
+        }
+        if (txTime >= monthStart) {
+          monthRevenue += amt;
+        }
+      }
+      if (statusUpper === "REFUNDED" || t.refundedAmount) {
+        totalRefunded += Number(t.refundedAmount || amt) || 0;
+      }
+    });
 
     return {
       todayRevenue,
       weekRevenue,
       monthRevenue,
-      totalTransactions,
+      totalTransactions: data?.total || transactions.length,
       totalGross,
       totalSettled,
       totalRefunded,

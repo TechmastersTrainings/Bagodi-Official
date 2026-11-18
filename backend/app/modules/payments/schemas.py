@@ -141,3 +141,26 @@ class PaymentAuditLogResponse(BaseModel):
     actor_id: UUID | None
     payload: dict[str, Any]
     created_at: datetime
+
+
+class PaymentTransactionItemRecord(BaseModel):
+    id: str
+    orderId: str
+    orderNumber: str
+    customerName: str | None = None
+    amount: float
+    currency: str = "INR"
+    paymentMethod: str
+    status: str
+    gatewayTransactionId: str | None = None
+    settlementBatchId: str | None = None
+    createdAt: str
+    refundedAmount: float = 0.0
+
+
+class PaginatedPaymentTransactionsResponse(BaseModel):
+    items: list[PaymentTransactionItemRecord]
+    total: int
+    page: int
+    pageSize: int
+    totalPages: int

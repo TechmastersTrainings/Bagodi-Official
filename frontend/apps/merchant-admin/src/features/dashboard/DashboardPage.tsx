@@ -88,11 +88,11 @@ export const DashboardPage: React.FC = () => {
   const commandModules = [
     {
       title: "Products & Catalogue",
-      description: "Manage 148 luxury ethnic garments, Raymond suiting & price points",
+      description: "Manage luxury ethnic garments, fine suiting and catalog price points",
       path: "/products",
       icon: <Shirt size={20} />,
       accentColor: "#E31B23",
-      statLabel: "148 SKUs",
+      statLabel: "Catalogue",
       actionText: "Manage Catalogue",
     },
     {
