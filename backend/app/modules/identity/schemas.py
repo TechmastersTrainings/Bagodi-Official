@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 
 class OTPSendRequest(BaseModel):
@@ -98,6 +98,27 @@ class UserProfileResponse(BaseModel):
     roles: list[str]
     permissions: list[str]
 
+    @computed_field
+    @property
+    def role(self) -> str:
+        if "SUPER_ADMIN" in self.roles:
+            return "SUPER_ADMIN"
+        if "MERCHANT_OWNER" in self.roles or "MERCHANT_ADMIN" in self.roles:
+            return "MERCHANT_ADMIN"
+        if self.roles:
+            return self.roles[0]
+        return "CUSTOMER"
+
+    @computed_field
+    @property
+    def fullName(self) -> str:
+        return self.display_name or self.email or ""
+
+    @computed_field
+    @property
+    def isActive(self) -> bool:
+        return self.status == "active"
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -105,6 +126,16 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: UserProfileResponse
+
+    @computed_field
+    @property
+    def tokens(self) -> dict[str, Any]:
+        return {
+            "accessToken": self.access_token,
+            "refreshToken": self.refresh_token,
+            "tokenType": "Bearer",
+            "expiresIn": self.expires_in,
+        }
 
 
 class TokenRefreshRequest(BaseModel):
