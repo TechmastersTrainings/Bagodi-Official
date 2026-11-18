@@ -475,3 +475,4 @@ export const PaymentCollectionModal: React.FC<PaymentCollectionModalProps> = ({
     </div>
   );
 };
+

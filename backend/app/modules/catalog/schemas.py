@@ -65,24 +65,31 @@ class BrandResponse(BaseModel):
 
 
 class ProductVariantCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     sku: str | None = Field(default=None, max_length=80, pattern=r"^[a-zA-Z0-9_\-]+$")
     barcode: str | None = Field(default=None, max_length=100)
-    name: str = Field(..., min_length=2, max_length=200)
+    name: str = Field(default="Standard", min_length=1, max_length=200)
     size: str | None = Field(default=None, max_length=50)
-    color: str | None = Field(default=None, max_length=50)
+    color: str | None = Field(default=None, max_length=50, alias="colorName")
     attributes: dict | None = Field(default=None)
-    mrp: Decimal = Field(..., ge=0)
-    base_price: Decimal = Field(..., ge=0)
-    initial_stock: int = Field(default=0, ge=0, description="Initial stock units for this size")
+    mrp: Decimal | None = Field(default=None, ge=0)
+    base_price: Decimal | None = Field(default=None, ge=0, alias="sellingPrice")
+    initial_stock: int = Field(default=0, ge=0, alias="initialStock")
     status: Literal["active", "inactive"] = Field(default="active")
 
 
 class ProductVariantUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=2, max_length=200)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
     barcode: str | None = Field(default=None, max_length=100)
     size: str | None = Field(default=None, max_length=50)
-    color: str | None = Field(default=None, max_length=50)
+    color: str | None = Field(default=None, max_length=50, alias="colorName")
     attributes: dict | None = Field(default=None)
+    mrp: Decimal | None = Field(default=None, ge=0)
+    base_price: Decimal | None = Field(default=None, ge=0, alias="sellingPrice")
+    status: Literal["active", "inactive"] | None = Field(default=None)
     mrp: Decimal | None = Field(default=None, ge=0)
     base_price: Decimal | None = Field(default=None, ge=0)
     status: Literal["active", "inactive"] | None = Field(default=None)
@@ -124,11 +131,13 @@ class ProductVariantResponse(BaseModel):
 
 
 class ProductImageCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     url: str = Field(..., max_length=1000)
-    alt_text: str | None = Field(default=None, max_length=255)
-    variant_id: UUID | None = Field(default=None)
-    sort_order: int = Field(default=0)
-    is_primary: bool = Field(default=False)
+    alt_text: str | None = Field(default=None, max_length=255, alias="altText")
+    variant_id: UUID | None = Field(default=None, alias="variantId")
+    sort_order: int = Field(default=0, alias="displayOrder")
+    is_primary: bool = Field(default=False, alias="isPrimary")
 
 
 class ProductImageResponse(BaseModel):
@@ -145,24 +154,31 @@ class ProductImageResponse(BaseModel):
 
 
 class ProductCreate(BaseModel):
-    category_id: UUID
-    brand_id: UUID | None = Field(default=None)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    category_id: UUID = Field(..., alias="categoryId")
+    brand_id: UUID | None = Field(default=None, alias="brandId")
     name: str = Field(..., min_length=2, max_length=250)
     slug: str | None = Field(default=None, max_length=150)
     description: str | None = Field(default=None, max_length=2000)
+    base_price: Decimal | None = Field(default=None, alias="basePrice")
     status: Literal["draft", "active", "archived"] = Field(default="draft")
-    is_published: bool = Field(default=False)
+    is_published: bool = Field(default=True, alias="isPublished")
     variants: list[ProductVariantCreate] = Field(default_factory=list)
     images: list[ProductImageCreate] = Field(default_factory=list)
 
 
 class ProductUpdate(BaseModel):
-    category_id: UUID | None = Field(default=None)
-    brand_id: UUID | None = Field(default=None)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    category_id: UUID | None = Field(default=None, alias="categoryId")
+    brand_id: UUID | None = Field(default=None, alias="brandId")
     name: str | None = Field(default=None, min_length=2, max_length=250)
     description: str | None = Field(default=None, max_length=2000)
+    base_price: Decimal | None = Field(default=None, alias="basePrice")
     status: Literal["draft", "active", "archived"] | None = Field(default=None)
-    is_published: bool | None = Field(default=None)
+    is_published: bool | None = Field(default=None, alias="isPublished")
+    images: list[ProductImageCreate] | None = Field(default=None)
 
 
 class ProductDetailResponse(BaseModel):

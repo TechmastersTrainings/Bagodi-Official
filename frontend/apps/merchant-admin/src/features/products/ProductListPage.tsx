@@ -58,7 +58,7 @@ export const ProductListPage: React.FC = () => {
     },
   });
 
-  const allItems = data?.items || [];
+  const allItems: Product[] = Array.isArray(data) ? (data as unknown as Product[]) : data?.items || [];
   const stagedItems = allItems.filter((p) => !p.isActive && !p.isArchived);
   const liveItems = allItems.filter((p) => p.isActive && !p.isArchived);
 

@@ -282,3 +282,4 @@ export const DailySummaryModal: React.FC<DailySummaryModalProps> = ({
     </div>
   );
 };
+

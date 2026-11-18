@@ -103,3 +103,4 @@ def generate_qr_svg(content: str, size: int = 260) -> str:
         f'{svg_body}'
         f'</svg>'
     )
+
