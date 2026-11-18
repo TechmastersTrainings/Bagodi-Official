@@ -1,17 +1,22 @@
+import math
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import SecurityPrincipal, get_security_principal
 from app.db.session import get_db
+from app.modules.orders.models import Order
 from app.modules.orders.schemas import (
     CheckoutRequest,
     DirectCheckoutRequest,
     OrderCancelRequest,
     OrderResponse,
+    OrderStatusUpdateRequest,
+    PaginatedOrderResponse,
     PaymentCallbackRequest,
 )
 from app.modules.orders.services import OrderService
@@ -211,6 +216,85 @@ async def direct_checkout_order(
 
 
 @router.get(
+    "",
+    response_model=PaginatedOrderResponse,
+    summary="List orders with pagination, store, and status filters",
+)
+async def list_orders(
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
+    tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
+    store_id: Annotated[UUID | None, Query(description="Filter by store")] = None,
+    status: Annotated[str | None, Query(description="Filter by order status")] = None,
+    paymentStatus: Annotated[str | None, Query(description="Filter by payment status")] = None,
+    search: Annotated[str | None, Query(description="Search order number or customer")] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    pageSize: Annotated[int, Query(ge=1, le=100)] = 20,
+    skip: Annotated[int | None, Query(ge=0)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=100)] = None,
+):
+    target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
+
+    eff_limit = limit or pageSize
+    eff_offset = skip if skip is not None else (page - 1) * eff_limit
+
+    conditions = [Order.tenant_id == target_tenant_id]
+
+    caller_roles = set(principal.roles or [])
+    merchant_roles = {"SUPER_ADMIN", "MERCHANT_ADMIN", "STORE_MANAGER", "STAFF", "OPERATOR", "DELIVERY_STAFF"}
+    if not (caller_roles & merchant_roles):
+        if not principal.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "AUTHENTICATION_REQUIRED", "message": "Authentication is required."},
+            )
+        conditions.append(Order.customer_id == principal.user_id)
+
+    if store_id:
+        conditions.append(Order.store_id == store_id)
+    if status and status != "ALL":
+        conditions.append(Order.status == status)
+    if paymentStatus and paymentStatus != "ALL":
+        conditions.append(Order.payment_status == paymentStatus.lower())
+    if search:
+        search_pattern = f"%{search}%"
+        conditions.append(
+            or_(
+                Order.order_number.ilike(search_pattern),
+                Order.customer_name.ilike(search_pattern),
+                Order.customer_phone.ilike(search_pattern),
+            )
+        )
+
+    count_stmt = select(func.count(Order.id)).where(*conditions)
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = (
+        select(Order)
+        .where(*conditions)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payments),
+        )
+        .order_by(Order.created_at.desc())
+        .offset(eff_offset)
+        .limit(eff_limit)
+    )
+    items = list((await db.execute(stmt)).scalars().all())
+    total_pages = math.ceil(total_count / eff_limit) if eff_limit > 0 else 1
+
+    return PaginatedOrderResponse(
+        items=items,
+        total=total_count,
+        page=page,
+        pageSize=eff_limit,
+        totalPages=total_pages,
+    )
+
+
+@router.get(
     "/my-orders",
     response_model=list[OrderResponse],
     summary="List current customer's order history",
@@ -233,22 +317,50 @@ async def list_my_orders(
 @router.get(
     "/{order_number}",
     response_model=OrderResponse,
-    summary="Get customer order details by order number",
+    summary="Get customer or merchant order details by order number/id",
 )
 async def get_my_order(
     order_number: str,
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
-    customer_id: Annotated[UUID, Depends(get_authenticated_customer_id)],
     db: Annotated[AsyncSession, Depends(get_db)],
     x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
     tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
 ):
     target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
+    caller_roles = set(principal.roles or [])
+    merchant_roles = {"SUPER_ADMIN", "MERCHANT_ADMIN", "STORE_MANAGER", "STAFF", "OPERATOR", "DELIVERY_STAFF"}
+    
+    # If customer, scope strictly to customer_id; if merchant/admin, allow inspecting tenant order
+    scoped_customer_id = None if (caller_roles & merchant_roles) else principal.user_id
+
     return await OrderService.get_order_by_number(
         db=db,
         tenant_id=target_tenant_id,
         order_number=order_number,
-        customer_id=customer_id,
+        customer_id=scoped_customer_id,
+    )
+
+
+@router.patch(
+    "/{order_id}/status",
+    response_model=OrderResponse,
+    summary="Update order status (Merchant operation)",
+)
+async def update_order_status_universal(
+    order_id: UUID,
+    data: OrderStatusUpdateRequest,
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
+    tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
+):
+    target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
+    return await OrderService.update_order_status(
+        db=db,
+        tenant_id=target_tenant_id,
+        order_id=order_id,
+        data=data,
+        user_id=principal.user_id,
     )
 
 

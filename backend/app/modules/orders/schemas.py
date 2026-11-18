@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 # --- Cart Schemas ---
@@ -117,6 +117,22 @@ class OrderItemResponse(BaseModel):
     applied_promotion_id: UUID | None = None
     applied_promotion_title: str | None = None
 
+    @computed_field
+    def productName(self) -> str:
+        return self.product_name
+
+    @computed_field
+    def variantName(self) -> str:
+        return self.variant_name
+
+    @computed_field
+    def unitPrice(self) -> float:
+        return float(self.unit_price)
+
+    @computed_field
+    def totalPrice(self) -> float:
+        return float(self.total_price)
+
 
 class OrderStatusHistoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -176,6 +192,58 @@ class OrderResponse(BaseModel):
     payments: list[PaymentTransactionResponse]
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    def orderNumber(self) -> str:
+        return self.order_number
+
+    @computed_field
+    def grandTotal(self) -> float:
+        return float(self.total_amount)
+
+    @computed_field
+    def discountTotal(self) -> float:
+        return float(self.discount_amount)
+
+    @computed_field
+    def deliveryCharge(self) -> float:
+        return float(self.shipping_fee)
+
+    @computed_field
+    def paymentStatus(self) -> str:
+        return self.payment_status
+
+    @computed_field
+    def paymentMethod(self) -> str:
+        return self.payment_method
+
+    @computed_field
+    def customerName(self) -> str:
+        return self.customer_name
+
+    @computed_field
+    def customerPhone(self) -> str:
+        return self.customer_phone
+
+    @computed_field
+    def customerEmail(self) -> str | None:
+        return self.customer_email
+
+    @computed_field
+    def createdAt(self) -> str:
+        return self.created_at.isoformat() if self.created_at else ""
+
+    @computed_field
+    def updatedAt(self) -> str:
+        return self.updated_at.isoformat() if self.updated_at else ""
+
+
+class PaginatedOrderResponse(BaseModel):
+    items: list[OrderResponse]
+    total: int
+    page: int
+    pageSize: int
+    totalPages: int
 
 
 # --- Order State Machine Operations ---

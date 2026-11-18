@@ -39,6 +39,7 @@ from app.modules.pricing.router_customer import router as pricing_customer_route
 from app.modules.pricing.router_merchant import router as pricing_merchant_router
 from app.modules.reports.router_merchant import router as reports_merchant_router
 from app.modules.reports.router_platform import router as reports_platform_router
+from app.modules.reports.router_reports import router as reports_gateway_router
 from app.modules.media.router import router as media_router
 
 logger = logging.getLogger("bagodi.platform")
@@ -195,4 +196,5 @@ app.include_router(delivery_staff_router, prefix=settings.api_v1_prefix)
 app.include_router(delivery_merchant_router, prefix=settings.api_v1_prefix)
 app.include_router(reports_merchant_router, prefix=settings.api_v1_prefix)
 app.include_router(reports_platform_router, prefix=settings.api_v1_prefix)
+app.include_router(reports_gateway_router, prefix=settings.api_v1_prefix)
 app.include_router(media_router, prefix=settings.api_v1_prefix)
