@@ -224,20 +224,30 @@ async def create_product_direct(
         data.status = "active"
     data.is_published = True
 
-    # If no variants supplied, construct default variant from base_price or fallback
+    # If no variants supplied, construct variants from sizes list, size or default FREE
     if not data.variants:
         price = Decimal(str(data.base_price)) if data.base_price is not None else Decimal("1999.00")
-        data.variants.append(
-            ProductVariantCreate(
-                name=f"{data.name} - Standard",
-                size="FREE",
-                color="Standard",
-                mrp=price,
-                base_price=price,
-                initial_stock=10,
-                status="active",
+        target_sizes: list[str] = []
+        if data.sizes and len(data.sizes) > 0:
+            target_sizes = [s.strip() for s in data.sizes if s and s.strip()]
+        elif data.size and data.size.strip():
+            target_sizes = [data.size.strip()]
+        
+        if not target_sizes:
+            target_sizes = ["FREE"]
+
+        for sz in target_sizes:
+            data.variants.append(
+                ProductVariantCreate(
+                    name=f"{data.name} - {sz}",
+                    size=sz,
+                    color="Standard",
+                    mrp=price,
+                    base_price=price,
+                    initial_stock=10,
+                    status="active",
+                )
             )
-        )
 
     product = await ProductService.create_product(db, tenant_id, data)
     return product

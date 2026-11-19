@@ -3,13 +3,23 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 
 # --- Cart Schemas ---
 class CartItemAdd(BaseModel):
-    variant_id: UUID
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    variant_id: UUID | None = Field(default=None, alias="variantId")
     quantity: int = Field(default=1, gt=0)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, data):
+        if isinstance(data, dict):
+            if "variantId" in data and ("variant_id" not in data or not data["variant_id"]):
+                data["variant_id"] = data["variantId"]
+        return data
 
 
 class CartItemUpdate(BaseModel):

@@ -195,6 +195,8 @@ class ProductCreate(BaseModel):
     status: Literal["draft", "active", "archived"] = Field(default="draft")
     is_published: bool = Field(default=True, alias="isPublished")
     variants: list[ProductVariantCreate] = Field(default_factory=list)
+    sizes: list[str] | None = Field(default=None)
+    size: str | None = Field(default=None)
     images: list[ProductImageCreate] = Field(default_factory=list)
 
     @field_validator("brand_id", mode="before")
@@ -215,6 +217,8 @@ class ProductUpdate(BaseModel):
     base_price: Decimal | None = Field(default=None, alias="basePrice")
     status: Literal["draft", "active", "archived"] | None = Field(default=None)
     is_published: bool | None = Field(default=None, alias="isPublished")
+    sizes: list[str] | None = Field(default=None)
+    size: str | None = Field(default=None)
     images: list[ProductImageCreate] | None = Field(default=None)
 
     @field_validator("brand_id", mode="before")
