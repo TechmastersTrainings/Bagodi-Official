@@ -28,7 +28,9 @@ from app.modules.orders.schemas import (
     CartItemAdd,
     CartItemResponse,
     CartItemUpdate,
+    CartPricing,
     CartResponse,
+    CartVariantSummary,
     CheckoutRequest,
     DirectCheckoutRequest,
     OrderStatusUpdateRequest,
@@ -318,6 +320,20 @@ class CartService:
             subtotal += line_total
             total_items += item.quantity
 
+            img_url = None
+            if hasattr(item.variant.product, "images") and item.variant.product.images:
+                img_url = item.variant.product.images[0].url
+
+            variant_summary = CartVariantSummary(
+                id=item.variant.id,
+                sku=item.variant.sku,
+                size=item.variant.size or "Standard",
+                color_name=item.variant.color or "Standard",
+                mrp=item.variant.mrp or item.unit_price,
+                selling_price=item.unit_price,
+                available_stock=balance.available_qty,
+            )
+
             item_responses.append(
                 CartItemResponse(
                     id=item.id,
@@ -325,11 +341,13 @@ class CartService:
                     sku=item.variant.sku,
                     product_name=item.variant.product.name,
                     variant_name=item.variant.name,
+                    image_url=img_url,
                     quantity=item.quantity,
                     unit_price=item.unit_price,
                     total_price=line_total,
                     is_in_stock=balance.available_qty >= item.quantity,
                     available_qty=balance.available_qty,
+                    variant=variant_summary,
                 )
             )
 
@@ -347,6 +365,14 @@ class CartService:
             except HTTPException:
                 coupon_code = None
 
+        pricing = CartPricing(
+            subtotal=subtotal,
+            discount_total=discount_amount,
+            delivery_charge=Decimal("0.00"),
+            tax_total=Decimal("0.00"),
+            final_total=total_amount,
+        )
+
         return CartResponse(
             id=cart.id,
             tenant_id=cart.tenant_id,
@@ -358,6 +384,7 @@ class CartService:
             subtotal=subtotal,
             discount_amount=discount_amount,
             total_amount=total_amount,
+            pricing=pricing,
             updated_at=cart.updated_at,
         )
 

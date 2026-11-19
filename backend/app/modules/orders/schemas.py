@@ -26,23 +26,47 @@ class CartItemUpdate(BaseModel):
     quantity: int = Field(..., gt=0)
 
 
-class CartItemResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class CartVariantSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
-    variant_id: UUID
     sku: str
-    product_name: str
-    variant_name: str
+    size: str = "Standard"
+    color_name: str | None = Field(default=None, alias="colorName")
+    mrp: Decimal | None = None
+    selling_price: Decimal | None = Field(default=None, alias="sellingPrice")
+    available_stock: int = Field(default=0, alias="availableStock")
+
+
+class CartPricing(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    subtotal: Decimal
+    discount_total: Decimal = Field(default=Decimal("0.00"), alias="discountTotal")
+    delivery_charge: Decimal = Field(default=Decimal("0.00"), alias="deliveryCharge")
+    tax_total: Decimal = Field(default=Decimal("0.00"), alias="taxTotal")
+    final_total: Decimal = Field(..., alias="finalTotal")
+
+
+class CartItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: UUID
+    variant_id: UUID = Field(..., alias="variantId")
+    sku: str
+    product_name: str = Field(..., alias="productName")
+    variant_name: str = Field(..., alias="variantName")
+    image_url: str | None = Field(default=None, alias="imageUrl")
     quantity: int
-    unit_price: Decimal
-    total_price: Decimal
-    is_in_stock: bool
-    available_qty: int
+    unit_price: Decimal = Field(..., alias="unitPrice")
+    total_price: Decimal = Field(..., alias="totalPrice")
+    is_in_stock: bool = True
+    available_qty: int = Field(default=0, alias="availableStock")
+    variant: CartVariantSummary | None = None
 
 
 class CartResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     tenant_id: UUID
@@ -50,10 +74,11 @@ class CartResponse(BaseModel):
     session_id: str | None
     coupon_code: str | None = None
     items: list[CartItemResponse]
-    total_items: int
+    total_items: int = Field(..., alias="itemCount")
     subtotal: Decimal
     discount_amount: Decimal = Decimal("0.00")
     total_amount: Decimal = Decimal("0.00")
+    pricing: CartPricing | None = None
     updated_at: datetime
 
 
