@@ -121,3 +121,4 @@ async def test_direct_inventory_endpoints(client: AsyncClient, mint_jwt_token):
     )
     assert adjust_resp.status_code == 200
     assert adjust_resp.json()["success"] is True
+

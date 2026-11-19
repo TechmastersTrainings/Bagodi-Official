@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import SecurityPrincipal, get_optional_security_principal
+from app.core.storage import storage
 from app.db.session import get_db
 from app.modules.catalog.models import Brand, Category, Product, ProductImage, ProductVariant
 from app.modules.inventory.models import InventoryLedger, PurchaseOrder, PurchaseOrderItem, StockBalance
@@ -304,15 +305,16 @@ async def add_inventory_item(
     db.add(variant)
     await db.flush()
 
-    # 5. Add images
+    # 5. Add images (clean base64 into Cloudflare R2 URLs)
     for idx, img in enumerate(data.images):
-        url = img.get("url")
-        if url:
+        raw_url = img.get("url")
+        if raw_url:
+            clean_url = storage.upload_base64_data_url(raw_url, folder="products")
             db.add(
                 ProductImage(
                     tenant_id=tenant.id,
                     product_id=product.id,
-                    url=url,
+                    url=clean_url,
                     alt_text=img.get("altText") or data.productName,
                     sort_order=idx + 1,
                     is_primary=(idx == 0 or img.get("isPrimary", False)),

@@ -1,4 +1,6 @@
+import io
 import uuid
+import base64
 import logging
 from typing import Optional, BinaryIO
 from app.core.config import get_settings
@@ -63,6 +65,50 @@ class CloudflareR2Storage:
         # Fallback for dev / unconfigured environments
         logger.warning("Cloudflare R2 storage credentials not configured, returning placeholder URL.")
         return f"https://assets.bagodi.in/{object_key}"
+
+    def upload_base64_data_url(self, data_url: str, folder: str = "products") -> str:
+        """
+        If given a base64 data URL (e.g. data:image/jpeg;base64,...), decodes it
+        and uploads directly to Cloudflare R2 bucket, returning the public CDN URL.
+        If already an HTTP/HTTPS URL, returns it as-is without re-uploading.
+        Prevents raw image binary/base64 strings from bloating database tables.
+        """
+        if not data_url or not isinstance(data_url, str):
+            return ""
+
+        trimmed = data_url.strip()
+        if not trimmed.startswith("data:"):
+            return trimmed
+
+        try:
+            if ";base64," in trimmed:
+                header, encoded = trimmed.split(";base64,", 1)
+                content_type = header.replace("data:", "").strip()
+            else:
+                header, encoded = trimmed.split(",", 1)
+                content_type = "image/jpeg"
+
+            ext_map = {
+                "image/jpeg": "jpg",
+                "image/jpg": "jpg",
+                "image/png": "png",
+                "image/webp": "webp",
+                "image/gif": "gif",
+                "image/avif": "avif",
+                "application/pdf": "pdf",
+            }
+            ext = ext_map.get(content_type, "jpg")
+            decoded_bytes = base64.b64decode(encoded)
+
+            return self.upload_file(
+                file_obj=io.BytesIO(decoded_bytes),
+                filename=f"product-{uuid.uuid4().hex[:8]}.{ext}",
+                content_type=content_type,
+                folder=folder,
+            )
+        except Exception as e:
+            logger.error(f"Failed to process base64 data URL to Cloudflare R2: {e}")
+            return trimmed
 
 
 storage = CloudflareR2Storage()

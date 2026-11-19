@@ -8,6 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.storage import storage
 from app.modules.catalog.models import Brand, Category, Product, ProductImage, ProductVariant
 from app.modules.catalog.schemas import (
     BrandCreate,
@@ -342,13 +343,14 @@ class ProductService:
                     notes=f"Initial stock for size {variant.size or 'Standard'}",
                 )
 
-        # 8. Add images
+        # 8. Add images (clean base64 into Cloudflare R2 URLs)
         for img in data.images:
+            clean_url = storage.upload_base64_data_url(img.url, folder="products")
             image = ProductImage(
                 tenant_id=tenant_id,
                 product_id=product.id,
                 variant_id=img.variant_id,
-                url=img.url,
+                url=clean_url,
                 alt_text=img.alt_text,
                 sort_order=img.sort_order,
                 is_primary=img.is_primary,
@@ -610,11 +612,12 @@ class ProductService:
         db: AsyncSession, tenant_id: UUID, product_id: UUID, data: ProductImageCreate
     ) -> ProductImage:
         await ProductService.get_merchant_product(db, tenant_id, product_id)
+        clean_url = storage.upload_base64_data_url(data.url, folder="products")
         image = ProductImage(
             tenant_id=tenant_id,
             product_id=product_id,
             variant_id=data.variant_id,
-            url=data.url,
+            url=clean_url,
             alt_text=data.alt_text,
             sort_order=data.sort_order,
             is_primary=data.is_primary,

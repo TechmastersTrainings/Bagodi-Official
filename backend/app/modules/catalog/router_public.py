@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import SecurityPrincipal, get_optional_security_principal
+from app.core.storage import storage
 from app.db.session import get_db
 from app.modules.catalog.models import Brand, Category, Product, ProductImage, ProductVariant
 from app.modules.catalog.schemas import (
@@ -277,10 +278,11 @@ async def update_product_direct(
         for img in list(product.images):
             await db.delete(img)
         for img_data in data.images:
+            clean_url = storage.upload_base64_data_url(img_data.url, folder="products")
             new_img = ProductImage(
                 tenant_id=product.tenant_id,
                 product_id=product.id,
-                url=img_data.url,
+                url=clean_url,
                 alt_text=img_data.alt_text,
                 sort_order=img_data.sort_order,
                 is_primary=img_data.is_primary,
