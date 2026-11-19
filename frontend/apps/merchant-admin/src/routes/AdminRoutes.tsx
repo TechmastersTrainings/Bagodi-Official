@@ -21,7 +21,14 @@ const ProtectedAdminRoute: React.FC<{ children: ReactNode }> = ({ children }) =>
   if (isLoading) return <LoadingSpinner label="Verifying operational staff permissions..." />;
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
 
-  const isStaff = hasRole(["MERCHANT_ADMIN", "STORE_MANAGER", "INVENTORY_STAFF", "SUPER_ADMIN"]);
+  const isStaff = hasRole([
+    "MERCHANT_ADMIN",
+    "MERCHANT_OWNER",
+    "STORE_MANAGER",
+    "INVENTORY_STAFF",
+    "DELIVERY_STAFF",
+    "SUPER_ADMIN",
+  ]);
   if (!isStaff) {
     return <PermissionDeniedState />;
   }

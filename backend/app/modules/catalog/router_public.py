@@ -3,7 +3,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -104,7 +104,24 @@ async def list_public_products(
         try:
             resolved_category_id = UUID(raw_cat.strip())
         except (ValueError, TypeError):
-            cat_stmt = select(Category).where(Category.slug == raw_cat.strip().lower())
+            cat_slug = raw_cat.strip().lower()
+            slug_aliases = {
+                "men-suiting": "mens-wear",
+                "mens-suiting": "mens-wear",
+                "men-wear": "mens-wear",
+                "women-ethnic": "womens-wear",
+                "womens-ethnic": "womens-wear",
+                "women-wear": "womens-wear",
+                "kids": "kids-wear",
+                "kids-festive": "kids-wear",
+                "fabrics": "mens-wear",
+                "wedding": "blazers",
+                "wedding-collection": "blazers",
+            }
+            target_slug = slug_aliases.get(cat_slug, cat_slug)
+            cat_stmt = select(Category).where(
+                or_(Category.slug == target_slug, Category.slug == cat_slug)
+            )
             found_cat = (await db.execute(cat_stmt)).scalar_one_or_none()
             if found_cat:
                 resolved_category_id = found_cat.id

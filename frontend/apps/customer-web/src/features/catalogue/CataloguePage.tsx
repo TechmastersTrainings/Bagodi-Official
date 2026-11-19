@@ -78,10 +78,26 @@ export const CataloguePage: React.FC = () => {
     retry: false,
   });
 
-  // Active Category resolution
+  // Active Category resolution (with alias mapping for storefront navigation links)
   const activeCategory = useMemo(() => {
     if (!categoryParam) return undefined;
-    return categories.find((c) => c.id === categoryParam || c.slug === categoryParam);
+    const catSlug = categoryParam.toLowerCase();
+    const aliasMap: Record<string, string> = {
+      "men-suiting": "mens-wear",
+      "mens-suiting": "mens-wear",
+      "men-wear": "mens-wear",
+      "women-ethnic": "womens-wear",
+      "womens-ethnic": "womens-wear",
+      "kids": "kids-wear",
+      "kids-festive": "kids-wear",
+      "wedding": "blazers",
+      "wedding-collection": "blazers",
+      "fabrics": "mens-wear",
+    };
+    const targetSlug = aliasMap[catSlug] || catSlug;
+    return categories.find(
+      (c) => c.id === categoryParam || c.slug === targetSlug || c.slug === catSlug
+    );
   }, [categoryParam, categories]);
 
   // Query Server Products strictly from Backend

@@ -22,3 +22,4 @@ def test_upload_base64_data_url_conversion():
     assert not converted_url.startswith("data:")
     assert "products/" in converted_url
     assert converted_url.endswith(".png")
+

@@ -109,7 +109,11 @@ async def get_optional_security_principal(
     """Extract and cryptographically verify the principal if a token is provided; otherwise returns None."""
     if not credentials or not credentials.credentials:
         return None
-    return await get_security_principal(credentials, db)
+    try:
+        return await get_security_principal(credentials, db)
+    except HTTPException:
+        # Invalid or expired token on optional auth endpoints should gracefully fall back to guest
+        return None
 
 
 def require_permission(permission: str):

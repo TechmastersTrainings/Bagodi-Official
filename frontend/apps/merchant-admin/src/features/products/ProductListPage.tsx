@@ -43,11 +43,14 @@ export const ProductListPage: React.FC = () => {
       defaultApiClient.get<PaginatedResponse<Product>>("/products", {
         params: {
           page,
-          pageSize: 15,
+          pageSize: 50,
           search: debouncedSearch || undefined,
           categoryId: selectedCategory || undefined,
+          includeAll: true,
         },
       }),
+    refetchOnWindowFocus: true,
+    staleTime: 5000,
   });
 
   // Archive mutation
