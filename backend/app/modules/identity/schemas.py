@@ -43,11 +43,15 @@ class OTPSendRequest(BaseModel):
 
 
 class OTPSendResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     status: str = "sent"
-    cooldown_seconds: int
-    expires_in_seconds: int
+    cooldown_seconds: int = Field(default=60, alias="cooldownSeconds")
+    expires_in_seconds: int = Field(default=300, alias="expiresInSeconds")
     message: str
-    dev_otp: str | None = None
+    dev_otp: str | None = Field(default=None, alias="devOtp")
+    reference_id: str | None = Field(default=None, alias="referenceId")
+    masked_destination: str | None = Field(default=None, alias="maskedDestination")
 
 
 class OTPVerifyRequest(BaseModel):
