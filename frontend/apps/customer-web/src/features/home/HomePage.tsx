@@ -35,11 +35,19 @@ export const HomePage: React.FC = () => {
     retry: 1,
   });
 
-  const featuredProducts: Product[] = Array.isArray(rawProductsData)
+  const rawList: any[] = Array.isArray(rawProductsData)
     ? rawProductsData
     : Array.isArray(rawProductsData?.items)
     ? rawProductsData.items
     : [];
+
+  const featuredProducts: Product[] = rawList.map((p) => ({
+    ...p,
+    isActive: Boolean(p.isActive ?? (p.status === "active" && p.is_published !== false)),
+    isArchived: Boolean(p.isArchived ?? (p.status === "archived")),
+    currency: p.currency || "INR",
+    basePrice: Number(p.basePrice) || (p.variants?.[0]?.base_price ? Number(p.variants[0].base_price) : 0),
+  }));
 
   // Authentic Categories
   const storeCategories = [

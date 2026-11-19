@@ -1,9 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 
 class CategoryCreate(BaseModel):
@@ -116,8 +116,18 @@ class ProductVariantResponse(BaseModel):
 
     @computed_field
     @property
-    def sellingPrice(self) -> Decimal:
-        return self.base_price
+    def sellingPrice(self) -> float:
+        return float(self.base_price)
+
+    @computed_field
+    @property
+    def basePrice(self) -> float:
+        return float(self.base_price)
+
+    @computed_field
+    @property
+    def mrpAmount(self) -> float:
+        return float(self.mrp)
 
     @computed_field
     @property
@@ -129,11 +139,16 @@ class ProductVariantResponse(BaseModel):
     def colorName(self) -> str:
         return self.color or "Standard"
 
+    @computed_field
+    @property
+    def isActive(self) -> bool:
+        return self.status == "active"
+
 
 class ProductImageCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    url: str = Field(..., max_length=1000)
+    url: str = Field(...)
     alt_text: str | None = Field(default=None, max_length=255, alias="altText")
     variant_id: UUID | None = Field(default=None, alias="variantId")
     sort_order: int = Field(default=0, alias="displayOrder")
@@ -152,6 +167,21 @@ class ProductImageResponse(BaseModel):
     is_primary: bool
     created_at: datetime
 
+    @computed_field
+    @property
+    def isPrimary(self) -> bool:
+        return self.is_primary
+
+    @computed_field
+    @property
+    def displayOrder(self) -> int:
+        return self.sort_order
+
+    @computed_field
+    @property
+    def altText(self) -> str | None:
+        return self.alt_text
+
 
 class ProductCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -167,6 +197,13 @@ class ProductCreate(BaseModel):
     variants: list[ProductVariantCreate] = Field(default_factory=list)
     images: list[ProductImageCreate] = Field(default_factory=list)
 
+    @field_validator("brand_id", mode="before")
+    @classmethod
+    def clean_brand_id(cls, v: Any) -> Any:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
+
 
 class ProductUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -179,6 +216,13 @@ class ProductUpdate(BaseModel):
     status: Literal["draft", "active", "archived"] | None = Field(default=None)
     is_published: bool | None = Field(default=None, alias="isPublished")
     images: list[ProductImageCreate] | None = Field(default=None)
+
+    @field_validator("brand_id", mode="before")
+    @classmethod
+    def clean_brand_id(cls, v: Any) -> Any:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
 
 
 class ProductDetailResponse(BaseModel):
@@ -202,15 +246,55 @@ class ProductDetailResponse(BaseModel):
 
     @computed_field
     @property
-    def basePrice(self) -> Decimal:
+    def basePrice(self) -> float:
         if self.variants:
-            return self.variants[0].base_price
-        return Decimal(0)
+            return float(self.variants[0].base_price)
+        return 0.0
 
     @computed_field
     @property
     def isActive(self) -> bool:
-        return self.status == "active"
+        return self.status == "active" and self.is_published
+
+    @computed_field
+    @property
+    def isArchived(self) -> bool:
+        return self.status == "archived"
+
+    @computed_field
+    @property
+    def currency(self) -> str:
+        return "INR"
+
+    @computed_field
+    @property
+    def categoryId(self) -> UUID:
+        return self.category_id
+
+    @computed_field
+    @property
+    def brandId(self) -> UUID | None:
+        return self.brand_id
+
+    @computed_field
+    @property
+    def isFeatured(self) -> bool:
+        return True
+
+    @computed_field
+    @property
+    def returnEligible(self) -> bool:
+        return True
+
+    @computed_field
+    @property
+    def exchangeEligible(self) -> bool:
+        return True
+
+    @computed_field
+    @property
+    def returnWindowDays(self) -> int:
+        return 7
 
 
 class BarcodeLookupResponse(BaseModel):

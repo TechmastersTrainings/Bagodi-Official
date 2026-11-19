@@ -3,7 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import SecurityPrincipal, get_security_principal
+from app.core.security import (
+    SecurityPrincipal,
+    get_optional_security_principal,
+    get_security_principal,
+)
 from app.db.session import get_db
 from app.modules.identity.schemas import (
     CustomerRegisterRequest,
@@ -165,10 +169,11 @@ async def refresh_tokens(
 )
 async def logout(
     data: LogoutRequest,
-    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    principal: Annotated[SecurityPrincipal | None, Depends(get_optional_security_principal)] = None,
 ):
-    await AuthService.logout(db, principal, raw_refresh_token=data.refresh_token)
+    if principal:
+        await AuthService.logout(db, principal, raw_refresh_token=data.refresh_token)
     return MessageResponse(message="Successfully logged out and session revoked.")
 
 

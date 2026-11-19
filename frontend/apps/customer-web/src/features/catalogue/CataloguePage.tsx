@@ -119,11 +119,19 @@ export const CataloguePage: React.FC = () => {
     retry: false,
   });
 
-  const products: Product[] = Array.isArray(serverProductData?.items)
-    ? (serverProductData.items as Product[])
+  const rawProducts: any[] = Array.isArray(serverProductData?.items)
+    ? serverProductData.items
     : Array.isArray(serverProductData)
-    ? (serverProductData as unknown as Product[])
+    ? (serverProductData as unknown as any[])
     : [];
+
+  const products: Product[] = rawProducts.map((p) => ({
+    ...p,
+    isActive: Boolean(p.isActive ?? (p.status === "active" && p.is_published !== false)),
+    isArchived: Boolean(p.isArchived ?? (p.status === "archived")),
+    currency: p.currency || "INR",
+    basePrice: Number(p.basePrice) || (p.variants?.[0]?.base_price ? Number(p.variants[0].base_price) : 0),
+  }));
 
   const totalCount = serverProductData?.total ?? products.length;
   const totalPages = serverProductData?.totalPages ?? Math.max(1, Math.ceil(totalCount / 16));

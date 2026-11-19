@@ -139,11 +139,13 @@ class TokenResponse(BaseModel):
 
 
 class TokenRefreshRequest(BaseModel):
-    refresh_token: str = Field(..., min_length=10)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    refresh_token: str = Field(..., min_length=10, alias="refreshToken")
 
 
 class LogoutRequest(BaseModel):
-    refresh_token: str | None = Field(default=None)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    refresh_token: str | None = Field(default=None, alias="refreshToken")
 
 
 class MessageResponse(BaseModel):

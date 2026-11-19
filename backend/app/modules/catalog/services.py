@@ -366,6 +366,8 @@ class ProductService:
             .options(
                 selectinload(Product.variants),
                 selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.brand),
             )
         )
         product = (await db.execute(stmt)).scalar_one_or_none()
@@ -395,6 +397,8 @@ class ProductService:
             .options(
                 selectinload(Product.variants),
                 selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.brand),
             )
         )
         if category_id:
@@ -467,23 +471,34 @@ class ProductService:
             clean_size = re.sub(r"[^A-Za-z0-9]", "", data.size or "FREE").upper()
             clean_slug = re.sub(r"[^A-Za-z0-9]", "", product.slug)[:8].upper()
             sku = f"BGD-{clean_slug}-{clean_size}-{uuid4().hex[:4].upper()}"
+        else:
+            sku_stmt = select(ProductVariant).where(
+                ProductVariant.tenant_id == tenant_id, ProductVariant.sku == sku
+            )
+            if (await db.execute(sku_stmt)).scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "VARIANT_SKU_EXISTS",
+                        "message": f"Variant SKU '{sku}' already exists for this merchant.",
+                    },
+                )
 
         barcode = data.barcode.strip() if data.barcode and data.barcode.strip() else None
         if not barcode:
             barcode = f"890{int(time.time()) % 1000000:06d}{random.randint(100, 999):03d}"
-
-        sku_stmt = select(ProductVariant).where(
-            ProductVariant.tenant_id == tenant_id, ProductVariant.sku == sku
-        )
-        if (await db.execute(sku_stmt)).scalar_one_or_none():
-            sku = f"{sku}-{uuid4().hex[:3].upper()}"
-
-        if barcode:
+        else:
             barcode_stmt = select(ProductVariant).where(
                 ProductVariant.tenant_id == tenant_id, ProductVariant.barcode == barcode
             )
             if (await db.execute(barcode_stmt)).scalar_one_or_none():
-                barcode = f"890{int(time.time() * 1000) % 1000000000:09d}"
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "VARIANT_BARCODE_EXISTS",
+                        "message": f"Barcode '{barcode}' is already in use.",
+                    },
+                )
 
         variant = ProductVariant(
             tenant_id=tenant_id,
@@ -618,10 +633,11 @@ class ProductService:
         search: str | None = None,
         skip: int = 0,
         limit: int = 50,
+        status_filter: str | None = "active",
+        is_published: bool | None = True,
     ) -> list[Product]:
         stmt = (
             select(Product)
-            .where(Product.status == "active", Product.is_published.is_(True))
             .options(
                 selectinload(Product.variants),
                 selectinload(Product.images),
@@ -629,6 +645,10 @@ class ProductService:
                 selectinload(Product.brand),
             )
         )
+        if status_filter and status_filter.lower() != "all":
+            stmt = stmt.where(Product.status == status_filter)
+        if is_published is not None:
+            stmt = stmt.where(Product.is_published.is_(is_published))
         if tenant_id:
             stmt = stmt.where(Product.tenant_id == tenant_id)
         if category_id:

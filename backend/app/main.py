@@ -22,6 +22,7 @@ from app.modules.identity.router import router as auth_router
 from app.modules.identity.router_addresses import router as customer_addresses_router
 from app.modules.identity.router_merchant_users import router as merchant_users_router
 from app.modules.inventory.router import router as inventory_router
+from app.modules.inventory.router_direct import router as inventory_direct_router
 from app.modules.notifications.router_customer import router as notifications_customer_router
 from app.modules.notifications.router_merchant import router as notifications_merchant_router
 from app.modules.notifications.router_webhooks import router as notifications_webhooks_router
@@ -177,6 +178,7 @@ app.include_router(public_catalog_router, prefix=settings.api_v1_prefix)
 app.include_router(storefront_router, prefix=settings.api_v1_prefix)
 app.include_router(barcode_router, prefix=settings.api_v1_prefix)
 app.include_router(inventory_router, prefix=settings.api_v1_prefix)
+app.include_router(inventory_direct_router, prefix=settings.api_v1_prefix)
 app.include_router(cart_router, prefix=settings.api_v1_prefix)
 app.include_router(orders_customer_router, prefix=settings.api_v1_prefix)
 app.include_router(customer_orders_router, prefix=settings.api_v1_prefix)

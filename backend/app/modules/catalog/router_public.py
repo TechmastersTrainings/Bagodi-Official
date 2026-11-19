@@ -83,6 +83,8 @@ async def list_public_products(
     brand_id: Annotated[str | None, Query(description="Filter by brand ID")] = None,
     brandId: Annotated[str | None, Query(description="Filter by brand ID (frontend alias)")] = None,
     search: Annotated[str | None, Query(description="Search products by title or keyword")] = None,
+    status: Annotated[str | None, Query(description="Filter by product status (e.g. active, draft, archived, all)")] = None,
+    includeAll: Annotated[bool | None, Query(description="Include all draft and staged products")] = None,
     page: Annotated[int | None, Query(ge=1, description="1-based page number")] = None,
     pageSize: Annotated[int | None, Query(ge=1, le=100, description="Items per page")] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -92,6 +94,7 @@ async def list_public_products(
     minPrice: Annotated[float | None, Query(description="Minimum price")] = None,
     maxPrice: Annotated[float | None, Query(description="Maximum price")] = None,
     inStockOnly: Annotated[bool | None, Query(description="Only in stock items")] = None,
+    principal: Annotated[SecurityPrincipal | None, Depends(get_optional_security_principal)] = None,
 ):
     # Resolve category filter (support UUID or slug e.g. 'sarees', 'mens-wear')
     resolved_category_id: UUID | None = None
@@ -123,6 +126,16 @@ async def list_public_products(
     if page and page > 1 and skip == 0:
         effective_skip = (page - 1) * effective_limit
 
+    # For authenticated merchants/admins or explicit all, include drafts and staged items
+    status_filter: str | None = "active"
+    is_published: bool | None = True
+    if includeAll or (status and status.lower() == "all") or (principal is not None and not inStockOnly):
+        status_filter = None
+        is_published = None
+    elif status and status.lower() in ("active", "draft", "archived"):
+        status_filter = status.lower()
+        is_published = None
+
     return await ProductService.list_public_products(
         db,
         tenant_id=tenant_id,
@@ -131,6 +144,8 @@ async def list_public_products(
         search=search,
         skip=effective_skip,
         limit=effective_limit,
+        status_filter=status_filter,
+        is_published=is_published,
     )
 
 
