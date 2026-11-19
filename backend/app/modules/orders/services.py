@@ -7,7 +7,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.catalog.models import ProductVariant
+from app.modules.catalog.models import Product, ProductImage, ProductVariant
 from app.modules.identity.models import User
 from app.modules.inventory.schemas import (
     CustomerReturnCreate,
@@ -320,9 +320,14 @@ class CartService:
             subtotal += line_total
             total_items += item.quantity
 
-            img_url = None
-            if hasattr(item.variant.product, "images") and item.variant.product.images:
-                img_url = item.variant.product.images[0].url
+            # Safely fetch primary image without triggering async lazy loading
+            img_stmt = (
+                select(ProductImage.url)
+                .where(ProductImage.product_id == item.variant.product_id)
+                .order_by(ProductImage.sort_order.asc())
+                .limit(1)
+            )
+            img_url = (await db.execute(img_stmt)).scalars().first()
 
             variant_summary = CartVariantSummary(
                 id=item.variant.id,
@@ -362,7 +367,7 @@ class CartService:
                 )
                 discount_amount = pricing_quote.total_discount
                 total_amount = pricing_quote.total_amount
-            except HTTPException:
+            except Exception:
                 coupon_code = None
 
         pricing = CartPricing(
