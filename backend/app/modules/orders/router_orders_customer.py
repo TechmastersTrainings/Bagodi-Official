@@ -53,6 +53,15 @@ async def create_storefront_order(
     tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
 ):
     target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
+
+    # Resolve customer user details for notification and receipts
+    from app.modules.identity.models import User
+    user_stmt = select(User).where(User.id == customer_id)
+    user_record = (await db.execute(user_stmt)).scalar_one_or_none()
+    customer_email = user_record.email if user_record else None
+    customer_phone = user_record.phone_e164 if user_record else None
+    customer_name = user_record.display_name if user_record else None
+
     shipping_addr_id = payload.get("shippingAddressId")
     shipping_data = None
     if shipping_addr_id:
@@ -84,13 +93,13 @@ async def create_storefront_order(
         recipient = (
             new_addr.get("fullName")
             or new_addr.get("full_name")
-            or principal.display_name
+            or customer_name
             or "Valued Customer"
         )
         phone = (
             new_addr.get("phoneNumber")
             or new_addr.get("phone")
-            or principal.phone_e164
+            or customer_phone
             or "+919876543210"
         )
         addr1 = (
@@ -139,8 +148,8 @@ async def create_storefront_order(
         checkout_req = CheckoutRequest(
             shipping_address=shipping_data,
             customer_name=shipping_data["full_name"],
-            customer_email=principal.email,
-            customer_phone=shipping_data["phone"],
+            customer_email=customer_email or "customer@bagodi.in",
+            customer_phone=shipping_data["phone"] or customer_phone or "+919876543210",
             payment_method=p_method,
             notes=payload.get("customerNotes"),
             coupon_code=payload.get("couponCode"),
