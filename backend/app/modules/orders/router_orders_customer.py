@@ -146,7 +146,7 @@ async def create_storefront_order(
             except Exception:
                 pass
 
-    p_method = "online" if str(payload.get("paymentMethod", "")).upper() == "RAZORPAY" else "cod"
+    p_method = "online" if str(payload.get("paymentMethod", "")).upper() in ["ONLINE", "UPI", "RAZORPAY", "CARD"] else "cod"
 
     try:
         checkout_req = CheckoutRequest(
