@@ -245,7 +245,7 @@ class PaymentTransactionResponse(BaseModel):
 
 
 class OrderResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     tenant_id: UUID
@@ -266,17 +266,29 @@ class OrderResponse(BaseModel):
     discount_breakdown: dict | None = None
     reservation_expires_at: datetime | None
     reservation_released: bool
-    shipping_address: dict
-    billing_address: dict | None
+    shipping_address: dict | None = None
+    billing_address: dict | None = None
     customer_name: str
-    customer_email: str | None
+    customer_email: str | None = None
     customer_phone: str
-    notes: str | None
+    notes: str | None = None
     items: list[OrderItemResponse]
     status_history: list[OrderStatusHistoryResponse]
     payments: list[PaymentTransactionResponse]
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    def shippingAddress(self) -> dict | None:
+        return self.shipping_address
+
+    @computed_field
+    def billingAddress(self) -> dict | None:
+        return self.billing_address
+
+    @computed_field
+    def fulfillmentStatus(self) -> str:
+        return self.fulfillment_status
 
     @computed_field
     def orderNumber(self) -> str:

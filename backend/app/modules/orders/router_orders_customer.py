@@ -7,7 +7,11 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import SecurityPrincipal, get_security_principal
+from app.core.security import (
+    SecurityPrincipal,
+    get_security_principal,
+    get_optional_security_principal,
+)
 from app.db.session import get_db
 from app.modules.orders.models import Order
 from app.modules.orders.schemas import (
@@ -223,11 +227,11 @@ async def list_customer_storefront_orders(
 
 async def resolve_order_tenant_id(
     db: AsyncSession,
-    principal: SecurityPrincipal,
+    principal: SecurityPrincipal | None,
     header_tenant_id: UUID | None,
     query_tenant_id: UUID | None,
 ) -> UUID:
-    resolved = principal.tenant_id or header_tenant_id or query_tenant_id
+    resolved = (principal.tenant_id if principal else None) or header_tenant_id or query_tenant_id
     if resolved:
         tenant = (
             await db.execute(select(Tenant).where(Tenant.id == resolved, Tenant.status == "active"))
@@ -398,17 +402,19 @@ async def list_my_orders(
 )
 async def get_my_order(
     order_number: str,
-    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    principal: Annotated[SecurityPrincipal | None, Depends(get_optional_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
     x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
     tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
 ):
     target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
-    caller_roles = set(principal.roles or [])
+    caller_roles = set(principal.roles or []) if principal else set()
     merchant_roles = {"SUPER_ADMIN", "MERCHANT_ADMIN", "STORE_MANAGER", "STAFF", "OPERATOR", "DELIVERY_STAFF"}
     
-    # If customer, scope strictly to customer_id; if merchant/admin, allow inspecting tenant order
-    scoped_customer_id = None if (caller_roles & merchant_roles) else principal.user_id
+    # If customer, scope strictly to customer_id; if merchant/admin or checking direct order confirmation, allow lookup
+    scoped_customer_id = None
+    if principal and not (caller_roles & merchant_roles):
+        scoped_customer_id = principal.user_id
 
     return await OrderService.get_order_by_number(
         db=db,
