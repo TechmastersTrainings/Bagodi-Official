@@ -157,33 +157,99 @@ class MessageResponse(BaseModel):
 
 
 class CustomerAddressCreate(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=150)
-    phone: str = Field(..., min_length=10, max_length=20)
-    address_line1: str = Field(..., min_length=3, max_length=255)
-    address_line2: str | None = Field(default=None, max_length=255)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    full_name: str = Field(..., min_length=2, max_length=150, alias="fullName")
+    phone: str = Field(..., min_length=10, max_length=20, alias="phoneNumber")
+    address_line1: str = Field(..., min_length=3, max_length=255, alias="addressLine1")
+    address_line2: str | None = Field(default=None, max_length=255, alias="addressLine2")
     landmark: str | None = Field(default=None, max_length=150)
     city: str = Field(..., min_length=2, max_length=100)
     state: str = Field(..., min_length=2, max_length=100)
-    postal_code: str = Field(..., min_length=6, max_length=10)
-    address_type: str = Field(default="home", pattern=r"^(home|work|other)$")
-    is_default: bool = False
+    postal_code: str = Field(..., min_length=5, max_length=10, alias="postalCode")
+    address_type: str = Field(default="home", pattern=r"^(home|work|other)$", alias="addressType")
+    is_default: bool = Field(default=False, alias="isDefault")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, data: Any) -> Any:
+        if isinstance(data, (str, bytes)):
+            try:
+                import json
+                data = json.loads(data)
+            except Exception:
+                pass
+        if isinstance(data, dict):
+            if "fullName" in data and "full_name" not in data:
+                data["full_name"] = data["fullName"]
+            elif "recipient_name" in data and "full_name" not in data:
+                data["full_name"] = data["recipient_name"]
+            if "phoneNumber" in data and "phone" not in data:
+                data["phone"] = data["phoneNumber"]
+            elif "phone_number" in data and "phone" not in data:
+                data["phone"] = data["phone_number"]
+            if "addressLine1" in data and "address_line1" not in data:
+                data["address_line1"] = data["addressLine1"]
+            if "addressLine2" in data and "address_line2" not in data:
+                data["address_line2"] = data["addressLine2"]
+            if "postalCode" in data and "postal_code" not in data:
+                data["postal_code"] = data["postalCode"]
+            elif "pincode" in data and "postal_code" not in data:
+                data["postal_code"] = data["pincode"]
+            if "addressType" in data and "address_type" not in data:
+                data["address_type"] = str(data["addressType"]).lower()
+            if "isDefault" in data and "is_default" not in data:
+                data["is_default"] = bool(data["isDefault"])
+        return data
 
 
 class CustomerAddressUpdate(BaseModel):
-    full_name: str | None = Field(default=None, min_length=2, max_length=150)
-    phone: str | None = Field(default=None, min_length=10, max_length=20)
-    address_line1: str | None = Field(default=None, min_length=3, max_length=255)
-    address_line2: str | None = Field(default=None, max_length=255)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    full_name: str | None = Field(default=None, min_length=2, max_length=150, alias="fullName")
+    phone: str | None = Field(default=None, min_length=10, max_length=20, alias="phoneNumber")
+    address_line1: str | None = Field(default=None, min_length=3, max_length=255, alias="addressLine1")
+    address_line2: str | None = Field(default=None, max_length=255, alias="addressLine2")
     landmark: str | None = Field(default=None, max_length=150)
     city: str | None = Field(default=None, min_length=2, max_length=100)
     state: str | None = Field(default=None, min_length=2, max_length=100)
-    postal_code: str | None = Field(default=None, min_length=6, max_length=10)
-    address_type: str | None = Field(default=None, pattern=r"^(home|work|other)$")
-    is_default: bool | None = None
+    postal_code: str | None = Field(default=None, min_length=5, max_length=10, alias="postalCode")
+    address_type: str | None = Field(default=None, pattern=r"^(home|work|other)$", alias="addressType")
+    is_default: bool | None = Field(default=None, alias="isDefault")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, data: Any) -> Any:
+        if isinstance(data, (str, bytes)):
+            try:
+                import json
+                data = json.loads(data)
+            except Exception:
+                pass
+        if isinstance(data, dict):
+            if "fullName" in data and "full_name" not in data:
+                data["full_name"] = data["fullName"]
+            if "phoneNumber" in data and "phone" not in data:
+                data["phone"] = data["phoneNumber"]
+            elif "phone_number" in data and "phone" not in data:
+                data["phone"] = data["phone_number"]
+            if "addressLine1" in data and "address_line1" not in data:
+                data["address_line1"] = data["addressLine1"]
+            if "addressLine2" in data and "address_line2" not in data:
+                data["address_line2"] = data["addressLine2"]
+            if "postalCode" in data and "postal_code" not in data:
+                data["postal_code"] = data["postalCode"]
+            elif "pincode" in data and "postal_code" not in data:
+                data["postal_code"] = data["pincode"]
+            if "addressType" in data and "address_type" not in data:
+                data["address_type"] = str(data["addressType"]).lower()
+            if "isDefault" in data and "is_default" not in data:
+                data["is_default"] = bool(data["isDefault"])
+        return data
 
 
 class CustomerAddressResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     tenant_id: UUID
@@ -200,6 +266,38 @@ class CustomerAddressResponse(BaseModel):
     is_default: bool
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    def fullName(self) -> str:
+        return self.full_name
+
+    @computed_field
+    def phoneNumber(self) -> str:
+        return self.phone
+
+    @computed_field
+    def addressLine1(self) -> str:
+        return self.address_line1
+
+    @computed_field
+    def addressLine2(self) -> str | None:
+        return self.address_line2
+
+    @computed_field
+    def postalCode(self) -> str:
+        return self.postal_code
+
+    @computed_field
+    def pincode(self) -> str:
+        return self.postal_code
+
+    @computed_field
+    def addressType(self) -> str:
+        return self.address_type
+
+    @computed_field
+    def isDefault(self) -> bool:
+        return self.is_default
 
 
 class LoginRequest(BaseModel):

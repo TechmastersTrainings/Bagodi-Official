@@ -57,18 +57,90 @@ class CartService:
                 },
             )
 
-        stmt = select(Cart).where(Cart.tenant_id == tenant_id)
+        cart = None
         if customer_id:
-            stmt = stmt.where(Cart.customer_id == customer_id)
-        else:
-            stmt = stmt.where(Cart.session_id == session_id, Cart.customer_id.is_(None))
+            # 1. Fetch customer cart if one exists
+            stmt = (
+                select(Cart)
+                .where(Cart.tenant_id == tenant_id, Cart.customer_id == customer_id)
+                .options(
+                    selectinload(Cart.items)
+                    .selectinload(CartItem.variant)
+                    .selectinload(ProductVariant.product)
+                )
+            )
+            cart = (await db.execute(stmt)).scalar_one_or_none()
 
-        stmt = stmt.options(
-            selectinload(Cart.items)
-            .selectinload(CartItem.variant)
-            .selectinload(ProductVariant.product)
-        )
-        cart = (await db.execute(stmt)).scalar_one_or_none()
+            # 2. Check if a guest cart for this browser session exists and has items
+            if session_id:
+                guest_stmt = (
+                    select(Cart)
+                    .where(
+                        Cart.tenant_id == tenant_id,
+                        Cart.session_id == session_id,
+                        Cart.customer_id.is_(None),
+                    )
+                    .options(
+                        selectinload(Cart.items)
+                        .selectinload(CartItem.variant)
+                        .selectinload(ProductVariant.product)
+                    )
+                )
+                guest_cart = (await db.execute(guest_stmt)).scalar_one_or_none()
+
+                if guest_cart and guest_cart.items:
+                    if not cart:
+                        # Adopt the guest cart directly as the customer cart
+                        guest_cart.customer_id = customer_id
+                        await db.commit()
+                        cart = guest_cart
+                    else:
+                        # Merge items from guest_cart into customer cart
+                        for g_item in list(guest_cart.items):
+                            existing_c_item = next(
+                                (i for i in cart.items if i.variant_id == g_item.variant_id), None
+                            )
+                            if existing_c_item:
+                                existing_c_item.quantity += g_item.quantity
+                            else:
+                                new_c_item = CartItem(
+                                    cart=cart,
+                                    cart_id=cart.id,
+                                    variant_id=g_item.variant_id,
+                                    quantity=g_item.quantity,
+                                    unit_price=g_item.unit_price,
+                                )
+                                cart.items.append(new_c_item)
+                                db.add(new_c_item)
+
+                        await db.delete(guest_cart)
+                        await db.commit()
+
+                        # Re-fetch customer cart
+                        stmt = (
+                            select(Cart)
+                            .where(Cart.id == cart.id)
+                            .options(
+                                selectinload(Cart.items)
+                                .selectinload(CartItem.variant)
+                                .selectinload(ProductVariant.product)
+                            )
+                            .execution_options(populate_existing=True)
+                        )
+                        cart = (await db.execute(stmt)).scalar_one()
+
+        else:
+            # Guest browsing session
+            stmt = (
+                select(Cart)
+                .where(Cart.tenant_id == tenant_id, Cart.session_id == session_id, Cart.customer_id.is_(None))
+                .options(
+                    selectinload(Cart.items)
+                    .selectinload(CartItem.variant)
+                    .selectinload(ProductVariant.product)
+                )
+            )
+            cart = (await db.execute(stmt)).scalar_one_or_none()
 
         if not cart:
             cart = Cart(
@@ -80,7 +152,16 @@ class CartService:
             await db.commit()
             await db.refresh(cart)
             # Re-fetch with options
-            cart = (await db.execute(stmt)).scalar_one()
+            refetch_stmt = (
+                select(Cart)
+                .where(Cart.id == cart.id)
+                .options(
+                    selectinload(Cart.items)
+                    .selectinload(CartItem.variant)
+                    .selectinload(ProductVariant.product)
+                )
+            )
+            cart = (await db.execute(refetch_stmt)).scalar_one()
 
         return cart
 

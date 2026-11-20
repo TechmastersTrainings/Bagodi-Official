@@ -93,28 +93,78 @@ class CartMergeRequest(BaseModel):
 
 # --- Address & Checkout Schemas ---
 class ShippingAddressSchema(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=150)
-    address_line1: str = Field(..., min_length=3, max_length=255)
-    address_line2: str | None = Field(default=None, max_length=255)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    full_name: str = Field(..., min_length=2, max_length=150, alias="fullName")
+    address_line1: str = Field(..., min_length=3, max_length=255, alias="addressLine1")
+    address_line2: str | None = Field(default=None, max_length=255, alias="addressLine2")
+    landmark: str | None = Field(default=None, max_length=150)
     city: str = Field(..., min_length=2, max_length=100)
     state: str = Field(..., min_length=2, max_length=100)
-    postal_code: str = Field(..., min_length=4, max_length=20)
-    phone: str = Field(..., min_length=10, max_length=20)
+    postal_code: str = Field(..., min_length=4, max_length=20, alias="postalCode")
+    phone: str = Field(..., min_length=10, max_length=20, alias="phoneNumber")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_shipping_address(cls, data):
+        if isinstance(data, (str, bytes)):
+            try:
+                import json
+                data = json.loads(data)
+            except Exception:
+                pass
+        if isinstance(data, dict):
+            if "recipient_name" in data and "full_name" not in data:
+                data["full_name"] = data["recipient_name"]
+            elif "fullName" in data and "full_name" not in data:
+                data["full_name"] = data["fullName"]
+            if "phoneNumber" in data and "phone" not in data:
+                data["phone"] = data["phoneNumber"]
+            elif "phone_number" in data and "phone" not in data:
+                data["phone"] = data["phone_number"]
+            if "addressLine1" in data and "address_line1" not in data:
+                data["address_line1"] = data["addressLine1"]
+            if "addressLine2" in data and "address_line2" not in data:
+                data["address_line2"] = data["addressLine2"]
+            if "postalCode" in data and "postal_code" not in data:
+                data["postal_code"] = data["postalCode"]
+            elif "pincode" in data and "postal_code" not in data:
+                data["postal_code"] = data["pincode"]
+        return data
 
 
 class CheckoutRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     store_id: UUID | None = Field(default=None, description="Fulfilling store location (defaults to active store)")
     shipping_address: ShippingAddressSchema
     billing_address: ShippingAddressSchema | None = None
-    customer_name: str = Field(..., min_length=2, max_length=200)
+    customer_name: str | None = Field(default=None, max_length=200)
     customer_email: str | None = Field(default=None, max_length=150)
-    customer_phone: str = Field(..., min_length=10, max_length=50)
+    customer_phone: str | None = Field(default=None, max_length=50)
     payment_method: Literal["online", "cod", "upi", "card", "netbanking"] = "online"
     notes: str | None = Field(default=None, max_length=1000)
     coupon_code: str | None = Field(
         default=None, max_length=50, description="Optional promotional coupon code"
     )
     idempotency_key: str | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_customer_details(cls, data):
+        if isinstance(data, dict):
+            s_addr = data.get("shipping_address")
+            if hasattr(s_addr, "full_name"):
+                if not data.get("customer_name"):
+                    data["customer_name"] = getattr(s_addr, "full_name", None) or "Valued Customer"
+                if not data.get("customer_phone"):
+                    data["customer_phone"] = getattr(s_addr, "phone", None) or "+919876543210"
+            elif isinstance(s_addr, dict):
+                if not data.get("customer_name"):
+                    data["customer_name"] = s_addr.get("full_name") or s_addr.get("recipient_name") or s_addr.get("fullName") or "Valued Customer"
+                if not data.get("customer_phone"):
+                    data["customer_phone"] = s_addr.get("phone") or s_addr.get("phoneNumber") or "+919876543210"
+        return data
 
 
 class DirectOrderItem(BaseModel):

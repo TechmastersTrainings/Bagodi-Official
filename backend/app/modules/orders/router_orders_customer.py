@@ -49,6 +49,7 @@ async def create_storefront_order(
     customer_id: Annotated[UUID, Depends(get_authenticated_customer_id)],
     db: Annotated[AsyncSession, Depends(get_db)],
     x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
     tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
 ):
     target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
@@ -58,16 +59,18 @@ async def create_storefront_order(
         from app.modules.identity.models import CustomerAddress
         try:
             addr_stmt = select(CustomerAddress).where(
-                CustomerAddress.id == UUID(shipping_addr_id),
+                CustomerAddress.id == UUID(str(shipping_addr_id)),
                 CustomerAddress.customer_id == customer_id,
             )
             found_addr = (await db.execute(addr_stmt)).scalar_one_or_none()
             if found_addr:
                 shipping_data = {
+                    "full_name": found_addr.full_name,
                     "recipient_name": found_addr.full_name,
                     "phone": found_addr.phone,
                     "address_line1": found_addr.address_line1,
                     "address_line2": found_addr.address_line2,
+                    "landmark": found_addr.landmark,
                     "city": found_addr.city,
                     "state": found_addr.state,
                     "postal_code": found_addr.postal_code,
@@ -78,35 +81,100 @@ async def create_storefront_order(
 
     if not shipping_data:
         new_addr = payload.get("newShippingAddress") or {}
+        recipient = (
+            new_addr.get("fullName")
+            or new_addr.get("full_name")
+            or principal.display_name
+            or "Valued Customer"
+        )
+        phone = (
+            new_addr.get("phoneNumber")
+            or new_addr.get("phone")
+            or principal.phone_e164
+            or "+919876543210"
+        )
+        addr1 = (
+            new_addr.get("addressLine1")
+            or new_addr.get("address_line1")
+            or "Bidar Main Road"
+        )
         shipping_data = {
-            "recipient_name": new_addr.get("fullName") or principal.display_name or "Valued Customer",
-            "phone": new_addr.get("phoneNumber") or principal.phone_e164 or "+919876543210",
-            "address_line1": new_addr.get("addressLine1") or "Bidar Main Road",
-            "address_line2": new_addr.get("addressLine2"),
+            "full_name": recipient,
+            "recipient_name": recipient,
+            "phone": phone,
+            "address_line1": addr1,
+            "address_line2": new_addr.get("addressLine2") or new_addr.get("address_line2"),
+            "landmark": new_addr.get("landmark"),
             "city": new_addr.get("city") or "Bidar",
             "state": new_addr.get("state") or "Karnataka",
-            "postal_code": new_addr.get("postalCode") or "585401",
+            "postal_code": new_addr.get("postalCode") or new_addr.get("postal_code") or "585401",
             "country": "India",
         }
 
+        # Auto-persist newly provided address for customer profile
+        if new_addr and (new_addr.get("fullName") or new_addr.get("full_name")):
+            try:
+                from app.modules.identity.models import CustomerAddress
+                saved_addr = CustomerAddress(
+                    tenant_id=target_tenant_id,
+                    customer_id=customer_id,
+                    full_name=recipient,
+                    phone=phone,
+                    address_line1=addr1,
+                    address_line2=shipping_data["address_line2"],
+                    landmark=shipping_data["landmark"],
+                    city=shipping_data["city"],
+                    state=shipping_data["state"],
+                    postal_code=shipping_data["postal_code"],
+                    is_default=True,
+                )
+                db.add(saved_addr)
+                await db.commit()
+            except Exception:
+                pass
+
     p_method = "online" if str(payload.get("paymentMethod", "")).upper() == "RAZORPAY" else "cod"
 
-    checkout_req = CheckoutRequest(
-        shipping_address=shipping_data,
-        customer_name=shipping_data["recipient_name"],
-        customer_email=principal.email,
-        customer_phone=shipping_data["phone"],
-        payment_method=p_method,
-        notes=payload.get("customerNotes"),
-        coupon_code=payload.get("couponCode"),
-    )
+    try:
+        checkout_req = CheckoutRequest(
+            shipping_address=shipping_data,
+            customer_name=shipping_data["full_name"],
+            customer_email=principal.email,
+            customer_phone=shipping_data["phone"],
+            payment_method=p_method,
+            notes=payload.get("customerNotes"),
+            coupon_code=payload.get("couponCode"),
+        )
+    except Exception as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_CHECKOUT_DATA", "message": f"Invalid checkout details: {str(val_err)}"},
+        )
 
-    order = await OrderService.checkout(
-        db=db,
-        tenant_id=target_tenant_id,
-        customer_id=customer_id,
-        data=checkout_req,
-    )
+    try:
+        # Pre-merge guest session items if any remain
+        if x_session_id:
+            try:
+                from app.modules.orders.services import CartService
+                await CartService.get_or_create_cart(
+                    db, tenant_id=target_tenant_id, customer_id=customer_id, session_id=x_session_id
+                )
+            except Exception:
+                pass
+
+        order = await OrderService.checkout(
+            db=db,
+            tenant_id=target_tenant_id,
+            customer_id=customer_id,
+            data=checkout_req,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "CHECKOUT_FAILED", "message": f"Order placement failed: {str(exc)}"},
+        )
 
     razorpay_data = None
     if p_method == "online":
