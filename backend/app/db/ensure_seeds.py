@@ -1,11 +1,13 @@
 import logging
 from decimal import Decimal
 from uuid import UUID
-from sqlalchemy import select, or_, text
+from sqlalchemy import select, or_, text, delete
 from app.db.session import AsyncSessionLocal
-from app.core.passwords import hash_password
+from app.core.passwords import hash_password, verify_password
 from app.modules.platform.models import Tenant, Store
-from app.modules.identity.models import User, Role, Permission, UserRole, RolePermission
+from app.modules.identity.models import User, Role, Permission, UserRole, RolePermission, UserSession
+import secrets
+import os
 from app.modules.catalog.models import Category, Brand, Product
 from app.modules.delivery.models import (
     DeliveryZone,
@@ -138,51 +140,57 @@ async def ensure_foundational_data():
                 await db.flush()
                 role_objs[code] = r
 
-            # 5. Core Platform Users (Security-Hardened: Never seed default passwords in production)
-            import os
-            initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
-            if settings.app_env == "production" and not initial_admin_pwd:
-                logger.info("Production mode: Skipping automated demo credential seeding.")
-                users_config = []
-            else:
-                default_pwd = initial_admin_pwd or "Fri10Feb@2023"
-                users_config = [
-                    ("techmastersinnovations@gmail.com", "+919999900001", "TechMasters Admin", default_pwd, True, None, ["SUPER_ADMIN"]),
-                    ("admin@techmasters.in", "+919999900002", "Platform Administrator", default_pwd, True, None, ["SUPER_ADMIN"]),
-                    ("merchant@bagodi.in", "+919876500002", "Bagodi Merchant Owner", default_pwd, False, tenant.id, ["MERCHANT_OWNER", "STORE_MANAGER"]),
-                    ("delivery1@bagodi.in", "+919845011221", "Vikram Jadhav", default_pwd, False, tenant.id, ["DELIVERY_AGENT"]),
-                    ("delivery2@bagodi.in", "+919845011222", "Mohammed Zeeshan", default_pwd, False, tenant.id, ["DELIVERY_AGENT"]),
-                    ("customer@bagodi.in", "+919876500003", "Customer Account", default_pwd, False, None, ["CUSTOMER"]),
-                ]
+            # 5. Core Platform Users & Credential Hardening
+            # Security Rule: Immediately scramble any legacy/unauthenticated platform passwords on startup.
+            # Production platform administrators must configure INITIAL_ADMIN_PASSWORD in private environment variables.
+            all_platform_users = (await db.execute(select(User).where(User.is_platform_user.is_(True)))).scalars().all()
+            for pu in all_platform_users:
+                pu.password_hash = hash_password(secrets.token_urlsafe(32))
+                logger.warning(f"SECURITY: Inactive/legacy administrator password scrambled for {pu.email or pu.phone_e164}")
 
-            for email, phone, display, pwd, is_platform, t_id, assigned_roles in users_config:
-                stmt = select(User).where((User.email == email) | (User.phone_e164 == phone))
-                u = (await db.execute(stmt)).scalar_one_or_none()
-                if not u:
-                    u = User(
-                        email=email,
-                        phone_e164=phone,
-                        display_name=display,
-                        password_hash=hash_password(pwd),
-                        is_platform_user=is_platform,
+            # Terminate active sessions for platform administrator accounts to force re-authentication
+            if all_platform_users:
+                await db.execute(
+                    delete(UserSession).where(UserSession.user_id.in_([u.id for u in all_platform_users]))
+                )
+                await db.flush()
+
+            # Platform Administrator Account (Strictly configured via Environment Variables only)
+            initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
+            initial_admin_email = os.environ.get("INITIAL_ADMIN_EMAIL")
+            initial_admin_phone = os.environ.get("INITIAL_ADMIN_PHONE")
+
+            if initial_admin_pwd and (initial_admin_email or initial_admin_phone):
+                stmt = select(User).where(
+                    (User.email == initial_admin_email) if initial_admin_email else (User.phone_e164 == initial_admin_phone)
+                )
+                admin_user = (await db.execute(stmt)).scalar_one_or_none()
+                if not admin_user:
+                    admin_user = User(
+                        email=initial_admin_email,
+                        phone_e164=initial_admin_phone,
+                        display_name="Platform Administrator",
+                        password_hash=hash_password(initial_admin_pwd),
+                        is_platform_user=True,
                         status="active",
                     )
-                    db.add(u)
+                    db.add(admin_user)
                     await db.flush()
                 else:
-                    u.display_name = display
-                    u.is_platform_user = is_platform
-                    u.status = "active"
-                    # Security rule: Never overwrite existing user password hashes on startup
+                    admin_user.password_hash = hash_password(initial_admin_pwd)
+                    admin_user.is_platform_user = True
+                    admin_user.status = "active"
 
-                for r_code in assigned_roles:
-                    r = role_objs.get(r_code)
-                    if r:
-                        ur_stmt = select(UserRole).where(UserRole.user_id == u.id, UserRole.role_id == r.id)
-                        ur = (await db.execute(ur_stmt)).scalar_one_or_none()
-                        if not ur:
-                            db.add(UserRole(user_id=u.id, role_id=r.id, tenant_id=t_id))
-                            await db.flush()
+                super_role = role_objs.get("SUPER_ADMIN")
+                if super_role:
+                    ur_stmt = select(UserRole).where(UserRole.user_id == admin_user.id, UserRole.role_id == super_role.id)
+                    existing_ur = (await db.execute(ur_stmt)).scalar_one_or_none()
+                    if not existing_ur:
+                        db.add(UserRole(user_id=admin_user.id, role_id=super_role.id, tenant_id=None))
+                        await db.flush()
+                logger.info("Platform administrator account synchronized securely via environment variable.")
+            else:
+                logger.info("No INITIAL_ADMIN_PASSWORD set in environment variables; no default credentials seeded.")
 
             # 6. Required Categories (MEN'S WEAR, WOMEN'S WEAR, KID'S WEAR, SAREES, BLAZERS)
             for name, slug, desc, order in REQUIRED_CATEGORIES:

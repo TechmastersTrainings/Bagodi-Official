@@ -26,7 +26,7 @@ async def test_complete_super_admin_governance_and_billing_lifecycle(client: Asy
         await conn.execute(
             text(
                 "INSERT INTO users (id, phone_e164, email, display_name, status, is_platform_user, created_at, updated_at) "
-                "VALUES (:id, '+919999900001', 'admin@techmasters.in', 'TechMasters SuperAdmin', 'active', true, now(), now()) "
+                "VALUES (:id, '+919999900001', 'superadmin@platform.internal', 'Platform SuperAdmin', 'active', true, now(), now()) "
                 "ON CONFLICT DO NOTHING"
             ),
             {"id": super_admin_id},
@@ -45,7 +45,7 @@ async def test_complete_super_admin_governance_and_billing_lifecycle(client: Asy
         "/api/v1/platform/staff",
         json={
             "phone_e164": "+919999900002",
-            "email": "compliance@techmasters.in",
+            "email": "compliance@platform.internal",
             "display_name": "Radha Sharma",
             "role_code": "COMPLIANCE_OFFICER",
         },

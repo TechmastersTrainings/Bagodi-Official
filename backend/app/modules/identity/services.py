@@ -166,8 +166,8 @@ class AuthService:
         else:
             masked_dest = destination
 
-        # In dev or console provider mode, supply dev_otp so customer test logins succeed
-        dev_code = otp_code if (settings.app_env == "development" or settings.otp_provider in ("console", "in_memory")) else "123456"
+        # In dev or console provider mode, supply dev_otp only when strictly in local development with debug
+        dev_code = otp_code if (settings.app_env == "development" and settings.debug) else None
 
         return OTPSendResponse(
             status="sent",
@@ -199,10 +199,11 @@ class AuthService:
                 },
             )
 
-        # Universal test & development bypass code: 123456
+        # Development bypass only when strictly in development environment with debug enabled
         is_dev_bypass = (
-            data.otp == "123456"
-            or (settings.app_env == "development" and settings.debug)
+            settings.app_env == "development"
+            and settings.debug
+            and data.otp == "123456"
         )
 
         # 1. Fetch latest unconsumed OTP request
@@ -277,19 +278,13 @@ class AuthService:
         user = (await db.execute(user_stmt)).scalar_one_or_none()
 
         if not user:
-            is_admin = target_email == "admin@techmasters.in" or target_phone == "+919999900001"
-            is_merchant = target_email == "merchant@bagodi.in" or target_phone == "+919876500002"
-            display = (
-                "TechMasters SuperAdmin"
-                if is_admin
-                else ("Bagodi Merchant" if is_merchant else (target_email.split("@")[0].title() if target_email else f"Customer {target_phone[-4:]}"))
-            )
+            display = target_email.split("@")[0].title() if target_email else f"Customer {target_phone[-4:]}"
             user = User(
                 phone_e164=target_phone,
                 email=target_email,
                 display_name=display,
                 status="active",
-                is_platform_user=is_admin,
+                is_platform_user=False,
             )
             db.add(user)
             await db.flush()
@@ -321,31 +316,6 @@ class AuthService:
                 )
                 effective_tenant_id = (await db.execute(anchor_stmt)).scalar_one_or_none()
 
-        # Ensure known default roles exist for this user if not assigned yet
-        is_merchant = (user.email == "merchant@bagodi.in") or (user.phone_e164 == "+919876500002")
-        is_admin = user.is_platform_user or (user.email == "admin@techmasters.in") or (user.phone_e164 == "+919999900001")
-
-        if is_merchant and effective_tenant_id:
-            role_stmt = select(Role).where(Role.code.in_(("MERCHANT_OWNER", "STORE_MANAGER")))
-            m_roles = (await db.execute(role_stmt)).scalars().all()
-            for r in m_roles:
-                existing_ur = (await db.execute(
-                    select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == r.id)
-                )).scalar_one_or_none()
-                if not existing_ur:
-                    db.add(UserRole(user_id=user.id, role_id=r.id, tenant_id=effective_tenant_id))
-            await db.flush()
-        elif is_admin:
-            role_stmt = select(Role).where(Role.code == "SUPER_ADMIN")
-            a_role = (await db.execute(role_stmt)).scalar_one_or_none()
-            if a_role:
-                existing_ur = (await db.execute(
-                    select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == a_role.id)
-                )).scalar_one_or_none()
-                if not existing_ur:
-                    db.add(UserRole(user_id=user.id, role_id=a_role.id, tenant_id=None))
-            await db.flush()
-
         roles, permissions = await AuthService.get_user_roles_and_permissions(
             db, user.id, effective_tenant_id
         )
@@ -355,16 +325,11 @@ class AuthService:
             plat_roles, plat_perms = await AuthService.get_user_roles_and_permissions(
                 db, user.id, None
             )
-            roles = sorted(set(roles + plat_roles + ["SUPER_ADMIN"]))
-            permissions = sorted(set(permissions + plat_perms + ["*"]))
-        elif is_merchant:
-            roles = sorted(set(roles + ["MERCHANT_OWNER", "STORE_MANAGER"]))
-            permissions = sorted(set(permissions + [
-                "catalog.*", "inventory.*", "orders.*", "delivery.*", "stores.*", "reports:*"
-            ]))
+            roles = sorted(set(roles + plat_roles))
+            permissions = sorted(set(permissions + plat_perms))
         elif not roles:
             roles = ["CUSTOMER"]
-            permissions = ["catalog.products.read", "orders.create", "orders.read", "cart.manage"]
+            permissions = ["catalog.products.read", "orders.create", "orders.read", "customer.*", "cart.manage"]
 
         # 8. Create user session and refresh token
         raw_refresh_token = generate_raw_refresh_token()

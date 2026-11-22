@@ -29,10 +29,12 @@ async def main():
         # -----------------------------------------------------------------
         # Step 1: Sign in as Merchant to prepare live boutique product
         # -----------------------------------------------------------------
+        import os
+        test_pwd = os.environ.get("TEST_PASSWORD", "LocalDevPass!1")
         print("\n[Step 1] Merchant Sign In & Live Garment Catalogue Setup...")
         merchant_resp = await client.post("/api/v1/auth/login", json={
             "email": "merchant@bagodi.in",
-            "password": "Fri10Feb@2023"
+            "password": test_pwd
         })
         assert merchant_resp.status_code == 200, f"Merchant login failed: {merchant_resp.text}"
         merchant_token = merchant_resp.json()["access_token"]
@@ -74,7 +76,7 @@ async def main():
             "display_name": "Ramesh Patil",
             "email": cust_email,
             "phone_e164": cust_phone,
-            "password": "Fri10Feb@2023"
+            "password": test_pwd
         })
         assert reg_resp.status_code == 201, f"Registration failed: {reg_resp.text}"
         customer_token = reg_resp.json()["access_token"]

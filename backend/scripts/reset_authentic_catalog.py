@@ -144,10 +144,7 @@ async def reset_catalog():
         # Clean up test user accounts (keep only authentic platform and store users)
         await db.execute(
             text(
-                "DELETE FROM users WHERE email NOT IN ("
-                "'customer@bagodi.in', 'merchant@bagodi.in', "
-                "'techmastersinnovations@gmail.com', 'admin@techmasters.in'"
-                ")"
+                "DELETE FROM users WHERE is_platform_user IS NOT TRUE AND email NOT LIKE '%bagodi.in'"
             )
         )
         await db.flush()
@@ -264,10 +261,6 @@ async def reset_catalog():
         print("\n🎉 Authentic Bagodi Catalogue Reset Complete!")
         print("  • 0 dummy or mock products remaining.")
         print("  • 6 high-end luxury couture items with high-res fashion photography and size-wise inventory active.")
-        print("  • Standard accounts verified:")
-        print("      Customer: customer@bagodi.in / Fri10Feb@2023")
-        print("      Merchant: merchant@bagodi.in / Fri10Feb@2023")
-        print("      Admin:    techmastersinnovations@gmail.com / Fri10Feb@2023")
 
 
 if __name__ == "__main__":

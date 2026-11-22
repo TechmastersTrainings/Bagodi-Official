@@ -3,10 +3,6 @@ Seed script to set up foundational entities:
 - Anchor Tenant: Bagodi Clothing (Bidar)
 - Flagship Store: Bagodi Bidar Flagship Store
 - Platform Roles & Permissions
-- 3 Dedicated Users:
-    1. Customer: customer@bagodi.in / +919876500001
-    2. Merchant: merchant@bagodi.in / +919876500002
-    3. Admin:    admin@techmasters.in / +919999900001
 - Foundational Fashion Categories (Silks, Kurtas, Menswear, etc.)
 - 0 products seeded (Merchant performs initial live product CRUD)
 """
@@ -156,45 +152,22 @@ async def seed():
             await db.flush()
             role_objs[code] = r
 
-        # 5. Dedicated Platform Users
-        users_config = [
-            (
-                "customer@bagodi.in",
-                "+919876500001",
-                "Customer Account",
-                "Fri10Feb@2023",
-                False,
-                None,
-                ["CUSTOMER"],
-            ),
-            (
-                "merchant@bagodi.in",
-                "+919876500002",
-                "Bagodi Merchant Owner",
-                "Fri10Feb@2023",
-                False,
-                tenant.id,
-                ["MERCHANT_OWNER", "STORE_MANAGER"],
-            ),
-            (
-                "techmastersinnovations@gmail.com",
-                "+919999900001",
-                "TechMasters Super Administrator",
-                "Fri10Feb@2023",
-                True,
-                None,
-                ["SUPER_ADMIN"],
-            ),
-            (
-                "admin@techmasters.in",
-                "+919999900002",
+        # 5. Dedicated Platform Users (Read strictly from Environment Variables)
+        import os
+        import secrets
+        initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
+        initial_admin_email = os.environ.get("INITIAL_ADMIN_EMAIL")
+        users_config = []
+        if initial_admin_pwd and initial_admin_email:
+            users_config.append((
+                initial_admin_email,
+                os.environ.get("INITIAL_ADMIN_PHONE", "+910000000001"),
                 "Platform Administrator",
-                "Fri10Feb@2023",
+                initial_admin_pwd,
                 True,
                 None,
-                ["SUPER_ADMIN"],
-            ),
-        ]
+                ["SUPER_ADMIN"]
+            ))
 
         for email, phone, display, pwd, is_platform, t_id, assigned_roles in users_config:
             stmt = select(User).where((User.email == email) | (User.phone_e164 == phone))
@@ -258,10 +231,6 @@ async def seed():
 
         await db.commit()
         print("\n🎉 Foundational Seeding Complete!")
-        print("  • 3 Users Ready:")
-        print("      1. Customer: customer@bagodi.in / +919876500001 (OTP: 123456)")
-        print("      2. Merchant: merchant@bagodi.in / +919876500002 (OTP: 123456)")
-        print("      3. Admin:    admin@techmasters.in / +919999900001 (OTP: 123456)")
         print("  • Foundational fashion categories ready in DB")
         print("  • 0 products in DB (Merchant is ready to add first live product)")
 

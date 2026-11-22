@@ -88,7 +88,7 @@ export const SuperAdminLoginPage: React.FC = () => {
             <TextInput
               label="Master Administrator Email"
               type="email"
-              placeholder="admin@techmasters.in"
+              placeholder="name@company.com"
               leftIcon={<Mail size={18} />}
               isRequired
               error={errors.email?.message}

@@ -4,6 +4,7 @@ Dedicated endpoints serving the Super Admin Platform Governance portal (/super/.
 """
 
 import math
+import secrets
 from datetime import datetime, timezone
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -473,7 +474,7 @@ async def onboard_merchant(
         u_stmt = select(User).where(User.email == admin_email)
         admin_user = (await db.execute(u_stmt)).scalar_one_or_none()
         if not admin_user:
-            admin_pwd = data.adminUser.password or "Bagodi@2026"
+            admin_pwd = data.adminUser.password or secrets.token_urlsafe(16)
             admin_user = User(
                 email=admin_email,
                 phone_e164=data.adminUser.phoneNumber or data.contactPhone,
@@ -602,7 +603,7 @@ async def create_platform_user(
             detail=f"User with email '{clean_email}' already exists.",
         )
 
-    pwd = data.tempPassword or "TechMasters@2026"
+    pwd = data.tempPassword or secrets.token_urlsafe(16)
     user = User(
         email=clean_email,
         display_name=data.fullName,

@@ -78,9 +78,11 @@ async def run_verification():
 
         # 4. Merchant Authentication
         print("\n4. Checking Merchant Authentication...")
+        import os
+        test_pwd = os.environ.get("TEST_PASSWORD", "LocalDevPass!1")
         merchant_login = await client.post(
             "/api/v1/auth/login",
-            json={"email": "merchant@bagodi.in", "password": "Fri10Feb@2023"}
+            json={"email": "merchant@bagodi.in", "password": test_pwd}
         )
         assert merchant_login.status_code == 200, f"Merchant login failed: {merchant_login.status_code} {merchant_login.text}"
         merchant_token = merchant_login.json()["access_token"]
@@ -155,7 +157,7 @@ async def run_verification():
         print("\n7. Checking Super Admin Authentication...")
         admin_login = await client.post(
             "/api/v1/auth/login",
-            json={"email": "techmastersinnovations@gmail.com", "password": "Fri10Feb@2023"}
+            json={"email": os.environ.get("INITIAL_ADMIN_EMAIL", "admin@bagodi.internal"), "password": test_pwd}
         )
         assert admin_login.status_code == 200, f"Admin login failed: {admin_login.status_code} {admin_login.text}"
         admin_token = admin_login.json()["access_token"]

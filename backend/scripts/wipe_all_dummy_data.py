@@ -86,15 +86,15 @@ async def wipe_dummy_data():
         except Exception as e:
             print("sessions/addresses:", e)
         
-        # 6. Delete all dummy users (Keep only techmastersinnovations@gmail.com, merchant@bagodi.in)
+        # 6. Delete all dummy users (Keep platform admin and registered merchant users)
         try:
             await session.execute(text("""
                 DELETE FROM user_roles WHERE user_id IN (
-                    SELECT id FROM users WHERE email NOT IN ('techmastersinnovations@gmail.com', 'merchant@bagodi.in')
+                    SELECT id FROM users WHERE is_platform_user IS NOT TRUE AND email NOT LIKE '%bagodi.in'
                 );
             """))
             await session.execute(text("""
-                DELETE FROM users WHERE email NOT IN ('techmastersinnovations@gmail.com', 'merchant@bagodi.in');
+                DELETE FROM users WHERE is_platform_user IS NOT TRUE AND email NOT LIKE '%bagodi.in';
             """))
         except Exception as e:
             print("users:", e)
