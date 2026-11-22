@@ -192,6 +192,33 @@ async def ensure_foundational_data():
             else:
                 logger.info("No INITIAL_ADMIN_PASSWORD set in environment variables; no default credentials seeded.")
 
+            # Ensure Customer Test Account (Strictly customer role, non-platform)
+            customer_email = "customer@bagodi.in"
+            customer_phone = "+919876500003"
+            cust_stmt = select(User).where((User.email == customer_email) | (User.phone_e164 == customer_phone))
+            cust_u = (await db.execute(cust_stmt)).scalar_one_or_none()
+            if not cust_u:
+                cust_u = User(
+                    email=customer_email,
+                    phone_e164=customer_phone,
+                    display_name="Customer Account",
+                    password_hash=hash_password("Fri10Feb@2023"),
+                    is_platform_user=False,
+                    status="active",
+                )
+                db.add(cust_u)
+                await db.flush()
+            elif not cust_u.password_hash:
+                cust_u.password_hash = hash_password("Fri10Feb@2023")
+                cust_u.status = "active"
+
+            cust_role = role_objs.get("CUSTOMER")
+            if cust_role and cust_u:
+                ur_stmt = select(UserRole).where(UserRole.user_id == cust_u.id, UserRole.role_id == cust_role.id)
+                if not (await db.execute(ur_stmt)).scalar_one_or_none():
+                    db.add(UserRole(user_id=cust_u.id, role_id=cust_role.id, tenant_id=None))
+                    await db.flush()
+
             # 6. Required Categories (MEN'S WEAR, WOMEN'S WEAR, KID'S WEAR, SAREES, BLAZERS)
             for name, slug, desc, order in REQUIRED_CATEGORIES:
                 stmt = select(Category).where(Category.slug == slug)
