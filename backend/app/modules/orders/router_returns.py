@@ -82,13 +82,13 @@ async def submit_return_request(
             detail={"code": "ORDER_NOT_FOUND", "message": f"Order {order_number} not found."},
         )
 
-    # Must be DELIVERED to request a return or exchange
-    if order.status not in ("DELIVERED", "COMPLETED"):
+    # Eligible statuses to request a return or exchange
+    if order.status not in ("DELIVERED", "COMPLETED", "CONFIRMED"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "code": "INVALID_ORDER_STATE",
-                "message": f"Cannot return or exchange items for an order in '{order.status}' status. Order must be delivered.",
+                "message": f"Cannot return or exchange items for an order in '{order.status}' status.",
             },
         )
 
@@ -163,6 +163,25 @@ async def list_order_returns(
             Order.order_number == order_number,
             Order.customer_id == customer_id,
         )
+        .order_by(desc(OrderReturnRequest.created_at))
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.get(
+    "/customer/returns",
+    response_model=list[OrderReturnRequestResponse],
+    summary="List all return and exchange requests for the authenticated customer",
+)
+async def list_customer_returns(
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    customer_id: Annotated[UUID, Depends(get_authenticated_customer_id)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    stmt = (
+        select(OrderReturnRequest)
+        .where(OrderReturnRequest.customer_id == customer_id)
         .order_by(desc(OrderReturnRequest.created_at))
     )
     result = await db.execute(stmt)

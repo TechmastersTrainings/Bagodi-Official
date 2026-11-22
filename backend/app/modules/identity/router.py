@@ -1,6 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import (
@@ -9,6 +11,7 @@ from app.core.security import (
     get_security_principal,
 )
 from app.db.session import get_db
+from app.modules.identity.models import User
 from app.modules.identity.schemas import (
     CustomerRegisterRequest,
     LoginRequest,
@@ -26,6 +29,13 @@ from app.modules.identity.schemas import (
 from app.modules.identity.services import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+class CustomerProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    display_name: str | None = Field(default=None, alias="displayName")
+    full_name: str | None = Field(default=None, alias="fullName")
+    email: str | None = None
 
 
 @router.post(
@@ -187,4 +197,39 @@ async def get_me(
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    return await AuthService.get_user_profile(db, principal)
+
+
+@router.patch(
+    "/me",
+    response_model=UserProfileResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update customer profile details (name, email)",
+)
+async def update_customer_profile(
+    data: CustomerProfileUpdateRequest,
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    if not principal.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "AUTHENTICATION_REQUIRED", "message": "Customer login is required."},
+        )
+    stmt = select(User).where(User.id == principal.user_id)
+    user = (await db.execute(stmt)).scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "USER_NOT_FOUND", "message": "Customer account not found."},
+        )
+
+    new_name = data.full_name or data.display_name
+    if new_name is not None and new_name.strip():
+        user.display_name = new_name.strip()
+    if data.email is not None:
+        user.email = data.email.strip().lower() if data.email.strip() else None
+
+    await db.commit()
+    await db.refresh(user)
     return await AuthService.get_user_profile(db, principal)
