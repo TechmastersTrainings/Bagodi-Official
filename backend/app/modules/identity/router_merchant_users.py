@@ -156,6 +156,27 @@ async def toggle_merchant_staff_status(
     await db.commit()
     await db.refresh(user)
 
+    try:
+        from app.modules.platform.services import PlatformAuditService
+        audit_action = "STAFF_SUSPENDED" if user.status == "inactive" else "STAFF_ACTIVATED"
+        await PlatformAuditService.log(
+            db,
+            action=audit_action,
+            target_type="USER",
+            target_id=str(user.id),
+            actor_id=user.id,
+            actor_email=user.email,
+            details={
+                "user_id": str(user.id),
+                "email": user.email,
+                "phone": user.phone_e164,
+                "display_name": user.display_name,
+                "status": user.status,
+            },
+        )
+    except Exception:
+        pass
+
     role_code = "STORE_MANAGER"
     role_obj = (
         await db.execute(select(Role).where(Role.id == user_role.role_id))
@@ -195,9 +216,32 @@ async def delete_merchant_staff(
             detail={"code": "USER_NOT_FOUND", "message": "Staff member not found."},
         )
 
-    await db.execute(delete(UserRole).where(UserRole.user_id == user_id, UserRole.tenant_id == tenant.tenant_id))
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if user:
-        user.status = "inactive"
+        try:
+            from app.modules.platform.services import PlatformAuditService
+            await PlatformAuditService.log(
+                db,
+                action="STAFF_DELETED",
+                target_type="USER",
+                target_id=str(user.id),
+                actor_id=user.id,
+                actor_email=user.email,
+                details={
+                    "user_id": str(user.id),
+                    "email": user.email,
+                    "phone": user.phone_e164,
+                    "display_name": user.display_name,
+                    "status": "permanently_deleted",
+                },
+            )
+        except Exception:
+            pass
+
+    from app.modules.identity.models import UserSession
+    await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
+    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
+    if user:
+        await db.delete(user)
     await db.commit()
 

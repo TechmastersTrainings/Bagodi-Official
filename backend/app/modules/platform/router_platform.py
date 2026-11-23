@@ -529,6 +529,27 @@ async def update_platform_user_status(
 
     if data.status:
         user.status = data.status
+        try:
+            from app.modules.platform.services import PlatformAuditService
+            audit_action = "USER_SUSPENDED" if data.status == "suspended" else "USER_ACTIVATED"
+            await PlatformAuditService.log(
+                db,
+                action=audit_action,
+                target_type="USER",
+                target_id=str(user.id),
+                actor_id=user.id,
+                actor_email=user.email,
+                details={
+                    "user_id": str(user.id),
+                    "email": user.email,
+                    "phone": user.phone_e164,
+                    "display_name": user.display_name,
+                    "new_status": user.status,
+                },
+            )
+        except Exception:
+            pass
+
     if data.display_name:
         user.display_name = data.display_name
     await db.commit()
@@ -565,6 +586,67 @@ async def update_platform_user_status(
         roles=roles,
         created_at=user.created_at,
     )
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Permanently delete a platform user account",
+)
+async def delete_platform_user(
+    user_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    from sqlalchemy import select, delete
+    from app.modules.identity.models import User, UserRole, UserSession
+    from app.modules.platform.services import PlatformAuditService
+
+    stmt = select(User).where(User.id == user_id)
+    user = (await db.execute(stmt)).scalar_one_or_none()
+    if not user:
+        return
+
+    # Record immutable audit event
+    try:
+        await PlatformAuditService.log(
+            db,
+            action="USER_DELETED",
+            target_type="USER",
+            target_id=str(user.id),
+            actor_id=user.id,
+            actor_email=user.email,
+            details={
+                "user_id": str(user.id),
+                "email": user.email,
+                "phone": user.phone_e164,
+                "display_name": user.display_name,
+                "status": "permanently_deleted",
+            },
+        )
+    except Exception:
+        pass
+
+    # Delete foreign key references
+    await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
+    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
+
+    try:
+        from app.modules.identity.models import CustomerAddress
+        await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == user_id))
+    except Exception:
+        pass
+
+    try:
+        from app.modules.orders.models import CartItem, Cart
+        cart_ids = (await db.execute(select(Cart.id).where(Cart.customer_id == user_id))).scalars().all()
+        if cart_ids:
+            await db.execute(delete(CartItem).where(CartItem.cart_id.in_(cart_ids)))
+            await db.execute(delete(Cart).where(Cart.id.in_(cart_ids)))
+    except Exception:
+        pass
+
+    await db.delete(user)
+    await db.commit()
 
 
 @router.post(

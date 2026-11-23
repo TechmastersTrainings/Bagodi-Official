@@ -402,18 +402,86 @@ async def ensure_foundational_data():
                 logger.info(f"✓ Cleaned up {len(dummy_products)} dummy test products from catalogue.")
 
             # 10. Clean up obsolete/dummy user accounts
+            cleanup_emails = [
+                "bagodistore@techmatersinnovations.in",
+                "vip.shopper@bagodi.in",
+                "vip.client@bagodi.in",
+                "client.bidar@bagodi.in",
+                "vip_customer_2026@bagodi.in",
+                "user_9705376383@bagodi.in",
+                "sachin_tester_2026@bagodi.in",
+                "testcustomer123@bagodi.in",
+                "ananya.patil@example.com",
+                "customer@bagodi.in",
+                "dummy@bagodi.in",
+                "test@bagodi.in",
+            ]
+            cleanup_phones = [
+                "+917894561230",
+                "+919208950128",
+                "+919988776655",
+                "+919900112233",
+                "+919705376383",
+                "+919605376373",
+                "+919505376355",
+                "+919845099887",
+                "+919876566725",
+                "+919876566688",
+                "+919876543203",
+                "+919876543202",
+                "+919876543201",
+                "+919876543233",
+                "+919876543222",
+                "+919876500999",
+                "+919876543210",
+                "+919876500003",
+            ]
             cleanup_user_stmt = select(User).where(
-                User.email.in_([
-                    "bagodistore@techmatersinnovations.in",
-                    "customer@bagodi.in",
-                    "dummy@bagodi.in",
-                    "test@bagodi.in",
-                ])
+                or_(
+                    User.email.in_(cleanup_emails),
+                    User.phone_e164.in_(cleanup_phones),
+                    User.display_name.in_([
+                        "Customer 1230", "Customer 0128", "Vip.Shopper", "Vip.Client",
+                        "Client.Bidar", "Customer 6655", "Customer 2233", "Vip_Customer_2026",
+                        "Boutique Client", "Customer 6373", "Customer 6355", "Sachin Tester",
+                        "Customer 6725", "Customer 6688", "Customer 3203", "Customer 3202",
+                        "Customer 3201", "Customer 3233", "Customer 3222", "Test Customer",
+                        "Ananya Sharma", "Customer Account",
+                    ]),
+                )
             )
             obsolete_users = (await db.execute(cleanup_user_stmt)).scalars().all()
             for obs_user in obsolete_users:
+                # Strictly protect real users and authentic staff accounts
+                if obs_user.email in (
+                    "bagodistore@techmastersinnovations.in",
+                    "merchant@bagodi.in",
+                    "admin@techmasters.in",
+                    "techmastersinnovations@gmail.com",
+                    "sachin@techmastersinnovations.in",
+                    "bhalkeshiva9@gmail.com",
+                    "diptidudhankar2004@gmail.com",
+                    "kavya@gmail.com",
+                    "bhagyalaxmiitgampalli@gmail.com",
+                    "rekhasachin98@gmail.com",
+                ) or obs_user.phone_e164 in (
+                    "+919880768222",
+                    "+919108950128",
+                    "+918660452068",
+                    "+916363804929",
+                    "+918105658896",
+                    "+918147721707",
+                    "+919880768111",
+                    "+919113670127",
+                ):
+                    continue
                 await db.execute(delete(UserRole).where(UserRole.user_id == obs_user.id))
                 await db.execute(delete(UserSession).where(UserSession.user_id == obs_user.id))
+                try:
+                    from app.modules.identity.models import CustomerAddress
+                    await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == obs_user.id))
+                except Exception:
+                    pass
                 await db.delete(obs_user)
             if obsolete_users:
                 logger.info(f"✓ Cleaned up {len(obsolete_users)} obsolete/dummy user accounts.")
