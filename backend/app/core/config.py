@@ -64,8 +64,13 @@ class Settings(BaseSettings):
         defaults = [
             "https://bagodi.in",
             "https://www.bagodi.in",
+            "https://merchant.bagodi.in",
+            "https://admin.bagodi.in",
+            "https://superadmin.bagodi.in",
             "http://bagodi.in",
             "http://www.bagodi.in",
+            "http://merchant.bagodi.in",
+            "http://admin.bagodi.in",
             "https://bagodi-store.vercel.app",
             "https://bagodi-merchant.vercel.app",
             "https://bagodi-super-admin.vercel.app",

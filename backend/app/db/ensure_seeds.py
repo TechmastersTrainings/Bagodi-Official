@@ -149,6 +149,24 @@ async def ensure_foundational_data():
 
             staff_users_config = [
                 (
+                    "bagodistore@techmastersinnovations.in",
+                    "+919999900003",
+                    "Bagodi Store Operations",
+                    admin_pwd,
+                    True,
+                    tenant.id,
+                    ["SUPER_ADMIN", "MERCHANT_OWNER", "STORE_MANAGER"],
+                ),
+                (
+                    "bagodistore@techmatersinnovations.in",
+                    "+919999900004",
+                    "Bagodi Store Operations",
+                    admin_pwd,
+                    True,
+                    tenant.id,
+                    ["SUPER_ADMIN", "MERCHANT_OWNER", "STORE_MANAGER"],
+                ),
+                (
                     "techmastersinnovations@gmail.com",
                     "+919999900001",
                     "TechMasters Admin",

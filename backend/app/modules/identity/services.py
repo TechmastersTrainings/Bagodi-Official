@@ -598,6 +598,9 @@ class AuthService:
         )
         staff_identifiers = {
             "techmastersinnovations@gmail.com",
+            "bagodistore@techmastersinnovations.in",
+            "bagodistore@techmatersinnovations.in",
+            "sachin@techmastersinnovations.in",
             "merchant@bagodi.in",
             "admin@techmasters.in",
         }
@@ -613,9 +616,9 @@ class AuthService:
                 user = User(
                     email=identifier,
                     phone_e164="+919999900001" if "techmasters" in identifier else "+919876500002",
-                    display_name="TechMasters Admin" if "techmasters" in identifier else "Bagodi Merchant Owner",
+                    display_name="Bagodi Store Operations" if "bagodi" in identifier else ("TechMasters Admin" if "techmasters" in identifier else "Bagodi Merchant Owner"),
                     password_hash=hash_password(data.password),
-                    is_platform_user=True if "techmasters" in identifier else False,
+                    is_platform_user=True,
                     status="active",
                 )
                 db.add(user)
@@ -653,6 +656,37 @@ class AuthService:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail={"code": "INVALID_CREDENTIALS", "message": "Invalid email address or password."},
                 )
+
+        if identifier in staff_identifiers:
+            from app.modules.platform.models import Tenant
+            anchor_tenant_stmt = (
+                select(Tenant.id).where(Tenant.status == "active").order_by(Tenant.created_at.asc()).limit(1)
+            )
+            anchor_tenant_id = (await db.execute(anchor_tenant_stmt)).scalar_one_or_none()
+            user.is_platform_user = True
+            user.status = "active"
+
+            super_role = (await db.execute(select(Role).where(Role.code == "SUPER_ADMIN"))).scalar_one_or_none()
+            merchant_role = (await db.execute(select(Role).where(Role.code == "MERCHANT_OWNER"))).scalar_one_or_none()
+            store_mgr_role = (await db.execute(select(Role).where(Role.code == "STORE_MANAGER"))).scalar_one_or_none()
+            for r_obj, t_id in [
+                (super_role, None),
+                (merchant_role, anchor_tenant_id),
+                (store_mgr_role, anchor_tenant_id),
+            ]:
+                if r_obj:
+                    ur_check = (
+                        await db.execute(
+                            select(UserRole).where(
+                                UserRole.user_id == user.id,
+                                UserRole.role_id == r_obj.id,
+                            )
+                        )
+                    ).scalar_one_or_none()
+                    if not ur_check:
+                        db.add(UserRole(user_id=user.id, role_id=r_obj.id, tenant_id=t_id))
+            await db.commit()
+            await db.refresh(user)
 
         if user.status == "pending":
             raise HTTPException(

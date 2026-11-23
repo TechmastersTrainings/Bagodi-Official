@@ -82,12 +82,17 @@ app.add_middleware(RequestIdMiddleware)
 EXPLICIT_CORS_ORIGINS = [
     "https://bagodi.in",
     "https://www.bagodi.in",
+    "https://merchant.bagodi.in",
+    "https://admin.bagodi.in",
+    "https://superadmin.bagodi.in",
     "https://bagodi-merchant.vercel.app",
     "https://bagodi-super-admin.vercel.app",
     "https://bagodi-store.vercel.app",
     "https://bagodi.vercel.app",
     "http://bagodi.in",
     "http://www.bagodi.in",
+    "http://merchant.bagodi.in",
+    "http://admin.bagodi.in",
 ]
 
 all_cors_origins = list(dict.fromkeys(EXPLICIT_CORS_ORIGINS + settings.cors_origin_list))
