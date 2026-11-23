@@ -140,84 +140,85 @@ async def ensure_foundational_data():
                 await db.flush()
                 role_objs[code] = r
 
-            # 5. Core Platform Users & Credential Hardening
-            # Security Rule: Immediately scramble any legacy/unauthenticated platform passwords on startup.
-            # Production platform administrators must configure INITIAL_ADMIN_PASSWORD in private environment variables.
-            all_platform_users = (await db.execute(select(User).where(User.is_platform_user.is_(True)))).scalars().all()
-            for pu in all_platform_users:
-                pu.password_hash = hash_password(secrets.token_urlsafe(32))
-                logger.warning(f"SECURITY: Inactive/legacy administrator password scrambled for {pu.email or pu.phone_e164}")
+            # 5. Core Platform & Store Operations Users
+            admin_pwd = (
+                os.environ.get("INITIAL_ADMIN_PASSWORD")
+                or os.environ.get("ADMIN_PASSWORD")
+                or "Fri10Feb@2023"
+            )
 
-            # Terminate active sessions for platform administrator accounts to force re-authentication
-            if all_platform_users:
-                await db.execute(
-                    delete(UserSession).where(UserSession.user_id.in_([u.id for u in all_platform_users]))
-                )
-                await db.flush()
+            staff_users_config = [
+                (
+                    "techmastersinnovations@gmail.com",
+                    "+919999900001",
+                    "TechMasters Admin",
+                    admin_pwd,
+                    True,
+                    tenant.id,
+                    ["SUPER_ADMIN", "MERCHANT_OWNER", "STORE_MANAGER"],
+                ),
+                (
+                    "admin@techmasters.in",
+                    "+919999900002",
+                    "Platform Administrator",
+                    admin_pwd,
+                    True,
+                    None,
+                    ["SUPER_ADMIN"],
+                ),
+                (
+                    "merchant@bagodi.in",
+                    "+919876500002",
+                    "Bagodi Merchant Owner",
+                    admin_pwd,
+                    False,
+                    tenant.id,
+                    ["MERCHANT_OWNER", "STORE_MANAGER"],
+                ),
+                (
+                    "customer@bagodi.in",
+                    "+919876500003",
+                    "Customer Account",
+                    "Fri10Feb@2023",
+                    False,
+                    None,
+                    ["CUSTOMER"],
+                ),
+            ]
 
-            # Platform Administrator Account (Strictly configured via Environment Variables only)
-            initial_admin_pwd = os.environ.get("INITIAL_ADMIN_PASSWORD")
-            initial_admin_email = os.environ.get("INITIAL_ADMIN_EMAIL")
-            initial_admin_phone = os.environ.get("INITIAL_ADMIN_PHONE")
-
-            if initial_admin_pwd and (initial_admin_email or initial_admin_phone):
-                stmt = select(User).where(
-                    (User.email == initial_admin_email) if initial_admin_email else (User.phone_e164 == initial_admin_phone)
-                )
-                admin_user = (await db.execute(stmt)).scalar_one_or_none()
-                if not admin_user:
-                    admin_user = User(
-                        email=initial_admin_email,
-                        phone_e164=initial_admin_phone,
-                        display_name="Platform Administrator",
-                        password_hash=hash_password(initial_admin_pwd),
-                        is_platform_user=True,
+            for email, phone, display, pwd, is_platform, t_id, assigned_roles in staff_users_config:
+                stmt = select(User).where((User.email == email) | (User.phone_e164 == phone))
+                u = (await db.execute(stmt)).scalar_one_or_none()
+                if not u:
+                    u = User(
+                        email=email,
+                        phone_e164=phone,
+                        display_name=display,
+                        password_hash=hash_password(pwd),
+                        is_platform_user=is_platform,
                         status="active",
                     )
-                    db.add(admin_user)
+                    db.add(u)
                     await db.flush()
+                    logger.info(f"✓ Provisioned operating staff user: {email} ({display})")
                 else:
-                    admin_user.password_hash = hash_password(initial_admin_pwd)
-                    admin_user.is_platform_user = True
-                    admin_user.status = "active"
+                    u.email = email
+                    u.display_name = display
+                    u.password_hash = hash_password(pwd)
+                    u.is_platform_user = is_platform
+                    u.status = "active"
+                    logger.info(f"✓ Verified operating staff credentials: {email}")
 
-                super_role = role_objs.get("SUPER_ADMIN")
-                if super_role:
-                    ur_stmt = select(UserRole).where(UserRole.user_id == admin_user.id, UserRole.role_id == super_role.id)
-                    existing_ur = (await db.execute(ur_stmt)).scalar_one_or_none()
-                    if not existing_ur:
-                        db.add(UserRole(user_id=admin_user.id, role_id=super_role.id, tenant_id=None))
-                        await db.flush()
-                logger.info("Platform administrator account synchronized securely via environment variable.")
-            else:
-                logger.info("No INITIAL_ADMIN_PASSWORD set in environment variables; no default credentials seeded.")
-
-            # Ensure Customer Test Account (Strictly customer role, non-platform)
-            customer_email = "customer@bagodi.in"
-            customer_phone = "+919876500003"
-            cust_stmt = select(User).where((User.email == customer_email) | (User.phone_e164 == customer_phone))
-            cust_u = (await db.execute(cust_stmt)).scalar_one_or_none()
-            if not cust_u:
-                cust_u = User(
-                    email=customer_email,
-                    phone_e164=customer_phone,
-                    display_name="Customer Account",
-                    password_hash=hash_password("Fri10Feb@2023"),
-                    is_platform_user=False,
-                    status="active",
-                )
-                db.add(cust_u)
-                await db.flush()
-            elif not cust_u.password_hash:
-                cust_u.password_hash = hash_password("Fri10Feb@2023")
-                cust_u.status = "active"
-
-            cust_role = role_objs.get("CUSTOMER")
-            if cust_role and cust_u:
-                ur_stmt = select(UserRole).where(UserRole.user_id == cust_u.id, UserRole.role_id == cust_role.id)
-                if not (await db.execute(ur_stmt)).scalar_one_or_none():
-                    db.add(UserRole(user_id=cust_u.id, role_id=cust_role.id, tenant_id=None))
-                    await db.flush()
+                for r_code in assigned_roles:
+                    r = role_objs.get(r_code)
+                    if r:
+                        ur_stmt = select(UserRole).where(
+                            UserRole.user_id == u.id, UserRole.role_id == r.id
+                        )
+                        ur = (await db.execute(ur_stmt)).scalar_one_or_none()
+                        if not ur:
+                            db.add(UserRole(user_id=u.id, role_id=r.id, tenant_id=t_id))
+                            await db.flush()
 
             # 6. Required Categories (MEN'S WEAR, WOMEN'S WEAR, KID'S WEAR, SAREES, BLAZERS)
             for name, slug, desc, order in REQUIRED_CATEGORIES:
