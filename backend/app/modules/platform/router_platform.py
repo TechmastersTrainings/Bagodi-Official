@@ -724,24 +724,11 @@ async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
     return True
 
 
-@router.delete(
-    "/users/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Permanently delete a platform user account from catalogue, database, and R2",
-)
-async def delete_platform_user(
-    user_id: UUID,
-    db: Annotated[AsyncSession, Depends(get_db)],
-):
-    success = await purge_user_completely(db, user_id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "USER_NOT_FOUND", "message": "User not found."},
-        )
-
-
 @router.post(
+    "/users/purge-dummy-data",
+    summary="Purge all synthetic test accounts from database and Cloudflare R2",
+)
+@router.delete(
     "/users/purge-dummy-data",
     summary="Purge all synthetic test accounts from database and Cloudflare R2",
 )
@@ -814,6 +801,23 @@ async def purge_all_dummy_users_endpoint(
         "purged_count": purged_count,
         "message": f"Purged {purged_count} test users completely from database, catalogue, and Cloudflare R2.",
     }
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Permanently delete a platform user account from catalogue, database, and R2",
+)
+async def delete_platform_user(
+    user_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    success = await purge_user_completely(db, user_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "USER_NOT_FOUND", "message": "User not found."},
+        )
 
 
 @router.post(
