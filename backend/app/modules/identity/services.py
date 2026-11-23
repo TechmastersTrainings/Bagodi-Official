@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import os
 import re
 from uuid import UUID
 
@@ -49,21 +50,30 @@ class AuthService:
     ) -> tuple[list[str], list[str]]:
         """Fetch active role codes and distinct permission codes for a user."""
         # Query UserRoles for this user matching tenant_id (or platform roles if tenant_id is None)
-        query = (
-            select(Role.code, Permission.code)
+        role_stmt = (
+            select(Role.code)
             .join(UserRole, UserRole.role_id == Role.id)
-            .join(RolePermission, RolePermission.role_id == Role.id)
-            .join(Permission, Permission.id == RolePermission.permission_id)
             .where(UserRole.user_id == user_id)
         )
         if tenant_id:
-            query = query.where((UserRole.tenant_id == tenant_id) | (UserRole.tenant_id.is_(None)))
+            role_stmt = role_stmt.where((UserRole.tenant_id == tenant_id) | (UserRole.tenant_id.is_(None)))
         else:
-            query = query.where(UserRole.tenant_id.is_(None))
+            role_stmt = role_stmt.where(UserRole.tenant_id.is_(None))
+        roles = sorted(set((await db.execute(role_stmt)).scalars().all()))
 
-        results = (await db.execute(query)).all()
-        roles = sorted({r[0] for r in results})
-        permissions = sorted({r[1] for r in results})
+        perm_stmt = (
+            select(Permission.code)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .join(Role, Role.id == RolePermission.role_id)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(UserRole.user_id == user_id)
+        )
+        if tenant_id:
+            perm_stmt = perm_stmt.where((UserRole.tenant_id == tenant_id) | (UserRole.tenant_id.is_(None)))
+        else:
+            perm_stmt = perm_stmt.where(UserRole.tenant_id.is_(None))
+        permissions = sorted(set((await db.execute(perm_stmt)).scalars().all()))
+
         return roles, permissions
 
     @staticmethod
@@ -662,14 +672,14 @@ class AuthService:
         # Resolve tenant context
         from app.modules.platform.models import Tenant
         effective_tenant_id = None
-        if not user.is_platform_user:
-            user_tenant_stmt = (
-                select(UserRole.tenant_id)
-                .where(UserRole.user_id == user.id, UserRole.tenant_id.is_not(None))
-                .limit(1)
-            )
-            effective_tenant_id = (await db.execute(user_tenant_stmt)).scalar_one_or_none()
+        user_tenant_stmt = (
+            select(UserRole.tenant_id)
+            .where(UserRole.user_id == user.id, UserRole.tenant_id.is_not(None))
+            .limit(1)
+        )
+        effective_tenant_id = (await db.execute(user_tenant_stmt)).scalar_one_or_none()
 
+        if not user.is_platform_user:
             # Check tenant approval status if merchant
             if effective_tenant_id:
                 tenant_stmt = select(Tenant).where(Tenant.id == effective_tenant_id)
@@ -691,6 +701,9 @@ class AuthService:
                 # Default to anchor active tenant
                 anchor_stmt = select(Tenant.id).where(Tenant.status == "active").order_by(Tenant.created_at.asc()).limit(1)
                 effective_tenant_id = (await db.execute(anchor_stmt)).scalar_one_or_none()
+        elif not effective_tenant_id:
+            anchor_stmt = select(Tenant.id).where(Tenant.status == "active").order_by(Tenant.created_at.asc()).limit(1)
+            effective_tenant_id = (await db.execute(anchor_stmt)).scalar_one_or_none()
 
         roles, permissions = await AuthService.get_user_roles_and_permissions(
             db, user.id, effective_tenant_id
