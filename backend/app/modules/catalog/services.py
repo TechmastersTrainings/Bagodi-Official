@@ -4,7 +4,7 @@ import time
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -443,6 +443,28 @@ class ProductService:
         db: AsyncSession, tenant_id: UUID, product_id: UUID
     ) -> None:
         product = await ProductService.get_merchant_product(db, tenant_id, product_id)
+        if not product:
+            return
+
+        var_stmt = select(ProductVariant.id).where(ProductVariant.product_id == product_id)
+        variant_ids = (await db.execute(var_stmt)).scalars().all()
+        if variant_ids:
+            from app.modules.orders.models import CartItem
+            await db.execute(delete(CartItem).where(CartItem.variant_id.in_(variant_ids)))
+
+            from app.modules.inventory.models import (
+                StockReservation,
+                InventoryLedger,
+                InventoryBalance,
+                StockAuditLog,
+                StoreInventory,
+            )
+            await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(variant_ids)))
+            await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(variant_ids)))
+            await db.execute(delete(InventoryBalance).where(InventoryBalance.variant_id.in_(variant_ids)))
+            await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(variant_ids)))
+            await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(variant_ids)))
+
         await db.delete(product)
         await db.commit()
 

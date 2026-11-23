@@ -383,6 +383,42 @@ async def ensure_foundational_data():
                         if veh and not personnel.assigned_vehicle_id:
                             personnel.assigned_vehicle_id = veh.id
 
+            # 9. Clean up any dummy/mock/test products
+            from app.modules.catalog.models import ProductVariant
+            dummy_prod_stmt = select(Product).where(
+                or_(
+                    Product.slug.ilike("%classic-lenin%"),
+                    Product.name.ilike("%Classic Lenin%"),
+                    Product.name.ilike("%Classis Lenin%"),
+                    Product.slug == "pure-silk-46bf79",
+                )
+            )
+            dummy_products = (await db.execute(dummy_prod_stmt)).scalars().all()
+            if dummy_products:
+                dummy_prod_ids = [p.id for p in dummy_products]
+                dummy_var_stmt = select(ProductVariant.id).where(ProductVariant.product_id.in_(dummy_prod_ids))
+                dummy_variant_ids = (await db.execute(dummy_var_stmt)).scalars().all()
+                if dummy_variant_ids:
+                    from app.modules.orders.models import CartItem
+                    await db.execute(delete(CartItem).where(CartItem.variant_id.in_(dummy_variant_ids)))
+
+                    from app.modules.inventory.models import (
+                        StockReservation,
+                        InventoryLedger,
+                        InventoryBalance,
+                        StockAuditLog,
+                        StoreInventory,
+                    )
+                    await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(dummy_variant_ids)))
+                    await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(dummy_variant_ids)))
+                    await db.execute(delete(InventoryBalance).where(InventoryBalance.variant_id.in_(dummy_variant_ids)))
+                    await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(dummy_variant_ids)))
+                    await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(dummy_variant_ids)))
+
+                for dp in dummy_products:
+                    await db.delete(dp)
+                logger.info(f"✓ Cleaned up {len(dummy_products)} dummy test products from catalogue.")
+
             await db.commit()
             logger.info("✓ Foundational data successfully verified in PostgreSQL.")
     except Exception as exc:

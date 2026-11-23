@@ -3,7 +3,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -325,7 +325,7 @@ async def update_product_direct(
 @storefront_router.delete(
     "/products/{product_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Archive or delete an apparel product",
+    summary="Permanently delete an apparel product and its variants",
 )
 async def delete_product_direct(
     product_id: UUID,
@@ -333,10 +333,33 @@ async def delete_product_direct(
 ):
     stmt = select(Product).where(Product.id == product_id)
     product = (await db.execute(stmt)).scalar_one_or_none()
-    if product:
-        product.status = "archived"
-        product.is_published = False
-        await db.commit()
+    if not product:
+        return
+
+    # Find variant ids
+    var_stmt = select(ProductVariant.id).where(ProductVariant.product_id == product_id)
+    variant_ids = (await db.execute(var_stmt)).scalars().all()
+
+    if variant_ids:
+        # Clean up related records with RESTRICT foreign keys
+        from app.modules.orders.models import CartItem
+        await db.execute(delete(CartItem).where(CartItem.variant_id.in_(variant_ids)))
+
+        from app.modules.inventory.models import (
+            StockReservation,
+            InventoryLedger,
+            InventoryBalance,
+            StockAuditLog,
+            StoreInventory,
+        )
+        await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(variant_ids)))
+        await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(variant_ids)))
+        await db.execute(delete(InventoryBalance).where(InventoryBalance.variant_id.in_(variant_ids)))
+        await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(variant_ids)))
+        await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(variant_ids)))
+
+    await db.delete(product)
+    await db.commit()
 
 
 @storefront_router.post(
