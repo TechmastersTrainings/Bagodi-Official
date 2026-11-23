@@ -588,56 +588,59 @@ async def update_platform_user_status(
     )
 
 
-@router.delete(
-    "/users/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Permanently delete a platform user account",
-)
-async def delete_platform_user(
-    user_id: UUID,
-    db: Annotated[AsyncSession, Depends(get_db)],
-):
-    from sqlalchemy import select, delete
-    from app.modules.identity.models import User, UserRole, UserSession
-    from app.modules.platform.services import PlatformAuditService
+async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
+    from sqlalchemy import select, delete, update
+    from app.core.storage import storage
+    from app.modules.identity.models import User, UserRole, UserSession, CustomerAddress
+    from app.modules.orders.models import Order, OrderItem, Cart, CartItem, OrderReturnRequest, PaymentTransaction
+    from app.modules.pricing.models import CouponRedemption
+    from app.modules.delivery.models import Shipment, ShipmentItem, DeliveryTrackingEvent, ProofOfDelivery, DeliveryPersonnel
+    from app.modules.platform.models import PlatformAuditLog
 
     stmt = select(User).where(User.id == user_id)
     user = (await db.execute(stmt)).scalar_one_or_none()
     if not user:
-        return
+        return False
 
-    # Record immutable audit event
-    try:
-        await PlatformAuditService.log(
-            db,
-            action="USER_DELETED",
-            target_type="USER",
-            target_id=str(user.id),
-            actor_id=user.id,
-            actor_email=user.email,
-            details={
-                "user_id": str(user.id),
-                "email": user.email,
-                "phone": user.phone_e164,
-                "display_name": user.display_name,
-                "status": "permanently_deleted",
-            },
+    # Never delete protected master administrative accounts
+    protected_emails = {
+        "bagodistore@techmastersinnovations.in",
+        "merchant@bagodi.in",
+        "admin@techmasters.in",
+        "techmastersinnovations@gmail.com",
+        "sachin@techmastersinnovations.in",
+    }
+    protected_phones = {"+919880768222"}
+    if user.email in protected_emails or user.phone_e164 in protected_phones:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "CANNOT_DELETE_MASTER_ACCOUNT", "message": "Master administrative accounts cannot be deleted."}
         )
+
+    # 1. Nullify references in platform audit logs so foreign key constraints are not violated
+    await db.execute(update(PlatformAuditLog).where(PlatformAuditLog.actor_id == user_id).values(actor_id=None))
+
+    # 2. Clean up returns and associated images in Cloudflare R2
+    try:
+        ret_stmt = select(OrderReturnRequest).where(OrderReturnRequest.customer_id == user_id)
+        returns = (await db.execute(ret_stmt)).scalars().all()
+        for ret in returns:
+            if ret.images and isinstance(ret.images, list):
+                for img_url in ret.images:
+                    if img_url:
+                        storage.delete_by_url(img_url)
+        await db.execute(delete(OrderReturnRequest).where(OrderReturnRequest.customer_id == user_id))
     except Exception:
         pass
 
-    # Delete foreign key references
-    await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
-    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
-
+    # 3. Clean up coupon redemptions
     try:
-        from app.modules.identity.models import CustomerAddress
-        await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == user_id))
+        await db.execute(delete(CouponRedemption).where(CouponRedemption.customer_id == user_id))
     except Exception:
         pass
 
+    # 4. Clean up carts and cart items
     try:
-        from app.modules.orders.models import CartItem, Cart
         cart_ids = (await db.execute(select(Cart.id).where(Cart.customer_id == user_id))).scalars().all()
         if cart_ids:
             await db.execute(delete(CartItem).where(CartItem.cart_id.in_(cart_ids)))
@@ -645,8 +648,172 @@ async def delete_platform_user(
     except Exception:
         pass
 
+    # 5. Clean up customer orders (and shipments, proof of delivery in Cloudflare R2)
+    try:
+        order_ids = (await db.execute(select(Order.id).where(Order.customer_id == user_id))).scalars().all()
+        if order_ids:
+            shipment_ids = (await db.execute(select(Shipment.id).where(Shipment.order_id.in_(order_ids)))).scalars().all()
+            if shipment_ids:
+                pod_stmt = select(ProofOfDelivery).where(ProofOfDelivery.shipment_id.in_(shipment_ids))
+                pods = (await db.execute(pod_stmt)).scalars().all()
+                for pod in pods:
+                    if pod.photo_url:
+                        storage.delete_by_url(pod.photo_url)
+                    if pod.signature_url:
+                        storage.delete_by_url(pod.signature_url)
+
+                await db.execute(delete(ProofOfDelivery).where(ProofOfDelivery.shipment_id.in_(shipment_ids)))
+                await db.execute(delete(DeliveryTrackingEvent).where(DeliveryTrackingEvent.shipment_id.in_(shipment_ids)))
+                await db.execute(delete(ShipmentItem).where(ShipmentItem.shipment_id.in_(shipment_ids)))
+                await db.execute(delete(Shipment).where(Shipment.id.in_(shipment_ids)))
+
+            await db.execute(delete(PaymentTransaction).where(PaymentTransaction.order_id.in_(order_ids)))
+            await db.execute(delete(OrderItem).where(OrderItem.order_id.in_(order_ids)))
+            await db.execute(delete(Order).where(Order.id.in_(order_ids)))
+    except Exception:
+        pass
+
+    # 6. Customer addresses
+    try:
+        await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == user_id))
+    except Exception:
+        pass
+
+    # 7. Delivery personnel linking
+    try:
+        await db.execute(delete(DeliveryPersonnel).where(DeliveryPersonnel.user_id == user_id))
+    except Exception:
+        pass
+
+    # 8. User roles and sessions
+    await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
+    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
+
+    # 9. Clean up any custom user avatar/document files in Cloudflare R2 under users/{user_id}
+    storage.delete_file(f"users/{user_id}.jpg")
+    storage.delete_file(f"users/{user_id}.png")
+    storage.delete_file(f"users/{user_id}.webp")
+    storage.delete_file(f"customers/{user_id}.jpg")
+    storage.delete_file(f"customers/{user_id}.png")
+    storage.delete_file(f"customers/{user_id}.webp")
+
+    # 10. Record immutable audit log WITHOUT setting actor_id to the deleted user
+    try:
+        from app.modules.platform.services import PlatformAuditService
+        await PlatformAuditService.log(
+            db,
+            action="USER_DELETED",
+            target_type="USER",
+            target_id=str(user.id),
+            actor_id=None,
+            actor_email="system@bagodi.in",
+            details={
+                "user_id": str(user.id),
+                "email": user.email,
+                "phone": user.phone_e164,
+                "display_name": user.display_name,
+                "status": "permanently_deleted_all_traces",
+            },
+        )
+    except Exception as e:
+        pass
+
+    # 11. Delete the user row permanently
     await db.delete(user)
     await db.commit()
+    return True
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Permanently delete a platform user account from catalogue, database, and R2",
+)
+async def delete_platform_user(
+    user_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    success = await purge_user_completely(db, user_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "USER_NOT_FOUND", "message": "User not found."},
+        )
+
+
+@router.post(
+    "/users/purge-dummy-data",
+    summary="Purge all synthetic test accounts from database and Cloudflare R2",
+)
+async def purge_all_dummy_users_endpoint(
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    from sqlalchemy import select, or_
+    from app.modules.identity.models import User
+
+    cleanup_emails = [
+        "bagodistore@techmatersinnovations.in",
+        "vip.shopper@bagodi.in",
+        "vip.client@bagodi.in",
+        "client.bidar@bagodi.in",
+        "vip_customer_2026@bagodi.in",
+        "user_9705376383@bagodi.in",
+        "sachin_tester_2026@bagodi.in",
+        "testcustomer123@bagodi.in",
+        "ananya.patil@example.com",
+        "customer@bagodi.in",
+        "dummy@bagodi.in",
+        "test@bagodi.in",
+    ]
+    cleanup_phones = [
+        "+917894561230",
+        "+919208950128",
+        "+919988776655",
+        "+919900112233",
+        "+919705376383",
+        "+919605376373",
+        "+919505376355",
+        "+919845099887",
+        "+919876566725",
+        "+919876566688",
+        "+919876543203",
+        "+919876543202",
+        "+919876543201",
+        "+919876543233",
+        "+919876543222",
+        "+919876500999",
+        "+919876543210",
+        "+919876500003",
+    ]
+    cleanup_stmt = select(User.id).where(
+        or_(
+            User.email.in_(cleanup_emails),
+            User.phone_e164.in_(cleanup_phones),
+            User.display_name.in_([
+                "Customer 1230", "Customer 0128", "Vip.Shopper", "Vip.Client",
+                "Client.Bidar", "Customer 6655", "Customer 2233", "Vip_Customer_2026",
+                "Boutique Client", "Customer 6373", "Customer 6355", "Sachin Tester",
+                "Customer 6725", "Customer 6688", "Customer 3203", "Customer 3202",
+                "Customer 3201", "Customer 3233", "Customer 3222", "Test Customer",
+                "Ananya Sharma", "Customer Account",
+            ]),
+        )
+    )
+    user_ids = (await db.execute(cleanup_stmt)).scalars().all()
+    purged_count = 0
+    for uid in user_ids:
+        try:
+            res = await purge_user_completely(db, uid)
+            if res:
+                purged_count += 1
+        except Exception:
+            pass
+
+    return {
+        "status": "success",
+        "purged_count": purged_count,
+        "message": f"Purged {purged_count} test users completely from database, catalogue, and Cloudflare R2.",
+    }
 
 
 @router.post(

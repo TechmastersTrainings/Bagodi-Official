@@ -216,32 +216,6 @@ async def delete_merchant_staff(
             detail={"code": "USER_NOT_FOUND", "message": "Staff member not found."},
         )
 
-    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
-    if user:
-        try:
-            from app.modules.platform.services import PlatformAuditService
-            await PlatformAuditService.log(
-                db,
-                action="STAFF_DELETED",
-                target_type="USER",
-                target_id=str(user.id),
-                actor_id=user.id,
-                actor_email=user.email,
-                details={
-                    "user_id": str(user.id),
-                    "email": user.email,
-                    "phone": user.phone_e164,
-                    "display_name": user.display_name,
-                    "status": "permanently_deleted",
-                },
-            )
-        except Exception:
-            pass
-
-    from app.modules.identity.models import UserSession
-    await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
-    await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
-    if user:
-        await db.delete(user)
-    await db.commit()
+    from app.modules.platform.router_platform import purge_user_completely
+    await purge_user_completely(db, user_id)
 

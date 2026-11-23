@@ -475,16 +475,13 @@ async def ensure_foundational_data():
                     "+919113670127",
                 ):
                     continue
-                await db.execute(delete(UserRole).where(UserRole.user_id == obs_user.id))
-                await db.execute(delete(UserSession).where(UserSession.user_id == obs_user.id))
                 try:
-                    from app.modules.identity.models import CustomerAddress
-                    await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == obs_user.id))
-                except Exception:
-                    pass
-                await db.delete(obs_user)
+                    from app.modules.platform.router_platform import purge_user_completely
+                    await purge_user_completely(db, obs_user.id)
+                except Exception as e:
+                    logger.warning(f"Error purging user {obs_user.id}: {e}")
             if obsolete_users:
-                logger.info(f"✓ Cleaned up {len(obsolete_users)} obsolete/dummy user accounts.")
+                logger.info(f"✓ Cleaned up {len(obsolete_users)} obsolete/dummy user accounts from database and R2.")
 
             await db.commit()
             logger.info("✓ Foundational data successfully verified in PostgreSQL.")
