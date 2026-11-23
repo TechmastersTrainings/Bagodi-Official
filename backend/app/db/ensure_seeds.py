@@ -158,15 +158,6 @@ async def ensure_foundational_data():
                     ["SUPER_ADMIN", "MERCHANT_OWNER", "STORE_MANAGER"],
                 ),
                 (
-                    "bagodistore@techmatersinnovations.in",
-                    "+919999900004",
-                    "Bagodi Store Operations",
-                    admin_pwd,
-                    True,
-                    tenant.id,
-                    ["SUPER_ADMIN", "MERCHANT_OWNER", "STORE_MANAGER"],
-                ),
-                (
                     "techmastersinnovations@gmail.com",
                     "+919999900001",
                     "TechMasters Admin",
@@ -192,15 +183,6 @@ async def ensure_foundational_data():
                     False,
                     tenant.id,
                     ["MERCHANT_OWNER", "STORE_MANAGER"],
-                ),
-                (
-                    "customer@bagodi.in",
-                    "+919876500003",
-                    "Customer Account",
-                    "Fri10Feb@2023",
-                    False,
-                    None,
-                    ["CUSTOMER"],
                 ),
             ]
 
@@ -418,6 +400,23 @@ async def ensure_foundational_data():
                 for dp in dummy_products:
                     await db.delete(dp)
                 logger.info(f"✓ Cleaned up {len(dummy_products)} dummy test products from catalogue.")
+
+            # 10. Clean up obsolete/dummy user accounts
+            cleanup_user_stmt = select(User).where(
+                User.email.in_([
+                    "bagodistore@techmatersinnovations.in",
+                    "customer@bagodi.in",
+                    "dummy@bagodi.in",
+                    "test@bagodi.in",
+                ])
+            )
+            obsolete_users = (await db.execute(cleanup_user_stmt)).scalars().all()
+            for obs_user in obsolete_users:
+                await db.execute(delete(UserRole).where(UserRole.user_id == obs_user.id))
+                await db.execute(delete(UserSession).where(UserSession.user_id == obs_user.id))
+                await db.delete(obs_user)
+            if obsolete_users:
+                logger.info(f"✓ Cleaned up {len(obsolete_users)} obsolete/dummy user accounts.")
 
             await db.commit()
             logger.info("✓ Foundational data successfully verified in PostgreSQL.")
