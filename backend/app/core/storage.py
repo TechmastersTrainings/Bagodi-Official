@@ -110,5 +110,47 @@ class CloudflareR2Storage:
             logger.error(f"Failed to process base64 data URL to Cloudflare R2: {e}")
             return trimmed
 
+    def delete_file(self, object_key: str) -> bool:
+        """
+        Deletes an object key from the Cloudflare R2 bucket.
+        """
+        client = self._get_client()
+        if client and self.settings.r2_bucket_name and object_key:
+            try:
+                client.delete_object(
+                    Bucket=self.settings.r2_bucket_name,
+                    Key=object_key.lstrip("/"),
+                )
+                logger.info(f"Successfully deleted {object_key} from Cloudflare R2.")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to delete {object_key} from Cloudflare R2: {e}")
+                return False
+        return False
+
+    def delete_by_url(self, file_url: str) -> bool:
+        """
+        Given a full CDN or R2 URL, extracts the object key and deletes it from Cloudflare R2.
+        e.g. 'https://assets.bagodi.in/products/product-1234.jpg' -> 'products/product-1234.jpg'
+        """
+        if not file_url or not isinstance(file_url, str):
+            return False
+
+        try:
+            from urllib.parse import urlparse
+            clean_url = file_url.split("?")[0].strip()
+            parsed = urlparse(clean_url)
+            path = parsed.path.lstrip("/")
+
+            # If path starts with bucket_name, strip it
+            if self.settings.r2_bucket_name and path.startswith(f"{self.settings.r2_bucket_name}/"):
+                path = path[len(self.settings.r2_bucket_name) + 1:]
+
+            if path:
+                return self.delete_file(path)
+        except Exception as e:
+            logger.error(f"Error parsing URL for R2 deletion ({file_url}): {e}")
+        return False
+
 
 storage = CloudflareR2Storage()

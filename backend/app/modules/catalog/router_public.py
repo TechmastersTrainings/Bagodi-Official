@@ -358,6 +358,13 @@ async def delete_product_direct(
         await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(variant_ids)))
         await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(variant_ids)))
 
+    # Permanently delete associated product images from Cloudflare R2
+    img_stmt = select(ProductImage.image_url).where(ProductImage.product_id == product_id)
+    image_urls = (await db.execute(img_stmt)).scalars().all()
+    for url in image_urls:
+        if url:
+            storage.delete_by_url(url)
+
     await db.delete(product)
     await db.commit()
 
