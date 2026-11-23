@@ -29,8 +29,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onOpenBarcod
   const location = useLocation();
   const { user, activeStore, logout, hasPermission, hasRole } = useAuth();
 
-  // Navigation module buttons (Replacing the old sidebar with a single-page ribbon)
-  const navItems: { label: string; path: string; icon: React.ReactNode; visible: boolean; badge?: string }[] = [
+  // Navigation module buttons
+  const navItems = [
     {
       label: "Dashboard",
       path: "/dashboard",
