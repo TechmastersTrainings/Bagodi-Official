@@ -228,3 +228,4 @@ export const TermsOfServicePage: React.FC = () => {
     </PolicyLayout>
   );
 };
+

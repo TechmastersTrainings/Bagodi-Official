@@ -78,16 +78,29 @@ app = FastAPI(
 
 app.add_middleware(RequestIdMiddleware)
 
-if settings.cors_origin_list:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origin_list,
-        allow_origin_regex=r"https?://(.*\.)?(bagodi\.in|vercel\.app)(:\d+)?",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Request-ID"],
-    )
+# Explicitly configured origins for customer storefront, merchant portal, super admin, and apex/subdomain web properties
+EXPLICIT_CORS_ORIGINS = [
+    "https://bagodi.in",
+    "https://www.bagodi.in",
+    "https://bagodi-merchant.vercel.app",
+    "https://bagodi-super-admin.vercel.app",
+    "https://bagodi-store.vercel.app",
+    "https://bagodi.vercel.app",
+    "http://bagodi.in",
+    "http://www.bagodi.in",
+]
+
+all_cors_origins = list(dict.fromkeys(EXPLICIT_CORS_ORIGINS + settings.cors_origin_list))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=all_cors_origins,
+    allow_origin_regex=r"https?://(.*\.)?(bagodi\.in|vercel\.app)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-ID", "Content-Type", "Authorization"],
+)
 
 
 @app.exception_handler(RequestValidationError)
