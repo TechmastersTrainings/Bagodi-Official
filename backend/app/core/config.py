@@ -62,14 +62,22 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         configured = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
         defaults = [
+            "https://bagodi.in",
+            "https://www.bagodi.in",
+            "http://bagodi.in",
+            "http://www.bagodi.in",
             "https://bagodi-store.vercel.app",
             "https://bagodi-merchant.vercel.app",
             "https://bagodi-super-admin.vercel.app",
+            "https://bagodi.vercel.app",
             "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:3002",
             "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
             "http://localhost:5180",
+            "http://localhost:5188",
         ]
         return list(dict.fromkeys(configured + defaults))
 
