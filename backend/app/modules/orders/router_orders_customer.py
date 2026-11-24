@@ -18,6 +18,7 @@ from app.modules.orders.schemas import (
     CheckoutRequest,
     DirectCheckoutRequest,
     OrderCancelRequest,
+    OrderNotificationRequest,
     OrderResponse,
     OrderStatusUpdateRequest,
     PaginatedOrderResponse,
@@ -445,6 +446,72 @@ async def update_order_status_universal(
         data=data,
         user_id=principal.user_id,
     )
+
+
+@router.post(
+    "/{order_id}/notify",
+    summary="Dispatch customer notification event for order",
+)
+async def notify_customer_order(
+    order_id: UUID,
+    data: OrderNotificationRequest,
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    x_tenant_id: Annotated[UUID | None, Header(alias="X-Tenant-ID")] = None,
+    tenant_id: Annotated[UUID | None, Query(description="Merchant context")] = None,
+):
+    target_tenant_id = await resolve_order_tenant_id(db, principal, x_tenant_id, tenant_id)
+    order = await OrderService.get_order_by_id(db, tenant_id=target_tenant_id, order_id=order_id)
+    channel = (data.channel or "WHATSAPP").upper()
+    custom_message = data.custom_note or data.customNote or "Your order update from Bagodi Shopping Mall"
+
+    from app.modules.inventory.services import _resolve_user_id
+    valid_user_id = await _resolve_user_id(db, principal.user_id)
+
+    from app.modules.notifications.services import NotificationService
+    await NotificationService.enqueue_outbox_event(
+        db,
+        tenant_id=target_tenant_id,
+        event_type="order.customer_notification",
+        aggregate_type="order",
+        aggregate_id=str(order.id),
+        payload={
+            "order_id": str(order.id),
+            "order_number": order.order_number,
+            "channel": channel,
+            "customer_name": order.customer_name,
+            "customer_phone": order.customer_phone,
+            "customer_email": order.customer_email,
+            "message": custom_message,
+            "status": order.status,
+        },
+        idempotency_key=f"outbox-notify-{order.order_number}-{channel}-{int(datetime.now(UTC).timestamp())}",
+    )
+
+    from app.modules.platform.models import PlatformAuditLog
+    audit_entry = PlatformAuditLog(
+        tenant_id=target_tenant_id,
+        actor_id=valid_user_id,
+        action="ORDER_CUSTOMER_NOTIFIED",
+        resource_type="ORDER",
+        resource_id=str(order.id),
+        details={
+            "order_number": order.order_number,
+            "channel": channel,
+            "recipient": order.customer_phone if channel in ("WHATSAPP", "SMS") else order.customer_email,
+            "message": custom_message,
+        },
+    )
+    db.add(audit_entry)
+    await db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Notification dispatched to {order.customer_name} via {channel}",
+        "orderId": str(order.id),
+        "orderNumber": order.order_number,
+        "channel": channel,
+    }
 
 
 @router.post(

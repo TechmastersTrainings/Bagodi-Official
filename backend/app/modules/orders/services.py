@@ -1047,32 +1047,53 @@ class OrderService:
     ) -> Order:
         order = await OrderService.get_order_by_id(db, tenant_id=tenant_id, order_id=order_id)
         current_status = order.status
-        target_status = data.status
-
-        # Server-side State Machine Validation Matrix
-        ALLOWED_TRANSITIONS: dict[str, list[str]] = {
-            "PENDING_PAYMENT": ["CONFIRMED", "CANCELLED"],
-            "CONFIRMED": ["PROCESSING", "CANCELLED"],
-            "PROCESSING": ["DISPATCHED", "CANCELLED"],
-            "DISPATCHED": ["DELIVERED", "RETURNED"],
-            "DELIVERED": ["RETURNED"],
-            "CANCELLED": [],
-            "RETURNED": [],
+        status_input = (data.status or "CONFIRMED").upper().strip()
+        # Normalization mapping to support both industry/carrier terms and state machine values
+        status_norm_map = {
+            "CONFIRMED": "CONFIRMED",
+            "PROCESSING": "PROCESSING",
+            "PACKED": "PACKED",
+            "SHIPPED": "DISPATCHED",
+            "DISPATCHED": "DISPATCHED",
+            "OUT_FOR_DELIVERY": "OUT_FOR_DELIVERY",
+            "DELIVERED": "DELIVERED",
+            "CANCELLED": "CANCELLED",
+            "RETURNED": "RETURNED",
+            "PENDING_PAYMENT": "PENDING_PAYMENT",
         }
+        target_status = status_norm_map.get(status_input, status_input)
 
-        if target_status not in ALLOWED_TRANSITIONS.get(current_status, []):
+        # Allow flexible operational transitions:
+        # A merchant or admin can progress any active order forward or cancel it.
+        terminal_states = {"CANCELLED", "RETURNED"}
+        if current_status in terminal_states and target_status != current_status:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={
-                    "code": "INVALID_STATUS_TRANSITION",
-                    "message": f"Transition from '{current_status}' to '{target_status}' is not permitted.",
+                    "code": "ORDER_ALREADY_TERMINAL",
+                    "message": f"Order is already in terminal state '{current_status}' and cannot be transitioned to '{target_status}'.",
                 },
             )
 
-        # Inventory Action Hooks
+        # Inventory Action Hooks & User Resolution
         valid_user_id = await _resolve_user_id(db, user_id)
 
-        if target_status == "DISPATCHED":
+        courier_partner = data.courierPartner or data.courier_partner
+        tracking_number = data.trackingNumber or data.tracking_number
+        cancellation_reason = data.cancellationReason or data.cancellation_reason
+
+        note_parts = []
+        if data.notes:
+            note_parts.append(data.notes)
+        if cancellation_reason:
+            note_parts.append(f"Reason: {cancellation_reason}")
+        if courier_partner:
+            note_parts.append(f"Courier: {courier_partner}")
+        if tracking_number:
+            note_parts.append(f"AWB: {tracking_number}")
+        full_note = " | ".join(note_parts) or f"Status transitioned from {current_status} to {target_status}"
+
+        if target_status in ("DISPATCHED", "OUT_FOR_DELIVERY"):
             # Physically dispatch inventory out of store reserved stock if it was reserved
             if order.reservation_expires_at is not None and not order.reservation_released:
                 for item in order.items:
@@ -1090,6 +1111,12 @@ class OrderService:
                     )
             order.fulfillment_status = "fulfilled"
 
+        elif target_status in ("PACKED", "PROCESSING"):
+            order.fulfillment_status = "packed"
+
+        elif target_status == "DELIVERED":
+            order.fulfillment_status = "delivered"
+
         elif target_status == "CANCELLED":
             # Release reserved stock back to available pool
             if not order.reservation_released:
@@ -1102,7 +1129,7 @@ class OrderService:
                             variant_id=item.variant_id,
                             quantity=item.quantity,
                             reference_id=order.order_number,
-                            notes=data.notes or "Order cancelled before dispatch",
+                            notes=full_note,
                         ),
                         user_id=valid_user_id,
                     )
@@ -1118,9 +1145,10 @@ class OrderService:
                     db,
                     tenant_id=tenant_id,
                     order=order,
-                    reason=data.notes or "Order cancelled",
+                    reason=full_note,
                     actor_id=valid_user_id,
                 )
+            order.fulfillment_status = "cancelled"
 
         elif target_status == "RETURNED":
             # Return inspected goods back into stock
@@ -1133,7 +1161,7 @@ class OrderService:
                         variant_id=item.variant_id,
                         quantity=item.quantity,
                         reference_id=f"RMA-{order.order_number}",
-                        notes=data.notes or "Inspected customer return restocked",
+                        notes=full_note,
                     ),
                     user_id=valid_user_id,
                 )
@@ -1145,21 +1173,75 @@ class OrderService:
                     db,
                     tenant_id=tenant_id,
                     order=order,
-                    reason=data.notes or "Customer return restocked and refunded",
+                    reason=full_note,
                     actor_id=valid_user_id,
                 )
+
+        # Update or create delivery shipment when dispatching or when courier details provided
+        if courier_partner or tracking_number or target_status in ("DISPATCHED", "OUT_FOR_DELIVERY"):
+            try:
+                from app.modules.delivery.models import Shipment
+                stmt_s = select(Shipment).where(Shipment.order_id == order.id).limit(1)
+                existing_s = (await db.execute(stmt_s)).scalar_one_or_none()
+                if existing_s:
+                    if courier_partner:
+                        existing_s.courier_provider = courier_partner
+                    if tracking_number:
+                        existing_s.courier_awb = tracking_number
+                    if target_status in ("DISPATCHED", "OUT_FOR_DELIVERY"):
+                        existing_s.status = "IN_TRANSIT"
+                    elif target_status == "DELIVERED":
+                        existing_s.status = "DELIVERED"
+                else:
+                    new_s = Shipment(
+                        tenant_id=order.tenant_id,
+                        store_id=order.store_id,
+                        order_id=order.id,
+                        shipment_number=f"SHP-{order.order_number[-6:]}",
+                        delivery_type="COURIER" if courier_partner and "INTERNAL" not in courier_partner.upper() else "INTERNAL",
+                        status="IN_TRANSIT" if target_status in ("DISPATCHED", "OUT_FOR_DELIVERY") else "MANIFESTED",
+                        courier_provider=courier_partner or "Bagodi Dedicated Fleet (Bidar Hyperlocal)",
+                        courier_awb=tracking_number or f"BAGODI-BID-{order.order_number[-5:].upper()}",
+                        delivery_contact_name=order.customer_name,
+                        delivery_contact_phone=order.customer_phone,
+                        shipping_address=order.shipping_address or {},
+                        total_weight_kg=Decimal(str(data.weightKg or 1.0)),
+                    )
+                    db.add(new_s)
+            except Exception as e:
+                pass
 
         order.status = target_status
         order.status_history.append(
             OrderStatusHistory(
                 from_status=current_status,
                 to_status=target_status,
-                notes=data.notes,
+                notes=full_note,
                 changed_by_user_id=valid_user_id,
             )
         )
 
-        if target_status in ("CONFIRMED", "DISPATCHED", "DELIVERED", "CANCELLED"):
+        # Audit log the fulfillment state mutation
+        try:
+            from app.modules.platform.models import PlatformAuditLog
+            audit_entry = PlatformAuditLog(
+                tenant_id=tenant_id,
+                actor_id=valid_user_id,
+                action="ORDER_STATUS_UPDATED",
+                resource_type="ORDER",
+                resource_id=str(order.id),
+                details={
+                    "order_number": order.order_number,
+                    "from_status": current_status,
+                    "to_status": target_status,
+                    "notes": full_note,
+                },
+            )
+            db.add(audit_entry)
+        except Exception:
+            pass
+
+        if target_status in ("CONFIRMED", "PACKED", "PROCESSING", "DISPATCHED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"):
             from app.modules.notifications.services import NotificationService
 
             await NotificationService.enqueue_outbox_event(
@@ -1176,7 +1258,7 @@ class OrderService:
                     "customer_phone": order.customer_phone,
                     "customer_email": order.customer_email,
                     "customer_id": str(order.customer_id) if order.customer_id else None,
-                    "notes": data.notes,
+                    "notes": full_note,
                 },
                 idempotency_key=f"outbox-order-status-{order.order_number}-{target_status.lower()}",
             )

@@ -345,8 +345,28 @@ class PaginatedOrderResponse(BaseModel):
 
 # --- Order State Machine Operations ---
 class OrderStatusUpdateRequest(BaseModel):
-    status: Literal["CONFIRMED", "PROCESSING", "DISPATCHED", "DELIVERED", "CANCELLED", "RETURNED"]
+    status: str = Field(..., description="Target fulfillment status")
     notes: str | None = Field(default=None, max_length=500)
+    courierPartner: str | None = None
+    courier_partner: str | None = None
+    trackingNumber: str | None = None
+    tracking_number: str | None = None
+    cancellationReason: str | None = None
+    cancellation_reason: str | None = None
+    pickupSlot: str | None = None
+    weightKg: float | None = None
+
+    class Config:
+        extra = "allow"
+
+
+class OrderNotificationRequest(BaseModel):
+    channel: str = Field(default="WHATSAPP", description="Notification channel: WHATSAPP, SMS, or EMAIL")
+    custom_note: str | None = Field(default=None, max_length=1000)
+    customNote: str | None = Field(default=None, max_length=1000)
+
+    class Config:
+        extra = "allow"
 
 
 class OrderCancelRequest(BaseModel):
