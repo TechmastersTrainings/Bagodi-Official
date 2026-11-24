@@ -1223,13 +1223,13 @@ class OrderService:
 
         # Audit log the fulfillment state mutation
         try:
-            from app.modules.platform.models import PlatformAuditLog
-            audit_entry = PlatformAuditLog(
-                tenant_id=tenant_id,
+            from app.modules.platform.services import PlatformService
+            await PlatformService.log_action(
+                db,
                 actor_id=valid_user_id,
                 action="ORDER_STATUS_UPDATED",
-                resource_type="ORDER",
-                resource_id=str(order.id),
+                target_type="ORDER",
+                target_id=str(order.id),
                 details={
                     "order_number": order.order_number,
                     "from_status": current_status,
@@ -1237,7 +1237,6 @@ class OrderService:
                     "notes": full_note,
                 },
             )
-            db.add(audit_entry)
         except Exception:
             pass
 

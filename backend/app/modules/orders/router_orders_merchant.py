@@ -118,21 +118,23 @@ async def notify_merchant_order(
         idempotency_key=f"outbox-notify-{order.order_number}-{channel}-{int(datetime.now(UTC).timestamp())}",
     )
 
-    from app.modules.platform.models import PlatformAuditLog
-    audit_entry = PlatformAuditLog(
-        tenant_id=tenant.tenant_id,
-        actor_id=valid_user_id,
-        action="ORDER_CUSTOMER_NOTIFIED",
-        resource_type="ORDER",
-        resource_id=str(order.id),
-        details={
-            "order_number": order.order_number,
-            "channel": channel,
-            "recipient": order.customer_phone if channel in ("WHATSAPP", "SMS") else order.customer_email,
-            "message": custom_message,
-        },
-    )
-    db.add(audit_entry)
+    try:
+        from app.modules.platform.services import PlatformService
+        await PlatformService.log_action(
+            db,
+            actor_id=valid_user_id,
+            action="ORDER_CUSTOMER_NOTIFIED",
+            target_type="ORDER",
+            target_id=str(order.id),
+            details={
+                "order_number": order.order_number,
+                "channel": channel,
+                "recipient": order.customer_phone if channel in ("WHATSAPP", "SMS") else order.customer_email,
+                "message": custom_message,
+            },
+        )
+    except Exception:
+        pass
     await db.commit()
 
     return {
