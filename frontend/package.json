@@ -1,12 +1,22 @@
 {
   "name": "bagodi-frontend",
   "private": true,
-  "packageManager": "pnpm@9.15.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:customer": "pnpm --filter customer-web dev",
-    "dev:merchant": "pnpm --filter merchant-admin dev",
-    "dev:super-admin": "pnpm --filter super-admin dev",
-    "build": "pnpm -r build"
+    "dev:customer": "npm run dev --workspace=@bagodi/customer-web",
+    "dev:merchant": "npm run dev --workspace=@bagodi/merchant-admin",
+    "dev:super-admin": "npm run dev --workspace=@bagodi/super-admin",
+    "build": "npm run build --workspaces --if-present",
+    "build:customer": "npm run build --workspace=@bagodi/customer-web",
+    "build:merchant": "npm run build --workspace=@bagodi/merchant-admin",
+    "build:super-admin": "npm run build --workspace=@bagodi/super-admin",
+    "build:delivery": "npm run build --workspace=@bagodi/delivery-agent"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",

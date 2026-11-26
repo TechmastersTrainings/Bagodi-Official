@@ -32,7 +32,7 @@
       "@bagodi/validation/*": ["packages/validation/src/*"],
       "react-hook-form": ["packages/form-hooks/index.ts"],
       "@hookform/resolvers/zod": ["packages/form-hooks/index.ts"],
-      "zod": ["node_modules/.pnpm/zod@4.6.7/node_modules/zod"]
+      "zod": ["node_modules/zod"]
     }
   }
 }
