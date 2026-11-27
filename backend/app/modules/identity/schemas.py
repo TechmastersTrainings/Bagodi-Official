@@ -1,9 +1,20 @@
+import json
 import re
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+
+
+def _maybe_parse_json(data: Any) -> Any:
+    """Parse raw JSON string/bytes payloads before field normalization."""
+    if isinstance(data, (str, bytes)):
+        try:
+            return json.loads(data)
+        except (ValueError, TypeError):
+            return data
+    return data
 
 
 class OTPSendRequest(BaseModel):
@@ -20,12 +31,7 @@ class OTPSendRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_otp_destination(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             dest = data.get("phoneOrEmail") or data.get("phone_e164") or data.get("email")
             if dest:
@@ -46,12 +52,32 @@ class OTPSendResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     status: str = "sent"
-    cooldown_seconds: int = Field(default=60, alias="cooldownSeconds")
-    expires_in_seconds: int = Field(default=300, alias="expiresInSeconds")
+    cooldown_seconds: int = 60
+    expires_in_seconds: int = 300
     message: str
-    dev_otp: str | None = Field(default=None, alias="devOtp")
-    reference_id: str | None = Field(default=None, alias="referenceId")
-    masked_destination: str | None = Field(default=None, alias="maskedDestination")
+    dev_otp: str | None = None
+    reference_id: str | None = None
+    masked_destination: str | None = None
+
+    @computed_field
+    def cooldownSeconds(self) -> int:
+        return self.cooldown_seconds
+
+    @computed_field
+    def expiresInSeconds(self) -> int:
+        return self.expires_in_seconds
+
+    @computed_field
+    def devOtp(self) -> str | None:
+        return self.dev_otp
+
+    @computed_field
+    def referenceId(self) -> str | None:
+        return self.reference_id
+
+    @computed_field
+    def maskedDestination(self) -> str | None:
+        return self.masked_destination
 
 
 class OTPVerifyRequest(BaseModel):
@@ -67,12 +93,7 @@ class OTPVerifyRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_verify_destination(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             dest = data.get("phoneOrEmail") or data.get("phone_e164") or data.get("email")
             if dest:
@@ -173,12 +194,7 @@ class CustomerAddressCreate(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_fields(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             if "fullName" in data and "full_name" not in data:
                 data["full_name"] = data["fullName"]
@@ -220,12 +236,7 @@ class CustomerAddressUpdate(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_fields(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             if "fullName" in data and "full_name" not in data:
                 data["full_name"] = data["fullName"]
@@ -308,12 +319,7 @@ class LoginRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_login_identifier(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             identifier = data.get("email") or data.get("emailOrPhone") or data.get("identifier") or data.get("username")
             if identifier:
@@ -334,12 +340,7 @@ class CustomerRegisterRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_customer_fields(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
+        data = _maybe_parse_json(data)
         if isinstance(data, dict):
             if "fullName" in data and not data.get("display_name"):
                 data["display_name"] = str(data["fullName"]).strip()
@@ -377,13 +378,7 @@ class MerchantRegisterRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_merchant_fields(cls, data: Any) -> Any:
-        if isinstance(data, (str, bytes)):
-            try:
-                import json
-                data = json.loads(data)
-            except Exception:
-                pass
-        return data
+        return _maybe_parse_json(data)
 
 
 class MerchantRegisterResponse(BaseModel):

@@ -10,6 +10,9 @@
     "dev:merchant": "npm run dev --workspace=@bagodi/merchant-admin",
     "dev:super-admin": "npm run dev --workspace=@bagodi/super-admin",
     "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
     "build:customer": "npm run build --workspace=@bagodi/customer-web",
     "build:merchant": "npm run build --workspace=@bagodi/merchant-admin",
     "build:super-admin": "npm run build --workspace=@bagodi/super-admin",
@@ -19,11 +22,16 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
+    "jsdom": "^25.0.1",
     "openapi-fetch": "^0.17.0",
     "openapi-typescript": "^7.13.0",
     "puppeteer-core": "^25.16.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9"
   }
 }

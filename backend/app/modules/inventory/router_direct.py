@@ -2,12 +2,12 @@ import random
 import re
 import time
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,7 +15,12 @@ from app.core.security import SecurityPrincipal, get_optional_security_principal
 from app.core.storage import storage
 from app.db.session import get_db
 from app.modules.catalog.models import Brand, Category, Product, ProductImage, ProductVariant
-from app.modules.inventory.models import InventoryLedger, PurchaseOrder, PurchaseOrderItem, StockBalance
+from app.modules.inventory.models import (
+    InventoryLedger,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    StockBalance,
+)
 from app.modules.inventory.services import InventoryService
 from app.modules.platform.models import Store, Tenant
 
@@ -497,7 +502,7 @@ async def list_stock_movements(
     stmt = stmt.offset((page - 1) * pageSize).limit(pageSize)
     ledgers = list((await db.execute(stmt)).scalars().all())
 
-    variant_ids = [l.variant_id for l in ledgers]
+    variant_ids = [ledger.variant_id for ledger in ledgers]
     v_map = {}
     if variant_ids:
         v_stmt = (
@@ -509,26 +514,26 @@ async def list_stock_movements(
             v_map[v.id] = v
 
     items = []
-    for l in ledgers:
-        variant = v_map.get(l.variant_id)
+    for ledger in ledgers:
+        variant = v_map.get(ledger.variant_id)
         product_name = variant.product.name if variant and variant.product else "Apparel"
         sku = variant.sku if variant else "SKU"
         barcode = (variant.barcode if variant else None) or sku
 
         items.append(
             {
-                "id": str(l.id),
-                "timestamp": l.created_at.isoformat(),
-                "inventoryId": str(l.variant_id),
+                "id": str(ledger.id),
+                "timestamp": ledger.created_at.isoformat(),
+                "inventoryId": str(ledger.variant_id),
                 "productName": product_name,
                 "sku": sku,
                 "barcode": barcode,
-                "operationType": l.movement_type,
-                "quantityChange": l.on_hand_delta,
-                "previousAvailableQuantity": max(0, l.quantity),
-                "newAvailableQuantity": l.quantity,
-                "reason": l.notes or l.reference_type or "Audit Transaction",
-                "referenceDocument": l.reference_id or "-",
+                "operationType": ledger.movement_type,
+                "quantityChange": ledger.on_hand_delta,
+                "previousAvailableQuantity": max(0, ledger.quantity),
+                "newAvailableQuantity": ledger.quantity,
+                "reason": ledger.notes or ledger.reference_type or "Audit Transaction",
+                "referenceDocument": ledger.reference_id or "-",
                 "operatorName": "Store Merchandiser",
             }
         )

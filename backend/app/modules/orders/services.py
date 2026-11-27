@@ -3,11 +3,12 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, or_
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.catalog.models import Product, ProductImage, ProductVariant
+from app.core.config import get_settings
+from app.modules.catalog.models import ProductImage, ProductVariant
 from app.modules.identity.models import User
 from app.modules.inventory.schemas import (
     CustomerReturnCreate,
@@ -590,52 +591,25 @@ class OrderService:
                     },
                 )
 
-            # Direct integration with InventoryService.reserve_stock (auto-buffers from central boutique reserve if low)
+            # Reserve stock atomically; fail cleanly with 409 on insufficient stock
             res_idemp = (
                 f"checkout:{data.idempotency_key}:{item.variant_id}"
                 if data.idempotency_key
                 else None
             )
-            try:
-                await InventoryService.reserve_stock(
-                    db=db,
-                    tenant_id=tenant_id,
-                    data=StockReservationCreate(
-                        store_id=store.id,
-                        variant_id=item.variant_id,
-                        quantity=item.quantity,
-                        reference_id=order_number,
-                        notes=f"Reservation for order {order_number}",
-                        idempotency_key=res_idemp,
-                    ),
-                    user_id=customer_id,
-                )
-            except HTTPException as stock_err:
-                if stock_err.status_code == 409:
-                    # Dynamically replenish from flagship boutique warehouse buffer to fulfill customer order
-                    balance = await InventoryService.get_or_create_balance_for_update(
-                        db, tenant_id, store.id, item.variant_id
-                    )
-                    replenish_qty = max(item.quantity * 2, 50)
-                    balance.on_hand_qty += replenish_qty
-                    balance.available_qty += replenish_qty
-                    await db.flush()
-                    # Retry reservation
-                    await InventoryService.reserve_stock(
-                        db=db,
-                        tenant_id=tenant_id,
-                        data=StockReservationCreate(
-                            store_id=store.id,
-                            variant_id=item.variant_id,
-                            quantity=item.quantity,
-                            reference_id=order_number,
-                            notes=f"Reservation for order {order_number}",
-                            idempotency_key=res_idemp,
-                        ),
-                        user_id=customer_id,
-                    )
-                else:
-                    raise
+            await InventoryService.reserve_stock(
+                db=db,
+                tenant_id=tenant_id,
+                data=StockReservationCreate(
+                    store_id=store.id,
+                    variant_id=item.variant_id,
+                    quantity=item.quantity,
+                    reference_id=order_number,
+                    notes=f"Reservation for order {order_number}",
+                    idempotency_key=res_idemp,
+                ),
+                user_id=customer_id,
+            )
 
             calc_item = calculated_items_map.get(item.variant_id)
             orig_price = calc_item.original_unit_price if calc_item else variant.base_price
@@ -672,10 +646,10 @@ class OrderService:
             )
 
         # 7. Initial Status based on Payment Method
-        is_paid = data.payment_method in ("upi", "card", "netbanking")
-        initial_status = "CONFIRMED" if (data.payment_method == "cod" or is_paid) else "PENDING_PAYMENT"
+        # Only Cash On Delivery starts CONFIRMED; all prepaid online methods await verified gateway capture.
+        initial_status = "CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT"
         expires_at = (
-            datetime.now(UTC) + timedelta(minutes=15) if data.payment_method == "online" else None
+            datetime.now(UTC) + timedelta(minutes=15) if data.payment_method != "cod" else None
         )
 
         valid_customer_id = await _resolve_user_id(db, customer_id)
@@ -722,32 +696,7 @@ class OrderService:
             ],
         )
 
-        if is_paid:
-            order.payment_status = "paid"
-            order.payments.append(
-                PaymentTransaction(
-                    tenant_id=tenant_id,
-                    transaction_reference=f"TXN-{order_number}-01",
-                    payment_method=data.payment_method,
-                    amount=total_amount,
-                    currency="INR",
-                    status="captured",
-                    gateway_provider="razorpay",
-                )
-            )
-        elif data.payment_method == "online":
-            order.payments.append(
-                PaymentTransaction(
-                    tenant_id=tenant_id,
-                    transaction_reference=f"TXN-{order_number}-01",
-                    payment_method=data.payment_method,
-                    amount=total_amount,
-                    currency="INR",
-                    status="initiated",
-                    gateway_provider="mock",
-                )
-            )
-        elif data.payment_method == "cod":
+        if data.payment_method == "cod":
             order.payments.append(
                 PaymentTransaction(
                     tenant_id=tenant_id,
@@ -757,6 +706,18 @@ class OrderService:
                     currency="INR",
                     status="pending",
                     gateway_provider="cod",
+                )
+            )
+        else:
+            order.payments.append(
+                PaymentTransaction(
+                    tenant_id=tenant_id,
+                    transaction_reference=f"TXN-{order_number}-01",
+                    payment_method=data.payment_method,
+                    amount=total_amount,
+                    currency="INR",
+                    status="initiated",
+                    gateway_provider=get_settings().payment_gateway_provider,
                 )
             )
 
@@ -928,14 +889,13 @@ class OrderService:
         shipping_fee = Decimal("0.00") if subtotal >= Decimal("999.00") else Decimal("49.00")
         total_amount = subtotal + shipping_fee
 
-        is_paid = data.payment_method in ("upi", "card", "netbanking")
         order = Order(
             tenant_id=tenant_id,
             store_id=store.id,
             customer_id=valid_customer_id,
             order_number=order_number,
-            status="CONFIRMED",
-            payment_status="paid" if is_paid else "confirmed" if data.payment_method == "cod" else "pending",
+            status="CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT",
+            payment_status="pending",
             payment_method=data.payment_method,
             fulfillment_status="unfulfilled",
             currency="INR",
@@ -943,6 +903,7 @@ class OrderService:
             discount_amount=Decimal("0.00"),
             shipping_fee=shipping_fee,
             total_amount=total_amount,
+            reservation_released=True,
             shipping_address=data.shipping_address.model_dump() if data.shipping_address else {
                 "full_name": data.customer_name or "Valued Customer",
                 "phone": data.customer_phone or "9876500001",
@@ -959,8 +920,8 @@ class OrderService:
             status_history=[
                 OrderStatusHistory(
                     from_status=None,
-                    to_status="CONFIRMED",
-                    notes=f"Direct checkout confirmed via {data.payment_method.upper()}",
+                    to_status="CONFIRMED" if data.payment_method == "cod" else "PENDING_PAYMENT",
+                    notes=f"Direct checkout via {data.payment_method.upper()}",
                     changed_by_user_id=valid_customer_id,
                 )
             ],
@@ -971,8 +932,8 @@ class OrderService:
                     payment_method=data.payment_method,
                     amount=total_amount,
                     currency="INR",
-                    status="captured" if is_paid else "confirmed" if data.payment_method == "cod" else "initiated",
-                    gateway_provider="razorpay" if is_paid else "cash" if data.payment_method == "cod" else data.payment_method,
+                    status="pending" if data.payment_method == "cod" else "initiated",
+                    gateway_provider="cod" if data.payment_method == "cod" else get_settings().payment_gateway_provider,
                 )
             ],
         )
@@ -1063,8 +1024,7 @@ class OrderService:
         }
         target_status = status_norm_map.get(status_input, status_input)
 
-        # Allow flexible operational transitions:
-        # A merchant or admin can progress any active order forward or cancel it.
+        # Validate strict forward order fulfillment transitions
         terminal_states = {"CANCELLED", "RETURNED"}
         if current_status in terminal_states and target_status != current_status:
             raise HTTPException(
@@ -1072,6 +1032,29 @@ class OrderService:
                 detail={
                     "code": "ORDER_ALREADY_TERMINAL",
                     "message": f"Order is already in terminal state '{current_status}' and cannot be transitioned to '{target_status}'.",
+                },
+            )
+
+        allowed_transitions = {
+            "PENDING_PAYMENT": {"CONFIRMED", "PROCESSING", "PACKED", "CANCELLED"},
+            "CONFIRMED": {"PROCESSING", "PACKED", "DISPATCHED", "CANCELLED"},
+            "PROCESSING": {"PACKED", "DISPATCHED", "CANCELLED"},
+            "PACKED": {"DISPATCHED", "OUT_FOR_DELIVERY", "CANCELLED"},
+            "DISPATCHED": {"OUT_FOR_DELIVERY", "DELIVERED", "RETURNED", "CANCELLED"},
+            "OUT_FOR_DELIVERY": {"DELIVERED", "RETURNED", "CANCELLED"},
+            "DELIVERED": {"RETURNED"},
+            "CANCELLED": set(),
+            "RETURNED": set(),
+        }
+        if (
+            target_status != current_status
+            and target_status not in allowed_transitions.get(current_status, set())
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "INVALID_STATUS_TRANSITION",
+                    "message": f"Cannot transition order from '{current_status}' to '{target_status}'.",
                 },
             )
 
@@ -1094,8 +1077,8 @@ class OrderService:
         full_note = " | ".join(note_parts) or f"Status transitioned from {current_status} to {target_status}"
 
         if target_status in ("DISPATCHED", "OUT_FOR_DELIVERY"):
-            # Physically dispatch inventory out of store reserved stock if it was reserved
-            if order.reservation_expires_at is not None and not order.reservation_released:
+            # Physically dispatch inventory out of store reserved stock exactly once
+            if not order.reservation_released:
                 for item in order.items:
                     await InventoryService.dispatch_stock(
                         db=db,
@@ -1109,6 +1092,7 @@ class OrderService:
                         ),
                         user_id=valid_user_id,
                     )
+                order.reservation_released = True
             order.fulfillment_status = "fulfilled"
 
         elif target_status in ("PACKED", "PROCESSING"):
@@ -1188,8 +1172,16 @@ class OrderService:
                         existing_s.courier_provider = courier_partner
                     if tracking_number:
                         existing_s.courier_awb = tracking_number
-                    if target_status in ("DISPATCHED", "OUT_FOR_DELIVERY"):
+                    if target_status == "DISPATCHED" and existing_s.status in (
+                        "PENDING_ASSIGNMENT",
+                        "ASSIGNED",
+                        "CREATED",
+                        "BOOKED",
+                        "MANIFESTED",
+                    ):
                         existing_s.status = "IN_TRANSIT"
+                    elif target_status == "OUT_FOR_DELIVERY" and existing_s.status != "DELIVERED":
+                        existing_s.status = "OUT_FOR_DELIVERY"
                     elif target_status == "DELIVERED":
                         existing_s.status = "DELIVERED"
                 else:
@@ -1208,7 +1200,7 @@ class OrderService:
                         total_weight_kg=Decimal(str(data.weightKg or 1.0)),
                     )
                     db.add(new_s)
-            except Exception as e:
+            except Exception:
                 pass
 
         order.status = target_status

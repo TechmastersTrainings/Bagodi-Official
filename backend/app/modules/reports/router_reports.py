@@ -4,7 +4,7 @@ Dedicated endpoints serving the Merchant Command Center and Reports Intelligence
 Authoritative data pipeline directly connected to the PostgreSQL multi-tenant ledger.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
@@ -248,7 +248,7 @@ async def get_sales_performance(
 ):
     target_tenant_id = await resolve_report_tenant_id(db, principal, x_tenant_id, tenant_id)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     delta_days = {"TODAY": 1, "WEEK": 7, "MONTH": 30, "QUARTER": 90, "YEAR": 365}.get(period, 30)
     start_date = now - timedelta(days=delta_days)
 
@@ -469,7 +469,7 @@ async def get_inventory_velocity(
     stockout_risks = (await db.execute(risk_stmt)).scalar() or 0
 
     # 2. Top-selling variants from OrderItem in last 30 days
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
     velocity_stmt = (
         select(
             ProductVariant.sku,

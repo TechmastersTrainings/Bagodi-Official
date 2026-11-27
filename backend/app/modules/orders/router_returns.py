@@ -11,7 +11,7 @@ from app.core.security import SecurityPrincipal, get_security_principal
 from app.db.session import get_db
 from app.modules.catalog.models import ProductVariant
 from app.modules.identity.models import User
-from app.modules.orders.models import Order, OrderItem, OrderReturnRequest
+from app.modules.orders.models import Order, OrderReturnRequest
 from app.modules.orders.schemas import (
     OrderReturnRequestCreate,
     OrderReturnRequestResponse,
@@ -82,8 +82,8 @@ async def submit_return_request(
             detail={"code": "ORDER_NOT_FOUND", "message": f"Order {order_number} not found."},
         )
 
-    # Eligible statuses to request a return or exchange
-    if order.status not in ("DELIVERED", "COMPLETED", "CONFIRMED"):
+    # Eligible statuses to request a return or exchange (only after delivery)
+    if order.status not in ("DELIVERED", "COMPLETED"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

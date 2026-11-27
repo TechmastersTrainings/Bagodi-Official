@@ -2,11 +2,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.passwords import hash_password
-from app.core.security import SecurityPrincipal, get_security_principal
 from app.core.tenant import TenantContext, get_current_tenant
 from app.db.session import get_db
 from app.modules.identity.models import Role, User, UserRole

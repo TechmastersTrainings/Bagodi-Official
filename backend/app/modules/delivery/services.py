@@ -384,12 +384,12 @@ class DeliveryService:
         update_data = data.model_dump(exclude_unset=True)
         for key, val in update_data.items():
             if (
-                key == "registration_number"
-                and val
-                or key == "vehicle_type"
-                and val
-                or key == "status"
-                and val
+                (key == "registration_number"
+                and val)
+                or (key == "vehicle_type"
+                and val)
+                or (key == "status"
+                and val)
             ):
                 val = val.strip().upper()
             setattr(vehicle, key, val)

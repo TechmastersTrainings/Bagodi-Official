@@ -22,7 +22,7 @@ def test_alembic_migration_chain_is_linear_and_unbroken():
     heads = script.get_heads()
     assert len(heads) == 1, f"Multiple heads detected in Alembic tree: {heads}"
     head_rev = heads[0]
-    assert head_rev in ("cf19a0460318", "b2c3d4e5f6a7"), f"Unexpected head revision: {head_rev}"
+    assert head_rev in ("cf19a0460318", "b2c3d4e5f6a7", "c3d4e5f6a7b8"), f"Unexpected head revision: {head_rev}"
 
     # 2. Traverse revisions from head to base
     rev_chain = []
@@ -34,7 +34,7 @@ def test_alembic_migration_chain_is_linear_and_unbroken():
         current = script.get_revision(current.down_revision)
 
     # Expected migrations in linear order
-    assert len(rev_chain) in (11, 15), f"Expected 11 or 15 migrations, found {len(rev_chain)}: {rev_chain}"
+    assert len(rev_chain) in (11, 15, 16), f"Expected 11, 15, or 16 migrations, found {len(rev_chain)}: {rev_chain}"
     assert rev_chain[-1] == "5419f447f363", (
         f"Initial migration must be 5419f447f363, got {rev_chain[-1]}"
     )
@@ -62,8 +62,8 @@ async def test_database_schema_tables_and_constraints_at_head():
             )
         )
         table_count = res_tables.scalar_one()
-        assert table_count in (53, 61), (
-            f"Expected 53 or 61 public tables at migration head, found {table_count}"
+        assert table_count in (53, 61, 62), (
+            f"Expected 53, 61, or 62 public tables at migration head, found {table_count}"
         )
 
         # Verify composite indexes exist

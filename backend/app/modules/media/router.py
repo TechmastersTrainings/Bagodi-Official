@@ -1,5 +1,8 @@
 import io
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+
 from app.core.storage import storage
 
 router = APIRouter(prefix="/media", tags=["Media Storage"])
@@ -10,8 +13,8 @@ ALLOWED_FOLDERS = {"products", "boutiques", "kyc", "branding", "banners"}
 
 @router.post("/upload")
 async def upload_media_file(
-    file: UploadFile = File(...),
-    folder: str = Form("products"),
+    file: Annotated[UploadFile, File(...)],
+    folder: Annotated[str, Form()] = "products",
 ):
     """
     Directly upload an asset (image/document) to Cloudflare R2 bucket.
@@ -71,5 +74,5 @@ async def upload_media_file(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload file to Cloudflare R2: {str(e)}",
-        )
+            detail=f"Failed to upload file to Cloudflare R2: {e!s}",
+        ) from e

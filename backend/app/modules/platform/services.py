@@ -1,7 +1,6 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Literal
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, func, or_, select
@@ -33,7 +32,6 @@ from app.modules.platform.schemas import (
     TenantCreate,
     TenantKYCDocumentCreate,
     TenantKYCDocumentReview,
-    TenantUpdate,
 )
 
 settings = get_settings()
@@ -658,7 +656,11 @@ class BillingService:
     @staticmethod
     async def list_plans(db: AsyncSession) -> list[MerchantSubscriptionPlan]:
         await BillingService.seed_default_plans_if_empty(db)
-        stmt = select(MerchantSubscriptionPlan).where(MerchantSubscriptionPlan.is_active == True).order_by(MerchantSubscriptionPlan.price.asc())
+        stmt = (
+            select(MerchantSubscriptionPlan)
+            .where(MerchantSubscriptionPlan.is_active.is_(True))
+            .order_by(MerchantSubscriptionPlan.price.asc())
+        )
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
@@ -880,7 +882,7 @@ class PlatformStaffService:
     async def list_staff(db: AsyncSession) -> list[dict]:
         stmt = (
             select(User)
-            .where(User.is_platform_user == True)
+            .where(User.is_platform_user.is_(True))
             .order_by(desc(User.created_at))
         )
         users = (await db.execute(stmt)).scalars().all()
@@ -1004,7 +1006,7 @@ class PlatformStaffService:
         actor_id: UUID | None = None,
         actor_email: str | None = None,
     ) -> dict:
-        stmt = select(User).where(User.id == user_id, User.is_platform_user == True)
+        stmt = select(User).where(User.id == user_id, User.is_platform_user.is_(True))
         user = (await db.execute(stmt)).scalar_one_or_none()
         if not user:
             raise HTTPException(

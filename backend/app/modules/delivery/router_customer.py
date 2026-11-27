@@ -9,8 +9,6 @@ from app.db.session import get_db
 from app.modules.delivery.schemas import (
     CustomerTrackingDetailResponse,
     DeliveryTrackingEventResponse,
-    ShipmentResponse,
-    ShipmentTrackingHistoryResponse,
 )
 from app.modules.delivery.services import DeliveryService
 

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
-    from app.modules.catalog.models import ProductVariant
+    from app.modules.catalog.models import Product, ProductVariant
     from app.modules.identity.models import User
     from app.modules.platform.models import Store
 
@@ -332,4 +332,37 @@ class OrderReturnRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         "ProductVariant", foreign_keys=[requested_variant_id]
     )
     reviewed_by: Mapped["User | None"] = relationship("User", foreign_keys=[reviewed_by_user_id])
+
+
+class WishlistItem(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "wishlist_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "customer_id",
+            "product_id",
+            name="uq_wishlist_items_tenant_customer_product",
+        ),
+    )
+
+    tenant_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("tenants.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    customer_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    product_id: Mapped[PG_UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    product: Mapped["Product"] = relationship("Product")
 

@@ -173,7 +173,7 @@ async def list_audit_logs(
 
     stmt = stmt.order_by(NotificationAuditLog.created_at.desc()).limit(limit).offset(offset)
     logs = (await db.execute(stmt)).scalars().all()
-    return [NotificationAuditLogResponse.model_validate(l) for l in logs]
+    return [NotificationAuditLogResponse.model_validate(log) for log in logs]
 
 
 @router.get("/messages", response_model=list[NotificationMessageResponse])

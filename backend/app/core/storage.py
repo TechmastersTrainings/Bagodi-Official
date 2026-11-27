@@ -1,8 +1,9 @@
-import io
-import uuid
 import base64
+import io
 import logging
-from typing import Optional, BinaryIO
+import uuid
+from typing import BinaryIO
+
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)

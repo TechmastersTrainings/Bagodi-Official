@@ -219,7 +219,7 @@ async def list_audit_logs(
 
     stmt = stmt.order_by(PaymentAuditLog.created_at.desc()).limit(limit).offset(offset)
     logs = (await db.execute(stmt)).scalars().all()
-    return [PaymentAuditLogResponse.model_validate(l) for l in logs]
+    return [PaymentAuditLogResponse.model_validate(log) for log in logs]
 
 
 @router.get("/{payment_id}", response_model=PaymentTransactionResponse)

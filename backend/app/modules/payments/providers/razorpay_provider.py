@@ -30,7 +30,7 @@ class RazorpayPaymentGatewayProvider(BasePaymentGatewayProvider):
         key_secret: str | None = None,
         webhook_secret: str | None = None,
         base_url: str = "https://api.razorpay.com/v1",
-        is_sandbox: bool = True,
+        is_sandbox: bool | None = None,
     ):
         settings = get_settings()
         self.key_id = (
@@ -49,7 +49,10 @@ class RazorpayPaymentGatewayProvider(BasePaymentGatewayProvider):
             or "rzp_whsec_32char_key_bagodi"
         )
         self.base_url = base_url
-        self.is_sandbox = is_sandbox
+        if is_sandbox is None:
+            self.is_sandbox = settings.app_env.lower() != "production"
+        else:
+            self.is_sandbox = is_sandbox
 
     @property
     def provider_name(self) -> str:
@@ -210,13 +213,18 @@ class RazorpayPaymentGatewayProvider(BasePaymentGatewayProvider):
         self,
         *,
         tenant_id: UUID,
-        transaction_id: UUID,
-        gateway_payment_id: str,
+        payment_transaction_id: UUID | None = None,
+        transaction_id: UUID | None = None,
+        gateway_payment_id: str | None = None,
+        refund_reference: str | None = None,
         amount: Decimal,
+        currency: str = "INR",
         reason: str | None = None,
     ) -> RefundResult:
+        txn_id = payment_transaction_id or transaction_id
         if self.is_sandbox and (self.key_id.startswith("rzp_test_bagodi") or not self.key_id):
-            gw_refund_id = f"rfnd_rzp_{transaction_id.hex[:14]}"
+            ref_suffix = txn_id.hex[:14] if txn_id else "sandbox"
+            gw_refund_id = f"rfnd_rzp_{ref_suffix}"
             return RefundResult(
                 is_valid=True,
                 gateway_refund_id=gw_refund_id,
@@ -226,8 +234,17 @@ class RazorpayPaymentGatewayProvider(BasePaymentGatewayProvider):
                 raw_response={
                     "status": "processed",
                     "id": gw_refund_id,
+                    "refund_reference": refund_reference,
+                    "currency": currency,
                     "amount": int(amount * 100),
                 },
+            )
+        if not gateway_payment_id:
+            return RefundResult(
+                is_valid=False,
+                gateway_refund_id="",
+                status="failed",
+                error_message="Missing gateway_payment_id for Razorpay refund.",
             )
         async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
             resp = await client.post(

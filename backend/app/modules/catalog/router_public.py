@@ -3,11 +3,15 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import delete, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.security import SecurityPrincipal, get_optional_security_principal
+from app.core.security import (
+    SecurityPrincipal,
+    get_optional_security_principal,
+    get_security_principal,
+)
 from app.core.storage import storage
 from app.db.session import get_db
 from app.modules.catalog.models import Brand, Category, Product, ProductImage, ProductVariant
@@ -16,7 +20,6 @@ from app.modules.catalog.schemas import (
     CategoryResponse,
     ProductCreate,
     ProductDetailResponse,
-    ProductImageCreate,
     ProductUpdate,
     ProductVariantCreate,
     ProductVariantResponse,
@@ -329,44 +332,33 @@ async def update_product_direct(
 )
 async def delete_product_direct(
     product_id: UUID,
+    principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    if not (
+        principal.is_platform_user
+        or principal.has_permission("catalog.products.delete")
+        or principal.has_permission("catalog.*")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "PERMISSION_DENIED",
+                "message": "Requires 'catalog.products.delete' permission.",
+            },
+        )
+
     stmt = select(Product).where(Product.id == product_id)
     product = (await db.execute(stmt)).scalar_one_or_none()
     if not product:
         return
-
-    # Find variant ids
-    var_stmt = select(ProductVariant.id).where(ProductVariant.product_id == product_id)
-    variant_ids = (await db.execute(var_stmt)).scalars().all()
-
-    if variant_ids:
-        # Clean up related records with RESTRICT foreign keys
-        from app.modules.orders.models import CartItem
-        await db.execute(delete(CartItem).where(CartItem.variant_id.in_(variant_ids)))
-
-        from app.modules.inventory.models import (
-            StockReservation,
-            InventoryLedger,
-            InventoryBalance,
-            StockAuditLog,
-            StoreInventory,
+    if not principal.is_platform_user and product.tenant_id != principal.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "CROSS_TENANT_DENIED", "message": "Cannot delete another merchant's product."},
         )
-        await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(variant_ids)))
-        await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(variant_ids)))
-        await db.execute(delete(InventoryBalance).where(InventoryBalance.variant_id.in_(variant_ids)))
-        await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(variant_ids)))
-        await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(variant_ids)))
 
-    # Permanently delete associated product images from Cloudflare R2
-    img_stmt = select(ProductImage.image_url).where(ProductImage.product_id == product_id)
-    image_urls = (await db.execute(img_stmt)).scalars().all()
-    for url in image_urls:
-        if url:
-            storage.delete_by_url(url)
-
-    await db.delete(product)
-    await db.commit()
+    await ProductService.delete_product_permanently(db, product)
 
 
 @storefront_router.post(

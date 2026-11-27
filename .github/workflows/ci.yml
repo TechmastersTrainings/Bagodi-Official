@@ -1,0 +1,121 @@
+name: Bagodi Platform CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-ci:
+    name: Backend Lint, Migrations & Pytest Suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bagodi
+          POSTGRES_PASSWORD: bagodi_dev_secret
+          POSTGRES_DB: bagodi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://bagodi:bagodi_dev_secret@127.0.0.1:5432/bagodi
+      APP_ENV: development
+      OTP_PROVIDER: console
+      PAYMENT_GATEWAY_PROVIDER: mock
+      COURIER_PROVIDER: mock
+      NOTIFICATION_DEFAULT_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+      - name: Run Ruff lint
+        run: ruff check app
+      - name: Apply Alembic migrations
+        run: alembic upgrade head
+      - name: Run Pytest suite
+        run: pytest -q --tb=short
+
+  frontend-ci:
+    name: Frontend Typecheck, Vitest & Multi-App Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Run TypeScript type checks across workspaces
+        run: npm run typecheck
+      - name: Run Vitest unit & component suite
+        run: npm run test
+      - name: Build all frontend Vite applications
+        run: npm run build
+
+  e2e-ci:
+    name: Multi-Portal Playwright E2E Verification
+    needs: [backend-ci, frontend-ci]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bagodi
+          POSTGRES_PASSWORD: bagodi_dev_secret
+          POSTGRES_DB: bagodi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://bagodi:bagodi_dev_secret@127.0.0.1:5432/bagodi
+      APP_ENV: development
+      OTP_PROVIDER: console
+      PAYMENT_GATEWAY_PROVIDER: mock
+      COURIER_PROVIDER: mock
+      NOTIFICATION_DEFAULT_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install backend & prepare database
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          alembic upgrade head
+      - name: Install frontend & Chromium browser
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install chromium
+      - name: Run Playwright E2E suite
+        working-directory: frontend
+        run: npm run test:e2e
+

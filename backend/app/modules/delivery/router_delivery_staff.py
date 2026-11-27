@@ -98,6 +98,10 @@ async def update_my_duty_status(
     "/me/assigned-shipments",
     response_model=list[ShipmentResponse],
 )
+@router.get(
+    "/my-deliveries",
+    response_model=list[ShipmentResponse],
+)
 async def list_my_assigned_shipments(
     principal: Annotated[SecurityPrincipal, Depends(get_security_principal)],
     db: Annotated[AsyncSession, Depends(get_db)],

@@ -32,7 +32,7 @@ async def resolve_cart_context(
     """Resolves merchant tenant, fulfilling store, and customer/guest identity."""
     resolved_tenant_id = (principal.tenant_id if principal else None) or tenant_id
     if not resolved_tenant_id:
-        stmt = select(Tenant).order_by(Tenant.created_at.asc())
+        stmt = select(Tenant).where(Tenant.status == "active").order_by(Tenant.created_at.asc())
         active_tenant = (await db.execute(stmt)).scalars().first()
         if active_tenant:
             resolved_tenant_id = active_tenant.id
@@ -45,24 +45,28 @@ async def resolve_cart_context(
                 },
             )
 
-    # Validate tenant is active or resolve default
+    # Validate tenant exists and is strictly active (block suspended tenants)
     tenant = (
         await db.execute(
             select(Tenant).where(Tenant.id == resolved_tenant_id)
         )
     ).scalar_one_or_none()
     if not tenant:
-        fallback_tenant = (await db.execute(select(Tenant).order_by(Tenant.created_at.asc()))).scalars().first()
-        if fallback_tenant:
-            resolved_tenant_id = fallback_tenant.id
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "code": "TENANT_NOT_FOUND",
-                    "message": "Merchant organization not found or inactive.",
-                },
-            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "TENANT_NOT_FOUND",
+                "message": "Merchant organization not found or inactive.",
+            },
+        )
+    if tenant.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "TENANT_SUSPENDED",
+                "message": f"Merchant organization is '{tenant.status}' and cannot accept cart operations.",
+            },
+        )
 
     # Resolve fulfilling store
     resolved_store_id = store_id

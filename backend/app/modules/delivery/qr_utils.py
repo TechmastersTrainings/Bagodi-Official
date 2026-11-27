@@ -47,9 +47,7 @@ def generate_qr_svg(content: str, size: int = 260) -> str:
     def draw_finder(ox: int, oy: int):
         for y in range(7):
             for x in range(7):
-                if x == 0 or x == 6 or y == 0 or y == 6:
-                    matrix[oy + y][ox + x] = 1
-                elif 2 <= x <= 4 and 2 <= y <= 4:
+                if (x in (0, 6) or y in (0, 6)) or (2 <= x <= 4 and 2 <= y <= 4):
                     matrix[oy + y][ox + x] = 1
                 else:
                     matrix[oy + y][ox + x] = 0
@@ -65,7 +63,6 @@ def generate_qr_svg(content: str, size: int = 260) -> str:
 
     # Fill data area deterministically with content hash bits
     bit_idx = 0
-    total_bits = len(h) * 8
     for r in range(grid_size):
         for c in range(grid_size):
             # Skip finders and separators

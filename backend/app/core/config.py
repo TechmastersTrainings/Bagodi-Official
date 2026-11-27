@@ -36,6 +36,18 @@ class Settings(BaseSettings):
     notification_max_retries: int = 3
     notification_base_retry_delay_seconds: int = 30
     notification_outbox_batch_size: int = 50
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
+    msg91_auth_key: str = ""
+    msg91_template_id: str = ""
+    shiprocket_email: str = ""
+    shiprocket_password: str = ""
+    shiprocket_api_token: str = ""
+    shiprocket_webhook_secret: str = ""
 
     # Cloudflare R2 Object Storage
     r2_account_id: str = ""

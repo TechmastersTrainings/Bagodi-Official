@@ -16,9 +16,12 @@ class CartItemAdd(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_fields(cls, data):
-        if isinstance(data, dict):
-            if "variantId" in data and ("variant_id" not in data or not data["variant_id"]):
-                data["variant_id"] = data["variantId"]
+        if (
+            isinstance(data, dict)
+            and "variantId" in data
+            and ("variant_id" not in data or not data["variant_id"])
+        ):
+            data["variant_id"] = data["variantId"]
         return data
 
 
@@ -32,37 +35,93 @@ class CartVariantSummary(BaseModel):
     id: UUID
     sku: str
     size: str = "Standard"
-    color_name: str | None = Field(default=None, alias="colorName")
+    color_name: str | None = None
     mrp: Decimal | None = None
-    selling_price: Decimal | None = Field(default=None, alias="sellingPrice")
-    available_stock: int = Field(default=0, alias="availableStock")
+    selling_price: Decimal | None = None
+    available_stock: int = 0
+
+    @computed_field
+    def colorName(self) -> str | None:
+        return self.color_name
+
+    @computed_field
+    def sellingPrice(self) -> Decimal | None:
+        return self.selling_price
+
+    @computed_field
+    def availableStock(self) -> int:
+        return self.available_stock
 
 
 class CartPricing(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     subtotal: Decimal
-    discount_total: Decimal = Field(default=Decimal("0.00"), alias="discountTotal")
-    delivery_charge: Decimal = Field(default=Decimal("0.00"), alias="deliveryCharge")
-    tax_total: Decimal = Field(default=Decimal("0.00"), alias="taxTotal")
-    final_total: Decimal = Field(..., alias="finalTotal")
+    discount_total: Decimal = Decimal("0.00")
+    delivery_charge: Decimal = Decimal("0.00")
+    tax_total: Decimal = Decimal("0.00")
+    final_total: Decimal
+
+    @computed_field
+    def discountTotal(self) -> Decimal:
+        return self.discount_total
+
+    @computed_field
+    def deliveryCharge(self) -> Decimal:
+        return self.delivery_charge
+
+    @computed_field
+    def taxTotal(self) -> Decimal:
+        return self.tax_total
+
+    @computed_field
+    def finalTotal(self) -> Decimal:
+        return self.final_total
 
 
 class CartItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
-    variant_id: UUID = Field(..., alias="variantId")
+    variant_id: UUID
     sku: str
-    product_name: str = Field(..., alias="productName")
-    variant_name: str = Field(..., alias="variantName")
-    image_url: str | None = Field(default=None, alias="imageUrl")
+    product_name: str
+    variant_name: str
+    image_url: str | None = None
     quantity: int
-    unit_price: Decimal = Field(..., alias="unitPrice")
-    total_price: Decimal = Field(..., alias="totalPrice")
+    unit_price: Decimal
+    total_price: Decimal
     is_in_stock: bool = True
-    available_qty: int = Field(default=0, alias="availableStock")
+    available_qty: int = 0
     variant: CartVariantSummary | None = None
+
+    @computed_field
+    def variantId(self) -> UUID:
+        return self.variant_id
+
+    @computed_field
+    def productName(self) -> str:
+        return self.product_name
+
+    @computed_field
+    def variantName(self) -> str:
+        return self.variant_name
+
+    @computed_field
+    def imageUrl(self) -> str | None:
+        return self.image_url
+
+    @computed_field
+    def unitPrice(self) -> Decimal:
+        return self.unit_price
+
+    @computed_field
+    def totalPrice(self) -> Decimal:
+        return self.total_price
+
+    @computed_field
+    def availableStock(self) -> int:
+        return self.available_qty
 
 
 class CartResponse(BaseModel):
@@ -74,12 +133,16 @@ class CartResponse(BaseModel):
     session_id: str | None
     coupon_code: str | None = None
     items: list[CartItemResponse]
-    total_items: int = Field(..., alias="itemCount")
+    total_items: int
     subtotal: Decimal
     discount_amount: Decimal = Decimal("0.00")
     total_amount: Decimal = Decimal("0.00")
     pricing: CartPricing | None = None
     updated_at: datetime
+
+    @computed_field
+    def itemCount(self) -> int:
+        return self.total_items
 
 
 class CartMergeRequest(BaseModel):
@@ -334,6 +397,39 @@ class OrderResponse(BaseModel):
     def updatedAt(self) -> str:
         return self.updated_at.isoformat() if self.updated_at else ""
 
+    def _compute_inclusive_gst(self) -> tuple[Decimal, Decimal, Decimal]:
+        """Indian apparel GST inclusive split: 5% for unit <= ₹1000, 12% above ₹1000."""
+        total_tax = Decimal("0.00")
+        for item in self.items or []:
+            line_amt = Decimal(str(item.total_price))
+            rate = Decimal("0.05") if Decimal(str(item.unit_price)) < Decimal("1000.00") else Decimal("0.12")
+            tax_part = line_amt - (line_amt / (Decimal("1.00") + rate))
+            total_tax += tax_part
+        total_tax = total_tax.quantize(Decimal("0.01"))
+        cgst = (total_tax / Decimal(2)).quantize(Decimal("0.01"))
+        sgst = (total_tax - cgst).quantize(Decimal("0.01"))
+        return total_tax, cgst, sgst
+
+    @computed_field
+    def taxAmount(self) -> float:
+        tax_amt, _, _ = self._compute_inclusive_gst()
+        return float(tax_amt)
+
+    @computed_field
+    def cgstAmount(self) -> float:
+        _, cgst, _ = self._compute_inclusive_gst()
+        return float(cgst)
+
+    @computed_field
+    def sgstAmount(self) -> float:
+        _, _, sgst = self._compute_inclusive_gst()
+        return float(sgst)
+
+    @computed_field
+    def taxableAmount(self) -> float:
+        tax_amt, _, _ = self._compute_inclusive_gst()
+        return float(max(Decimal("0.00"), Decimal(str(self.subtotal)) - Decimal(str(self.discount_amount)) - tax_amt))
+
 
 class PaginatedOrderResponse(BaseModel):
     items: list[OrderResponse]
@@ -345,6 +441,8 @@ class PaginatedOrderResponse(BaseModel):
 
 # --- Order State Machine Operations ---
 class OrderStatusUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     status: str = Field(..., description="Target fulfillment status")
     notes: str | None = Field(default=None, max_length=500)
     courierPartner: str | None = None
@@ -356,17 +454,13 @@ class OrderStatusUpdateRequest(BaseModel):
     pickupSlot: str | None = None
     weightKg: float | None = None
 
-    class Config:
-        extra = "allow"
-
 
 class OrderNotificationRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     channel: str = Field(default="WHATSAPP", description="Notification channel: WHATSAPP, SMS, or EMAIL")
     custom_note: str | None = Field(default=None, max_length=1000)
     customNote: str | None = Field(default=None, max_length=1000)
-
-    class Config:
-        extra = "allow"
 
 
 class OrderCancelRequest(BaseModel):

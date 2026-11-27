@@ -1,7 +1,8 @@
-from typing import Annotated, Literal
+from contextlib import suppress
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import SecurityPrincipal, get_security_principal, require_platform_admin
@@ -441,8 +442,9 @@ async def list_platform_users(
     role_filter: Annotated[str | None, Query(description="Filter by role: CUSTOMER, MERCHANT, ADMIN")] = None,
     search: Annotated[str | None, Query(description="Search email, phone, name")] = None,
 ):
-    from sqlalchemy import select, or_
-    from app.modules.identity.models import User, UserRole, Role
+    from sqlalchemy import or_, select
+
+    from app.modules.identity.models import Role, User, UserRole
     from app.modules.platform.models import Tenant
 
     stmt = select(User).order_by(User.created_at.desc())
@@ -516,7 +518,8 @@ async def update_platform_user_status(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     from sqlalchemy import select
-    from app.modules.identity.models import User, UserRole, Role
+
+    from app.modules.identity.models import Role, User, UserRole
     from app.modules.platform.models import Tenant
 
     stmt = select(User).where(User.id == user_id)
@@ -589,13 +592,27 @@ async def update_platform_user_status(
 
 
 async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
-    from sqlalchemy import select, delete, update
+    from sqlalchemy import delete, select, update
+
     from app.core.storage import storage
-    from app.modules.identity.models import User, UserRole, UserSession, CustomerAddress
-    from app.modules.orders.models import Order, OrderItem, Cart, CartItem, OrderReturnRequest, PaymentTransaction
-    from app.modules.pricing.models import CouponRedemption
-    from app.modules.delivery.models import Shipment, ShipmentItem, DeliveryTrackingEvent, ProofOfDelivery, DeliveryPersonnel
+    from app.modules.delivery.models import (
+        DeliveryPersonnel,
+        DeliveryTrackingEvent,
+        ProofOfDelivery,
+        Shipment,
+        ShipmentItem,
+    )
+    from app.modules.identity.models import CustomerAddress, User, UserRole, UserSession
+    from app.modules.orders.models import (
+        Cart,
+        CartItem,
+        Order,
+        OrderItem,
+        OrderReturnRequest,
+        PaymentTransaction,
+    )
     from app.modules.platform.models import PlatformAuditLog
+    from app.modules.pricing.models import CouponRedemption
 
     stmt = select(User).where(User.id == user_id)
     user = (await db.execute(stmt)).scalar_one_or_none()
@@ -634,10 +651,8 @@ async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
         pass
 
     # 3. Clean up coupon redemptions
-    try:
+    with suppress(Exception):
         await db.execute(delete(CouponRedemption).where(CouponRedemption.customer_id == user_id))
-    except Exception:
-        pass
 
     # 4. Clean up carts and cart items
     try:
@@ -674,16 +689,12 @@ async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
         pass
 
     # 6. Customer addresses
-    try:
+    with suppress(Exception):
         await db.execute(delete(CustomerAddress).where(CustomerAddress.customer_id == user_id))
-    except Exception:
-        pass
 
     # 7. Delivery personnel linking
-    try:
+    with suppress(Exception):
         await db.execute(delete(DeliveryPersonnel).where(DeliveryPersonnel.user_id == user_id))
-    except Exception:
-        pass
 
     # 8. User roles and sessions
     await db.execute(delete(UserRole).where(UserRole.user_id == user_id))
@@ -715,7 +726,7 @@ async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
                 "status": "permanently_deleted_all_traces",
             },
         )
-    except Exception as e:
+    except Exception:
         pass
 
     # 11. Delete the user row permanently
@@ -735,7 +746,8 @@ async def purge_user_completely(db: AsyncSession, user_id: UUID) -> bool:
 async def purge_all_dummy_users_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    from sqlalchemy import select, or_
+    from sqlalchemy import or_, select
+
     from app.modules.identity.models import User
 
     cleanup_emails = [

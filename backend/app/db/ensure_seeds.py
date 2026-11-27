@@ -1,20 +1,27 @@
 import logging
+import os
 from decimal import Decimal
 from uuid import UUID
-from sqlalchemy import select, or_, text, delete
+
+from sqlalchemy import delete, or_, select
+
+from app.core.passwords import hash_password
 from app.db.session import AsyncSessionLocal
-from app.core.passwords import hash_password, verify_password
-from app.modules.platform.models import Tenant, Store
-from app.modules.identity.models import User, Role, Permission, UserRole, RolePermission, UserSession
-import secrets
-import os
-from app.modules.catalog.models import Category, Brand, Product
+from app.modules.catalog.models import Brand, Category, Product
 from app.modules.delivery.models import (
+    DeliveryPersonnel,
+    DeliveryVehicle,
     DeliveryZone,
     DeliveryZonePincode,
-    DeliveryVehicle,
-    DeliveryPersonnel,
 )
+from app.modules.identity.models import (
+    Permission,
+    Role,
+    RolePermission,
+    User,
+    UserRole,
+)
+from app.modules.platform.models import Store, Tenant
 
 logger = logging.getLogger("bagodi.platform")
 
@@ -385,10 +392,10 @@ async def ensure_foundational_data():
                     await db.execute(delete(CartItem).where(CartItem.variant_id.in_(dummy_variant_ids)))
 
                     from app.modules.inventory.models import (
-                        StockReservation,
-                        InventoryLedger,
                         InventoryBalance,
+                        InventoryLedger,
                         StockAuditLog,
+                        StockReservation,
                         StoreInventory,
                     )
                     await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(dummy_variant_ids)))
@@ -485,6 +492,6 @@ async def ensure_foundational_data():
 
             await db.commit()
             logger.info("✓ Foundational data successfully verified in PostgreSQL.")
-    except Exception as exc:
-        logger.error(f"Failed to ensure foundational data: {exc}", exc_info=True)
+    except Exception:
+        logger.exception("Failed to ensure foundational data")
 

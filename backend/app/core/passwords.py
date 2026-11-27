@@ -18,7 +18,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         parts = hashed_password.split("$")
         if len(parts) != 3:
             return False
-        algorithm_info, salt_hex, key_hex = parts
+        _algorithm_info, salt_hex, key_hex = parts
         salt = bytes.fromhex(salt_hex)
         expected_key = bytes.fromhex(key_hex)
         new_key = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)

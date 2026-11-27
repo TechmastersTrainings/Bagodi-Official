@@ -5,9 +5,9 @@ Dedicated endpoints serving the Super Admin Platform Governance portal (/super/.
 
 import math
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -24,7 +24,7 @@ from app.db.session import get_db
 from app.modules.catalog.models import Product
 from app.modules.identity.models import Role, User, UserRole
 from app.modules.orders.models import Order
-from app.modules.platform.models import PlatformAuditLog, Store, Tenant, TenantStatusLog
+from app.modules.platform.models import PlatformAuditLog, Store, Tenant
 from app.modules.platform.services import PlatformAuditService, TenantService
 
 router = APIRouter(
@@ -174,7 +174,7 @@ class CreatePlatformUserRequest(BaseModel):
 def format_audit_log(log: PlatformAuditLog) -> AuditLogEntryResponse:
     return AuditLogEntryResponse(
         id=str(log.id),
-        timestamp=log.created_at.isoformat() if log.created_at else datetime.now(timezone.utc).isoformat(),
+        timestamp=log.created_at.isoformat() if log.created_at else datetime.now(UTC).isoformat(),
         actorId=str(log.actor_id or ""),
         actorEmail=log.actor_email or "system@techmasters.internal",
         action=log.action,
@@ -221,8 +221,8 @@ async def build_merchant_response(db: AsyncSession, tenant: Tenant) -> MerchantT
         totalOrdersCount=order_count,
         grossSalesVolume=sales_vol,
         apiKeyPrefix=f"bgd_live_{tenant.slug[:6]}",
-        createdAt=tenant.created_at.isoformat() if tenant.created_at else datetime.now(timezone.utc).isoformat(),
-        updatedAt=tenant.updated_at.isoformat() if tenant.updated_at else datetime.now(timezone.utc).isoformat(),
+        createdAt=tenant.created_at.isoformat() if tenant.created_at else datetime.now(UTC).isoformat(),
+        updatedAt=tenant.updated_at.isoformat() if tenant.updated_at else datetime.now(UTC).isoformat(),
     )
 
 
@@ -237,7 +237,7 @@ async def build_merchant_response(db: AsyncSession, tenant: Tenant) -> MerchantT
 async def get_platform_summary(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(UTC).isoformat()
 
     # Total and status-filtered merchants
     total_merchants_stmt = select(func.count(Tenant.id))
@@ -267,7 +267,7 @@ async def get_platform_summary(
 
     # Recent audit logs
     recent_logs = await PlatformAuditService.list_logs(db, skip=0, limit=10)
-    formatted_logs = [format_audit_log(l) for l in recent_logs]
+    formatted_logs = [format_audit_log(log) for log in recent_logs]
 
     # Cluster health
     services = [
@@ -564,7 +564,7 @@ async def list_platform_users(
                 twoFactorEnabled=False,
                 lastLoginAt=u.updated_at.isoformat() if u.updated_at else None,
                 lastLoginIp="127.0.0.1",
-                createdAt=u.created_at.isoformat() if u.created_at else datetime.now(timezone.utc).isoformat(),
+                createdAt=u.created_at.isoformat() if u.created_at else datetime.now(UTC).isoformat(),
             )
         )
 
@@ -646,7 +646,7 @@ async def create_platform_user(
         twoFactorEnabled=False,
         lastLoginAt=None,
         lastLoginIp=None,
-        createdAt=user.created_at.isoformat() if user.created_at else datetime.now(timezone.utc).isoformat(),
+        createdAt=user.created_at.isoformat() if user.created_at else datetime.now(UTC).isoformat(),
     )
 
 
@@ -689,7 +689,7 @@ async def list_audit_logs(
     stmt = stmt.order_by(desc(PlatformAuditLog.created_at)).offset(skip).limit(pageSize)
     logs = (await db.execute(stmt)).scalars().all()
 
-    items = [format_audit_log(l) for l in logs]
+    items = [format_audit_log(log) for log in logs]
     total_pages = math.ceil(total / pageSize) if total > 0 else 1
 
     return PaginatedAuditLogsResponse(

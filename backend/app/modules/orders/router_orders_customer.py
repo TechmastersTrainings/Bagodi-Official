@@ -1,17 +1,17 @@
-from datetime import UTC, datetime
 import math
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.security import (
     SecurityPrincipal,
-    get_security_principal,
     get_optional_security_principal,
+    get_security_principal,
 )
 from app.db.session import get_db
 from app.modules.orders.models import Order
@@ -96,23 +96,22 @@ async def create_storefront_order(
 
     if not shipping_data:
         new_addr = payload.get("newShippingAddress") or {}
-        recipient = (
-            new_addr.get("fullName")
-            or new_addr.get("full_name")
-            or customer_name
-            or "Valued Customer"
-        )
-        phone = (
-            new_addr.get("phoneNumber")
-            or new_addr.get("phone")
-            or customer_phone
-            or "+919876543210"
-        )
-        addr1 = (
-            new_addr.get("addressLine1")
-            or new_addr.get("address_line1")
-            or "Bidar Main Road"
-        )
+        recipient = new_addr.get("fullName") or new_addr.get("full_name") or customer_name
+        phone = new_addr.get("phoneNumber") or new_addr.get("phone") or customer_phone
+        addr1 = new_addr.get("addressLine1") or new_addr.get("address_line1")
+        city = new_addr.get("city")
+        state = new_addr.get("state")
+        postal_code = new_addr.get("postalCode") or new_addr.get("postal_code")
+
+        if not recipient or not phone or not addr1 or not city or not state or not postal_code:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "SHIPPING_ADDRESS_REQUIRED",
+                    "message": "Complete shipping address (fullName, phoneNumber, addressLine1, city, state, postalCode) is required.",
+                },
+            )
+
         shipping_data = {
             "full_name": recipient,
             "recipient_name": recipient,
@@ -120,33 +119,33 @@ async def create_storefront_order(
             "address_line1": addr1,
             "address_line2": new_addr.get("addressLine2") or new_addr.get("address_line2"),
             "landmark": new_addr.get("landmark"),
-            "city": new_addr.get("city") or "Bidar",
-            "state": new_addr.get("state") or "Karnataka",
-            "postal_code": new_addr.get("postalCode") or new_addr.get("postal_code") or "585401",
-            "country": "India",
+            "city": city,
+            "state": state,
+            "postal_code": postal_code,
+            "country": new_addr.get("country") or "India",
         }
 
         # Auto-persist newly provided address for customer profile
-        if new_addr and (new_addr.get("fullName") or new_addr.get("full_name")):
-            try:
-                from app.modules.identity.models import CustomerAddress
-                saved_addr = CustomerAddress(
-                    tenant_id=target_tenant_id,
-                    customer_id=customer_id,
-                    full_name=recipient,
-                    phone=phone,
-                    address_line1=addr1,
-                    address_line2=shipping_data["address_line2"],
-                    landmark=shipping_data["landmark"],
-                    city=shipping_data["city"],
-                    state=shipping_data["state"],
-                    postal_code=shipping_data["postal_code"],
-                    is_default=True,
-                )
-                db.add(saved_addr)
-                await db.commit()
-            except Exception:
-                pass
+        try:
+            from app.modules.identity.models import CustomerAddress
+
+            saved_addr = CustomerAddress(
+                tenant_id=target_tenant_id,
+                customer_id=customer_id,
+                full_name=recipient,
+                phone=phone,
+                address_line1=addr1,
+                address_line2=shipping_data["address_line2"],
+                landmark=shipping_data["landmark"],
+                city=shipping_data["city"],
+                state=shipping_data["state"],
+                postal_code=shipping_data["postal_code"],
+                is_default=True,
+            )
+            db.add(saved_addr)
+            await db.commit()
+        except Exception:
+            await db.rollback()
 
     p_method = "online" if str(payload.get("paymentMethod", "")).upper() in ["ONLINE", "UPI", "RAZORPAY", "CARD"] else "cod"
 
@@ -163,8 +162,8 @@ async def create_storefront_order(
     except Exception as val_err:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"code": "INVALID_CHECKOUT_DATA", "message": f"Invalid checkout details: {str(val_err)}"},
-        )
+            detail={"code": "INVALID_CHECKOUT_DATA", "message": f"Invalid checkout details: {val_err!s}"},
+        ) from val_err
 
     try:
         # Pre-merge guest session items if any remain
@@ -188,16 +187,35 @@ async def create_storefront_order(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "CHECKOUT_FAILED", "message": f"Order placement failed: {str(exc)}"},
-        )
+            detail={"code": "CHECKOUT_FAILED", "message": f"Order placement failed: {exc!s}"},
+        ) from exc
 
     razorpay_data = None
     if p_method == "online":
+        from app.modules.payments.schemas import PaymentInitiateRequest
+        from app.modules.payments.services import PaymentService
+
+        init_res = await PaymentService.initiate_payment(
+            db=db,
+            tenant_id=target_tenant_id,
+            data=PaymentInitiateRequest(
+                order_id=order.id,
+                payment_method="online",
+                idempotency_key=f"init-{order.order_number}",
+            ),
+            customer_id=customer_id,
+        )
+        payload_dict = init_res.checkout_payload or {}
         razorpay_data = {
-            "keyId": "rzp_test_bagodi_dev",
-            "orderId": f"order_{order.order_number}",
-            "amount": int(float(order.total_amount) * 100),
-            "currency": "INR",
+            "transactionId": str(init_res.transaction_id),
+            "transactionReference": init_res.transaction_reference,
+            "gatewayProvider": init_res.gateway_provider,
+            "keyId": payload_dict.get("key") or "",
+            "orderId": init_res.gateway_order_id or f"order_{order.order_number}",
+            "razorpayOrderId": init_res.gateway_order_id or f"order_{order.order_number}",
+            "amount": int(float(init_res.amount) * 100),
+            "currency": init_res.currency,
+            "checkoutUrl": init_res.checkout_url,
         }
 
     return {
@@ -236,10 +254,22 @@ async def resolve_order_tenant_id(
     resolved = (principal.tenant_id if principal else None) or header_tenant_id or query_tenant_id
     if resolved:
         tenant = (
-            await db.execute(select(Tenant).where(Tenant.id == resolved, Tenant.status == "active"))
+            await db.execute(select(Tenant).where(Tenant.id == resolved))
         ).scalar_one_or_none()
-        if tenant:
-            return tenant.id
+        if not tenant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "TENANT_NOT_FOUND", "message": "Merchant organization not found."},
+            )
+        if tenant.status != "active":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "TENANT_SUSPENDED",
+                    "message": f"Merchant organization is '{tenant.status}' and cannot process orders.",
+                },
+            )
+        return tenant.id
 
     anchor = (
         await db.execute(select(Tenant).where(Tenant.status == "active").limit(1))

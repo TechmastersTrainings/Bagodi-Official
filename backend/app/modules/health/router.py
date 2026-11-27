@@ -31,7 +31,7 @@ async def health_ready(db: Annotated[AsyncSession, Depends(get_db)]):
             "status": "ready",
             "database": "connected",
         }
-    except (SQLAlchemyError, Exception):  # noqa: BLE001
+    except (SQLAlchemyError, Exception):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"status": "unhealthy", "database": "disconnected"},

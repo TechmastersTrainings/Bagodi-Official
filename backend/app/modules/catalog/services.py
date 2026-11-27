@@ -223,7 +223,7 @@ class ProductService:
         stock_map = {row[0]: int(row[1]) for row in result.all()}
         for p in products:
             for v in (p.variants or []):
-                setattr(v, "available_qty", stock_map.get(v.id, 0))
+                v.available_qty = stock_map.get(v.id, 0)
 
     @staticmethod
     async def create_product(db: AsyncSession, tenant_id: UUID, data: ProductCreate) -> Product:
@@ -231,7 +231,7 @@ class ProductService:
         product_slug = data.slug.strip() if data.slug and data.slug.strip() else None
         if not product_slug:
             base_slug = re.sub(r"[^a-z0-9]+", "-", data.name.lower()).strip("-")
-            product_slug = base_slug if base_slug else "apparel"
+            product_slug = base_slug or "apparel"
             slug_stmt = select(Product).where(Product.tenant_id == tenant_id, Product.slug == product_slug)
             if (await db.execute(slug_stmt)).scalar_one_or_none():
                 product_slug = f"{product_slug[:120]}-{uuid4().hex[:6]}"
@@ -439,34 +439,42 @@ class ProductService:
         return await ProductService.get_merchant_product(db, tenant_id, product.id)
 
     @staticmethod
-    async def delete_merchant_product(
-        db: AsyncSession, tenant_id: UUID, product_id: UUID
-    ) -> None:
-        product = await ProductService.get_merchant_product(db, tenant_id, product_id)
-        if not product:
-            return
-
-        var_stmt = select(ProductVariant.id).where(ProductVariant.product_id == product_id)
-        variant_ids = (await db.execute(var_stmt)).scalars().all()
+    async def delete_product_permanently(db: AsyncSession, product: Product) -> None:
+        """Delete a product, its variants/inventory/cart rows, and its R2 assets cleanly."""
+        var_stmt = select(ProductVariant.id).where(ProductVariant.product_id == product.id)
+        variant_ids = list((await db.execute(var_stmt)).scalars().all())
         if variant_ids:
-            from app.modules.orders.models import CartItem
+            from app.modules.orders.models import CartItem, OrderItem
+
+            has_order = (
+                await db.execute(select(OrderItem.id).where(OrderItem.variant_id.in_(variant_ids)).limit(1))
+            ).scalar_one_or_none()
+            if has_order:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "PRODUCT_HAS_ORDERS",
+                        "message": "Cannot permanently delete a product referenced by existing orders; unpublish it instead.",
+                    },
+                )
+
             await db.execute(delete(CartItem).where(CartItem.variant_id.in_(variant_ids)))
 
             from app.modules.inventory.models import (
-                StockReservation,
                 InventoryLedger,
-                InventoryBalance,
-                StockAuditLog,
-                StoreInventory,
+                PurchaseOrderItem,
+                StockBalance,
+                StockReceiptItem,
+                StoreTransferItem,
             )
-            await db.execute(delete(StockReservation).where(StockReservation.variant_id.in_(variant_ids)))
-            await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(variant_ids)))
-            await db.execute(delete(InventoryBalance).where(InventoryBalance.variant_id.in_(variant_ids)))
-            await db.execute(delete(StockAuditLog).where(StockAuditLog.variant_id.in_(variant_ids)))
-            await db.execute(delete(StoreInventory).where(StoreInventory.variant_id.in_(variant_ids)))
 
-        # Permanently delete associated product images from Cloudflare R2
-        img_stmt = select(ProductImage.image_url).where(ProductImage.product_id == product_id)
+            await db.execute(delete(InventoryLedger).where(InventoryLedger.variant_id.in_(variant_ids)))
+            await db.execute(delete(StockBalance).where(StockBalance.variant_id.in_(variant_ids)))
+            await db.execute(delete(PurchaseOrderItem).where(PurchaseOrderItem.variant_id.in_(variant_ids)))
+            await db.execute(delete(StockReceiptItem).where(StockReceiptItem.variant_id.in_(variant_ids)))
+            await db.execute(delete(StoreTransferItem).where(StoreTransferItem.variant_id.in_(variant_ids)))
+
+        img_stmt = select(ProductImage.url).where(ProductImage.product_id == product.id)
         image_urls = (await db.execute(img_stmt)).scalars().all()
         for url in image_urls:
             if url:
@@ -474,6 +482,13 @@ class ProductService:
 
         await db.delete(product)
         await db.commit()
+
+    @staticmethod
+    async def delete_merchant_product(
+        db: AsyncSession, tenant_id: UUID, product_id: UUID
+    ) -> None:
+        product = await ProductService.get_merchant_product(db, tenant_id, product_id)
+        await ProductService.delete_product_permanently(db, product)
 
     @staticmethod
     async def delete_variant(
@@ -578,7 +593,7 @@ class ProductService:
 
         await db.commit()
         await db.refresh(variant)
-        setattr(variant, "available_qty", init_stock)
+        variant.available_qty = init_stock
         return variant
 
     @staticmethod
@@ -633,7 +648,7 @@ class ProductService:
             StockBalance.variant_id == variant.id
         )
         stock_qty = (await db.execute(stock_stmt)).scalar() or 0
-        setattr(variant, "available_qty", int(stock_qty))
+        variant.available_qty = int(stock_qty)
         return variant
 
     @staticmethod

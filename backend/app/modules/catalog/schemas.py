@@ -90,9 +90,6 @@ class ProductVariantUpdate(BaseModel):
     mrp: Decimal | None = Field(default=None, ge=0)
     base_price: Decimal | None = Field(default=None, ge=0, alias="sellingPrice")
     status: Literal["active", "inactive"] | None = Field(default=None)
-    mrp: Decimal | None = Field(default=None, ge=0)
-    base_price: Decimal | None = Field(default=None, ge=0)
-    status: Literal["active", "inactive"] | None = Field(default=None)
 
 
 class ProductVariantResponse(BaseModel):

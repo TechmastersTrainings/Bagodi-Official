@@ -1,22 +1,19 @@
 import logging
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
-from sqlalchemy import desc, func, or_, select, delete
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.security import SecurityPrincipal, get_security_principal, get_optional_security_principal
 from app.db.session import get_db
-from app.modules.delivery.models import DeliveryPersonnel, Shipment, ShipmentItem
-from app.modules.orders.models import Order, OrderReturnRequest, OrderItem
-from app.modules.pricing.models import Coupon
+from app.modules.delivery.models import DeliveryPersonnel, Shipment
+from app.modules.orders.models import OrderReturnRequest
 from app.modules.platform.models import Tenant
-from app.modules.identity.models import User
+from app.modules.pricing.models import Coupon
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +70,7 @@ async def list_active_delivery_staff(
 ):
     stmt = (
         select(DeliveryPersonnel)
-        .where(DeliveryPersonnel.is_active == True)
+        .where(DeliveryPersonnel.is_active.is_(True))
         .options(selectinload(DeliveryPersonnel.vehicle))
     )
     personnel_list = (await db.execute(stmt)).scalars().all()

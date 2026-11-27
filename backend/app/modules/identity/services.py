@@ -1,6 +1,6 @@
-from datetime import UTC, datetime, timedelta
 import os
 import re
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -162,25 +162,31 @@ class AuthService:
                 provider = get_otp_provider()
                 await provider.send_otp(target_phone, otp_code, settings.otp_expire_seconds)
             except Exception as err:
+                if settings.app_env.lower() == "production" and not settings.allow_mock_providers_in_production:
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail={"code": "OTP_DELIVERY_FAILED", "message": "Unable to dispatch verification code via SMS."},
+                    ) from err
                 print(f"[AUTH OTP] Mobile dispatch note: {err}")
 
-        # Always print to console for local developer debugging
-        destination = target_phone or target_email
-        print(f"\n========================================")
-        print(f"🔑 [AUTH OTP] Code for {destination}: {otp_code}")
-        print(f"========================================\n")
-
         # Mask destination for privacy (e.g. +91******4321)
+        destination = target_phone or target_email
         if target_phone and len(target_phone) > 4:
             masked_dest = target_phone[:3] + "*" * (len(target_phone) - 7) + target_phone[-4:]
         else:
             masked_dest = destination
 
-        # In dev or console provider mode, supply dev_otp so customer logins succeed when real SMS provider is not active
+        # Never leak raw OTP to logs or API responses in production unless mock providers explicitly allowed
+        is_prod = settings.app_env.lower() == "production"
+        if not is_prod or settings.allow_mock_providers_in_production:
+            print("\n========================================")
+            print(f"[AUTH OTP] Code for {destination}: {otp_code}")
+            print("========================================\n")
+
         is_simulated = (
             settings.app_env == "development"
-            or settings.otp_provider in ("console", "in_memory")
-            or not getattr(settings, "twilio_account_sid", None)
+            or (not is_prod and settings.otp_provider in ("console", "in_memory"))
+            or (is_prod and settings.allow_mock_providers_in_production)
         )
         dev_code = otp_code if is_simulated else None
 
